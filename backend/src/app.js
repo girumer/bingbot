@@ -66,24 +66,18 @@ const io = new Server(server, {
 
 const allowedOrigins = [
   'http://localhost:3000',
-
-  //          // Development URL
-  'https://localhost:3000',        // Development URL with HTTPS
-  'http://167.235.140.218',        // IP address (if needed)
-  'http://adeyebingo.com',         // Production domain with HTTP
-  'https://adeyebingo.com',        // Production domain with HTTPS
-  'http://www.adeyebingo.com',     // www version with HTTP
-  'https://www.adeyebingo.com',//      // www version with HTTPS
-
+  'https://localhost:3000',
   'http://167.235.140.218',
   'http://adeyebingo.com',
   'https://adeyebingo.com',
   'http://www.adeyebingo.com',
   'https://www.adeyebingo.com',
-
-  'https://api.adeyebingo.com',
   
-
+  // ADD THESE TWO LINES:
+  'http://api.adeyebingo.com',    // ← ADD THIS (HTTP)
+  'https://api.adeyebingo.com',   // ← YOU ALREADY HAVE THIS
+  
+  // ... rest of your origins
 ];
 app.use(cors({
   origin: function (origin, callback) {
