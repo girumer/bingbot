@@ -50,13 +50,13 @@ const io = new Server(server, {
   cors: {
     origin: [
       "http://localhost:3000",
-      "https://localhost:3000",
+      "http://localhost:3000",
       "http://167.235.140.218",
       "http://adeyebingo.com",
-      "https://adeyebingo.com",
+      "http://adeyebingo.com",
       "http://www.adeyebingo.com",
-      "https://www.adeyebingo.com",
-      "https://api.adeyebingo.com"
+      "http://www.adeyebingo.com",
+      "http://api.adeyebingo.com"
     ],
     methods: ["GET", "POST"],
     credentials: true
