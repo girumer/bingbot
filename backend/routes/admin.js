@@ -1,0 +1,14 @@
+const express = require('express');
+const router = express.Router();
+const { adminLogin, getAllUsers, getTransactions,registerUser, deleteUser } = require('../controllers/adminController');
+const { verifyAdmin } = require('../middleware/adminMiddleware'); // optional middleware
+
+// Admin login
+router.post('/login', adminLogin);
+router.post('/register-user', verifyAdmin, registerUser);
+router.delete('/delete-user/:userId', verifyAdmin, deleteUser);
+// Protected admin routes
+router.get('/users', verifyAdmin, getAllUsers);
+router.get('/transactions', verifyAdmin, getTransactions);
+
+module.exports = router;

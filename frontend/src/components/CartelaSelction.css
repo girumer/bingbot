@@ -1,0 +1,322 @@
+/* Wrapper for horizontal scrolling */
+.Cartelacontainer-wrapper {
+    overflow-x: auto; /* enable horizontal scroll if needed */
+    width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
+    background-color: #060e62;
+}
+/* Top display buttons */
+.wallet-stake-display {
+    display: flex;                   /* use flexbox */
+    justify-content: space-between;  /* spread buttons evenly */
+    width: 100%;
+    gap: 5px;                        /* small gap between buttons */
+    margin: 1rem 0;
+    flex-wrap: nowrap;                /* prevent wrapping */
+}
+
+
+.display-btn {
+  flex: 1 1 30%;
+  margin: 0.5rem;
+  padding: 0.8rem;
+  background-color: #1d1e1f;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  border-radius: 8px;
+  box-shadow: 0px 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Cartela container (grid of 10 rows) */
+.Cartelacontainer {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr); /* 10 columns */
+  gap: 8px;
+  margin-top: 1rem;
+}
+
+/* Individual cartela buttons */
+.cartela {
+  padding: 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.cartela:hover {
+  transform: scale(1.05);
+}
+.timer-display{
+    align-items: center;
+    color: red;
+    font-size: 24px;
+    justify-content: center;
+}
+/* Grid for buttons */
+.Cartelacontainer {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr); /* 10 columns per row */
+    gap: 5px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.cartela {
+    width: 100%; /* fill grid cell */
+    height: 35px;
+    min-width: 30px; /* minimum width for mobile */
+    background-color: #16e916ed;
+    color: rgb(180, 29, 29);
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    font-size: 0.8rem;
+    border-radius: 5px;
+    transition: transform 0.2s;
+}
+
+.cartela:active {
+    transform: scale(0.95);
+}
+
+/* Command board for controls */
+.cartelacomand_bord {
+    background-color: rgba(49, 114, 227, 0.974);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Game start button */
+.game_start {
+    background-color: rgb(95, 11, 213);
+    width: 100%;
+    height: 50px;
+    margin: 20px auto;
+    border-radius: 25px;
+    color: white;
+    font-size: large;
+    display: block;
+}
+
+/* Dropdowns and stake */
+.Stakeplace,
+.dropdown-cartela {
+    width: 90%;
+    max-width: 300px;
+    margin: 10px auto;
+    font-family: Arial, sans-serif;
+}
+
+.dropdown-header-cartela {
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 20px;
+    background-color: #e24f4f;
+    cursor: pointer;
+}
+
+.dropdown-list-cartela {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #0e0e0e;
+    border-radius: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 1000;
+}
+
+
+
+.dropdown-item-cartela:hover {
+    background-color: #ec3636;
+    border-radius: 20px;
+}
+
+.arrow {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #333;
+    transition: transform 0.2s;
+}
+
+.arrow.open {
+    transform: rotate(180deg);
+}
+
+/* Stake values grid */
+.stakevalue {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+    gap: 10px;
+    font-size: large;
+}
+
+.stakevalue label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.cartela-cell {
+  display: inline-block;
+  width: 35px;
+  height: 35px;
+  line-height: 35px;
+  text-align: center;
+  border: 1px solid #333;
+  margin: 2px;
+  border-radius: 6px;
+  background: #f4f4f4;
+  transition: 0.3s;
+}
+
+.cartela-cell.taken {
+  background: red;
+  color: rgb(190, 70, 30);
+  font-weight: bold;
+}
+
+.cartela-display.pending {
+  transition: opacity 0.5s ease;
+  opacity: 1;
+}
+
+.cartela-display.pending.fade-out {
+  opacity: 0;
+}
+
+/* Mobile responsiveness */
+
+.selected-cartela {
+    display: flex;
+    justify-content: center; /* center the card horizontally */
+    margin: 20px 0;
+}
+
+.cartela-display {
+    display: flex;
+    flex-direction: column;
+    gap: 5px; /* space between rows */
+    background: transparent !important;
+    padding: 15px;
+    border-radius: 0px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.cartela-row {
+    display: flex;
+    gap: 5px; /* space between cells */
+    justify-content: center;
+}
+
+.cartela-cell {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #333;
+    border-radius: 5px;
+    font-weight: bold;
+    background-color: #fff;
+    cursor: default; /* change to pointer if you want clickable cells */
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Example hover effect */
+.cartela-cell:hover {
+    background-color: #a6a398;
+    color: #f3fbff;
+}
+.buttonconfirm {
+    display: flex;           /* use flexbox */
+    flex-direction: row;     /* horizontal layout */
+    justify-content: center; /* center buttons horizontally */
+    gap: 20px;               /* space between buttons */
+    margin: 20px 0;
+}
+
+
+
+.game_start {
+    width: 150px;            /* button width */
+    padding: 12px 0;         /* vertical padding */
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.game_start:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.game_start:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+@media (max-width: 480px) {
+    .cartela {
+        height: 28px;
+        font-size: 0.65rem;
+    }
+
+    .stakevalue {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+/* Top three buttons horizontal full width, like 10 columns */
+/* Top three buttons horizontal full width, exactly filling 10 columns */
+/* Container for top three buttons */
+/* Top three buttons horizontal full width */
+.wallet-stake-buttons {
+    display: flex;
+    justify-content: space-between; /* spread buttons evenly */
+    width: 100%;
+    gap: 5px; /* space between buttons */
+    margin-bottom: 10px;
+    flex-wrap: nowrap; /* prevent wrapping */
+}
+
+/* Each button proportional width */
+.wallet-stake-buttons button {
+    flex: 1; /* default equal width */
+    padding: 0.8rem;
+    font-size: 0.9rem;
+    text-align: center;
+    border-radius: 6px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+/* Proportional widths for desktop */
+.wallet-stake-buttons button:nth-child(1) {
+    flex: 3; /* 3 parts */
+}
+.wallet-stake-buttons button:nth-child(2) {
+    flex: 4; /* 4 parts */
+}
+.wallet-stake-buttons button:nth-child(3) {
+    flex: 3; /* 3 parts */
+}
+
+/* Mobile adjustments */
+
