@@ -510,6 +510,9 @@ async function checkWinners(roomId, calledNumber) {
   app.get('/api', (req, res) => {
     res.send('API is working!');
   });
+  app.get('/api/test-endpoint', (req, res) => {
+  res.json({ message: "API is working!" });
+});
   app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/api', reportRoutes);
