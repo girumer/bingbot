@@ -124,29 +124,20 @@ const handlelogin=()=>{
         <>
        
        <div >
-      <button className="Home" aria-label="House User" onClick={gotohome}>
-  <i className="fa-solid fa-house-user" onClick={gotohome}></i> {/* House User Icon */}
- HOME
-</button>
+     
    
 
         <button className="history" aria-label="Game History" onClick={gotohistory}>
            <i className="fa-solid fa-history" onClick={gotohistory}></i> {/* History Icon */}
                  History
                 </button>
-                <button className="history" aria-label="Game History" onClick={gotoreport}>
-           <i className="fa-solid fa-history" onClick={gotoreport}></i> {/* History Icon */}
-                 Report
-                </button>
+                
                 <button className="wallet" aria-label="Wallet" onClick={gototransfer}>
   <i className="fa-solid fa-wallet" onClick={gototransfer}></i> {/* Wallet Icon */}
-  Wallet
+  play
 </button>
 
-        <button className="help" aria-label="Help" onClick={gotohelp}>
-       <i className="fa-solid fa-question-circle" onClick={gotohelp}></i> {/* Question Circle Icon */}
-                        cartelas
-                   </button>
+        
         <button className="nav-btn1 nav-close-btn" onClick={showNavBar}>
           <FaTimes />
         </button>

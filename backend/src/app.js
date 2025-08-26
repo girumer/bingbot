@@ -223,7 +223,7 @@ socket.on("selectCartela", async ({ roomId, cartelaIndex }) => {
     // Start countdown if 2+ players have at least 1 cartela
     const playersWithCartela = Object.values(rooms[rId].playerCartelas).filter(arr => arr.length > 0).length;
     if (!rooms[rId].timer && playersWithCartela >= 2) {
-      startCountdown(rId, 5);
+      startCountdown(rId, 30);
     }
   } catch (err) {
     console.error("Error selecting cartela:", err);

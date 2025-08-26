@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import "./WalletPage.css";
+import Navbar from "./Navbar";
 
 function WalletPage() {
+  const navigate = useNavigate();
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("telebirr");
   const [wallet, setWallet] = useState(0);
@@ -105,42 +108,65 @@ function WalletPage() {
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "400px", margin: "auto" }}>
-      <h2>Wallet: {wallet} ETB</h2>
+    <React.Fragment>
+      {/* --- Navbar --- */}
+      <Navbar />
 
-      <input
-        type="number"
-        placeholder="Enter amount"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-      />
-
-      <select
-        value={method}
-        onChange={(e) => setMethod(e.target.value)}
-        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-      >
-        <option value="telebirr">Telebirr</option>
-        <option value="cbebirr">CBE Birr</option>
-      </select>
-
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-        <button onClick={handleDeposit} style={{ width: "48%", padding: "10px" }}>Deposit</button>
-        <button onClick={handleWithdraw} style={{ width: "48%", padding: "10px" }}>Withdraw</button>
-      </div>
-
-      {/* --- Coin Component --- */}
-      <div style={{ marginTop: "20px" }}>
-        <h3>Coins: {coins}</h3>
+      <div style={{ padding: "20px", maxWidth: "400px", margin: "auto" }}>
+        
+        {/* --- Back to Game Menu Button --- */}
         <button
-          onClick={handleConvertCoins}
-          style={{ width: "100%", padding: "10px", marginTop: "5px" }}
+          onClick={() => navigate("/mainmenu")}
+          style={{
+            width: "100%",
+            padding: "10px",
+            marginBottom: "20px",
+            backgroundColor: "#007bff",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
         >
-          Convert Coins to Wallet
+          Back to Game Menu
         </button>
+
+        <h2>Wallet: {wallet} ETB</h2>
+
+        <input
+          type="number"
+          placeholder="Enter amount"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+        />
+
+        <select
+          value={method}
+          onChange={(e) => setMethod(e.target.value)}
+          style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+        >
+          <option value="telebirr">Telebirr</option>
+          <option value="cbebirr">CBE Birr</option>
+        </select>
+
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+          <button onClick={handleDeposit} style={{ width: "48%", padding: "10px" }}>Deposit</button>
+          <button onClick={handleWithdraw} style={{ width: "48%", padding: "10px" }}>Withdraw</button>
+        </div>
+
+        {/* --- Coin Component --- */}
+        <div style={{ marginTop: "20px" }}>
+          <h3>Coins: {coins}</h3>
+          <button
+            onClick={handleConvertCoins}
+            style={{ width: "100%", padding: "10px", marginTop: "5px" }}
+          >
+            Convert Coins to Wallet
+          </button>
+        </div>
       </div>
-    </div>
+    </React.Fragment>
   );
 }
 

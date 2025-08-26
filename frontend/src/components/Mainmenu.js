@@ -68,6 +68,7 @@ function Mainmenu() {
     <React.Fragment>
  
 
+      <Navbar />
       {/* Top button bar */}
       {/* Top button bar */}
 <div className="top-button-bar">
