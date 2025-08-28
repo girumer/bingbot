@@ -1,733 +1,559 @@
 /* --- MAIN LAYOUT --- */
 .bingo-board-wrapper {
   display: flex;
-  flex-direction: row;
-  gap: 6px;
-  width: 100%;
-
-  background-color: #007bff;
-}
-
-
-.left-panel {
-  flex: 1;        /* take equal space by default */
-  width: 50%;     /* force it to 50% */
-  background: #e30a0a; /* just for testing */
-}
-
-.right-panel {
-  flex: 1;
-  width: 50%;
-  background: #2d0ac8; /* just for testing */
-}
-
-.left-board .panel-body {
-  display: flex;
   flex-direction: column;
-  height: 100%;
-  width: 100%;       /* fill the panel height */
+  height: 100vh;
+  padding: 5px;
+  background-color:#12024cdb;
+  gap: 5px;
+}
+/* Toggle Switch Styles */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+  margin: 0 10px;
 }
 
-.numbers-columns {
-  flex: 1;            /* take all available vertical space */
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #3fa8484f;
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: wheat;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: #4CAF50;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(26px);
+}
+
+.toggle-container {
   display: flex;
-  justify-content: space-around; /* keep columns spaced evenly */
-  align-items: stretch;          /* stretch columns to full height */
+  align-items: center;
+  justify-content: center;
+  margin-top: 5px;
+  padding: 8px;
+  background-color: #7d3fa84f;
+  border-radius: 8px;
 }
 
-.number-column {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;   /* top alignment for letter-button */
-  flex: 1;                       /* make each column same height */
+.toggle-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #f4e9e9;
 }
-
-.number-button {
-  flex: 1;                       /* stretch buttons equally within column */
-  margin: 2px 0;                 /* keep spacing */
-  min-height: 0;                 /* prevent overflow issues */
-}
-
-.left-board,
-.right-panel {
-  flex: 1;           /* equal flex */
-  max-width: 50%;    /* ensures they don’t exceed 50% */
-  min-width: 0;      /* avoid overflow issues */
-}
-/* Container for all called numbers */
-/* --- LAST FIVE CALLED NUMBERS --- */
-.called-numbers-wrapper {
-  display: flex;
-  gap: 6px;
-  margin: 8px 0;
-  justify-content: center; /* horizontal alignment */
-}
-.winner-highlight {
-  background-color: rgb(57, 238, 96) !important;
-  color: black !important;
-  font-weight: bold !important;
-  border: 2px solid red !important;
-}
-
 .winner-popup {
   position: fixed;
-  top: 50%;
+  top: 10%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgb(142, 12, 212);
-  padding: 20px;
+  transform: translateX(-50%);
+  background: #ece3e3;
+  color: white;
+  padding: 15px;
   border-radius: 10px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
   z-index: 1000;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
   max-width: 90%;
-  max-height: 90%;
-  overflow: auto;
+  
+}
+.cartela-cell.highlighted {
+  background-color: rgb(25, 227, 79);
+  color: black;
+}
+.winner-highlight {
+  background-color: rgb(40, 199, 104) !important;
+  border: 3px solid red !important;
+  color: black;
+  font-weight: bold !important;
+  transform: scale(1.1);
+}
+
+.winner-popup h2 {
+  margin-bottom: 10px;
+}
+
+.winner-cartelas-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  color: #01060b;
+  gap: 8px;
 }
 
 .winner-cartela {
-  margin: 10px 0;
-  border: 3px solid gold;
-}
-
-.winner-name {
-  text-align: center;
-  font-weight: bold;
-  margin-top: 10px;
-  font-size: 1.2em;
-  color: #2c3e50;
-}
-.called-number {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%; /* circle */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: bold;
-  font-size: 0.85rem;
-  text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* Color per letter */
-.called-number.b {
-  background-color: rgb(215, 83, 21);
-  color: black; /* better contrast */
-}
-
-.called-number.i {
-  background-color: rgb(121, 154, 224);
-}
-
-.called-number.n {
-  background-color: rgb(2, 42, 57);
-}
-
-.called-number.g {
-  background-color: rgb(64, 64, 157);
-}
-
-.called-number.o {
-  background-color: rgb(181, 173, 23);
-}
-
-
-
-
-
-/* Panels */
-.panel {
-  display: flex;
-  flex-direction: column;
-  background: #131aea;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-/* LEFT PANEL = BINGO BOARD */
-.left-board {
-  flex: 3; /* 30% */
-  max-width: 30%;
   min-width: 120px;
-  overflow-x: hidden;
-  overflow-y: auto;
+  color: white;
+  flex: 1 0 auto;
 }
 
-/* RIGHT PANEL = STATS + CARTELAS */
-.right-panel {
-  flex: 7; /* 70% */
-  max-width: 70%;
-  min-width: 100px;
+/* --- TOP SECTION - 10% --- */
+.top-stats {
+  flex: 0 0 10%;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-/* PANEL HEADER */
-.panel-header {
-  background: #f4f4f4;
-  padding: 4px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: space-between;
+  justify-content: space-around;
+  align-items: center;
+  gap: 5px;
+  padding: 5px;
+  background: #12024cdb;
+  border-radius: 5px;
 }
 
 .stat-button {
-  font-size: 0.7rem;
-  padding: 2px 4px;
-  background: #eee;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* LETTERS + NUMBERS GRID */
-.numbers-columns {
-  display: flex;
-  justify-content: center;
-  gap: 2px;
-}
-
-.number-column {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* --- BINGO HEADER & NUMBER BUTTONS --- */
-.letter-button,
-.number-button {
-  background: #000;      /* black background */
-  color: #fff;           /* white text */
+  padding: 10px;
+  background:#2802434f;
+  border: 1px solid #efa8a8;
+  border-radius: 10%;
+  color:white;
+  font-size: 18px;
   font-weight: bold;
-  border-radius: 3px;
-  
   text-align: center;
+  min-width: 100px;
+}
+
+/* --- MIDDLE SECTION - 30% --- */
+.numbers-grid-wrapper {
+  flex: 0 0 30%;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
+  gap: 5px;
+  padding: 5px;
+  background: #12024cdb;
+  border-radius: 5px;
+}
+
+.last-called-number {
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  background: #070707;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.last-five-display {
+  display: flex;
+  gap: 4px;
+  font-size: 65px;
+  border: 12px;
+}
+
+.last-five-number {
+    width: 45px;
+  height: 45px;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  color: white;
+}
+
+.last-five-number.b { background: yellow; color: black; }
+.last-five-number.i { background: green; }
+.last-five-number.n { background: red; }
+.last-five-number.g { background: blue; }
+.last-five-number.o { background: brown; }
+
+.number-row {
+  display: flex;
+  gap: 2px;
   align-items: center;
 }
 
-/* LETTER BUTTONS */
 .letter-button {
-  width: 28px;           /* larger width */
-  height: 28px;          /* larger height */
-  font-size: 22px;       /* bigger text */
-  line-height: 28px;
+  width: 22px;
+  height: 22px;
+  margin-left: 10px;
+  background: black;
+  color: white;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
 }
 
-/* NUMBER BUTTONS */
 .number-button {
-  width: 32px;           /* larger width */
-  height: 32px;          /* larger height */
-  font-size: 24px;       /* bigger text */
-  line-height: 28px;
-  margin: 2px 0;
+  width: 22px;
+  height: 22px;
+  background: #1b1919;
   border: 1px solid #ccc;
-  background: #f4efef;
-  color: #0f0e0e;
+  border-radius: 2px;
+  display: flex;
+
+  color:white;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+}
+/* Cartela container */
+.cartela-container {
+    display: flex;            /* keep columns side by side */
+    overflow-x: auto;         /* enable horizontal scrolling if needed */
+    padding: 5px;
+    background-color: #12024cdb;
+    gap: 5px;                 /* spacing between columns */
+    -webkit-overflow-scrolling: touch; /* smooth scrolling on mobile */
+}
+
+/* Each cartela column */
+.cartela-column {
+    display: flex;
+    flex-direction: column;
+    min-width: 50px;          /* adjust width for mobile */
+}
+
+/* Each cell number */
+.cartela-cell {
+    width: 50px;              /* same as column width */
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;        /* bold numbers */
+    font-size: 1.2rem;   
+         /* slightly bigger */
+    border: 1px solid #1a1818;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    background-color: #684d4d;
 }
 
 .number-button.called {
   background: #780b54;
-  color: rgb(240, 236, 236);   /* keep called numbers highlighted */
- 
-}
-.last-five-display {
-  display: flex;
-  flex-direction: row; /* horizontal layout */
-  gap: 6px;            /* space between numbers */
-  overflow-x: auto;    /* scroll if needed */
-  padding-bottom: 4px;
-  align-items: center; /* vertically center the circles */
+  color: white;
 }
 
-.last-five-number {
-  width: 40px;
-  height: 40px;
+/* --- BOTTOM SECTION - 60% --- */
+.bottom-panels {
+  flex: 0 0 60%;
+  display: flex;
+  background-color: #12024cdb;;
+  gap: 5px;
+}
+
+.bottom-left {
+  flex: 1;
+  background:#12024cdb;
+  border-radius: 5px;
+  padding: 5px;
+}
+/* --- Cartelas Container --- */
+.cartelas-container-horizontal {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 columns for 4 cartelas */
+  grid-template-rows: repeat(2, auto);  /* 2 rows for 4 cartelas */
+  gap: 8px;
+  width: 100%;
+  padding: 5px;
+  box-sizing: border-box;
+  justify-items: center;
+  align-items: start; /* bottom alignment */
+}
+
+/* --- Cartela display --- */
+.cartela-display {
+  width: 140px;  /* smaller width */
+  height: auto;
+  border: 2px solid #e74c3c; /* red border like in screenshot */
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgb(225, 133, 133);
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+/* --- Header cells --- */
+.cartela-header-cell {
+  font-size: 12px;
+  font-weight: bold;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%; /* circle */
-  color: #fff;
-  font-weight: bold;
-  font-size: 14px;
-  margin-right: 6px;
-  flex-shrink: 0;
+  border-radius: 2px;
+  color: white;
 }
 
-/* Specific colors per B-I-N-G-O */
-.last-five-number.b {
-  background-color: yellow;
-  color: black; /* better contrast on yellow */
-}
+/* --- B-I-N-G-O colors --- */
+.cartela-header-cell.b { background: #8e44ad; }
+.cartela-header-cell.i { background: #e67e22; }
+.cartela-header-cell.n { background: #c0392b; }
+.cartela-header-cell.g { background: #27ae60; }
+.cartela-header-cell.o { background: #2980b9; }
 
-.last-five-number.i {
-  background-color: green;
-}
-
-.last-five-number.n {
-  background-color: red;
-}
-
-.last-five-number.g {
-  background-color: blue;
-}
-
-.last-five-number.o {
-  background-color: brown;
-}
-
-
-/* --- CARTELAS --- */
-.my-cartelas h3 {
-  font-size: 0.8rem;
-  margin: 4px 0;
-}
-
-/* SCROLLABLE CARTELAS WITH GAP */
-.cartelas-container-horizontal {
-  display: flex;
-  gap: 2px; /* GAP BETWEEN CARTELAS */
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-  scrollbar-width: thin;
-}
-
-.cartelas-container-horizontal::-webkit-scrollbar {
-  height: 6px;
-}
-
-.cartelas-container-horizontal::-webkit-scrollbar-thumb {
-  background: #aaa;
-  border-radius: 3px;
-}
-
-.cartelas-container-horizontal::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.cartela-display {
-  flex-shrink: 0;
-  width: 70px;
-  min-width: 70px;
-  max-width: 80px;
-  border: 1px solid #ccc;
-  padding: 1px;
-  border-radius: 1px;
-  background: #fff;
-  scroll-snap-align: start;
-  transition: transform 0.2s ease-in-out;
-}
-
+/* --- Cartela rows --- */
 .cartela-row {
   display: flex;
-  justify-content: center;
-  gap: 1px;
+  gap: 0px;
 }
 
 .cartela-cell {
-  width: 10px;
-  height: 10px;
-  font-size: 8px;
-  text-align: center;
-  line-height: 10px;
-  border: 1px solid #bbb;
-  background: #f9f9f9;
-  border-radius: 3px;
+  flex: 1;
+  min-width: 22px;  /* fit 5 cells in the smaller width */
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold; /* bold numbers */
+  font-size: 13px;  /* slightly bigger */
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 2px;
 }
 
 .cartela-cell.clicked {
-  background-color: #90ee90;
-  border-color: #32cd32;
+  background: #2ecc71; /* green highlight for called/free cell */
+  color: white;
 }
 
-.selected-cartela {
-  border-color: #007bff;
-  box-shadow: 0 0 6px #007bff88;
+
+/* --- CARTELAS CONTAINER --- */
+.cartelas-container-horizontal {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 5px;
+  box-sizing: border-box;
 }
-/* Cartela BINGO header */
+
+/* 1 Cartela */
+
+
+/* 2 Cartelas */
+
+
+
+/* 3 Cartelas */
+/* 3 Cartelas */
+
+
+
+/* Cartela Base Styles */
+.cartela-display {
+  background: rgb(227, 155, 155);
+  border: 1px solid #ddd;
+  border-radius: 1px;
+  padding: 2%;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  box-sizing: border-box;
+}
+
 .cartela-header {
   display: flex;
-  justify-content: center;
-  gap: 2px;
+  gap: 1px;
   margin-bottom: 2px;
 }
 
 .cartela-header-cell {
-  width: 16px;   /* same width as cell */
-  height: 16px;  /* same height as cell */
-  font-size: 10px;
-  text-align: center;
-  font-weight: bold;
-}
-.cartela-header-cell {
-  width: 16px;   /* match cartela-cell width */
-  height: 16px;  /* match cartela-cell height */
-  font-size: 10px;
-  text-align: center;
-  font-weight: bold;
+  flex: 1;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
   border-radius: 2px;
 }
 
-/* Color per letter B-I-N-G-O */
-.cartela-header-cell.b {
-  background-color: rgb(226, 105, 24);
-  height: 32px;
-  color: black;
-}
+.cartela-header-cell.b { background: yellow; color: black; }
+.cartela-header-cell.i { background: green; color: white; }
+.cartela-header-cell.n { background: red; color: white; }
+.cartela-header-cell.g { background: blue; color: white; }
+.cartela-header-cell.o { background: brown; color: white; }
 
-.cartela-header-cell.i {
-  background-color: green;
-  height: 32px;
-  color: white;
-}
-
-.cartela-header-cell.n {
-  background-color: rgb(213, 234, 24);
-  height: 32px;
-  color: white;
-}
-
-.cartela-header-cell.g {
-  background-color: blue;
-  height: 32px;
-  color: white;
-}
-.cartela-header-cell.o {
-  background-color: blue;
-  height: 32px;
-  color: white;
-}
-/* --- CARTELAS --- */
-.cartela-header {
+.cartela-rows-container {
+  flex: 1;
   display: flex;
-  justify-content: space-between; /* instead of center */
-  gap: 2px;
-  margin-bottom: 4px;
-}
-
-.cartela-header-cell {
-  flex: 1; /* each header takes equal space */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-
-/* SCROLLABLE CARTELAS WITH GAP */
-.cartelas-container-horizontal {
-  display: flex;
-  gap: 6px; /* GAP BETWEEN CARTELAS */
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-  scrollbar-width: thin;
-}
-
-.cartelas-container-horizontal::-webkit-scrollbar {
-  height: 6px;
-}
-
-.cartelas-container-horizontal::-webkit-scrollbar-thumb {
-  background: #aaa;
-  border-radius: 3px;
-}
-
-.cartelas-container-horizontal::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.cartela-display {
-  flex-shrink: 0;
-  width: 110px; /* Increased width to accommodate proper spacing */
-  min-width: 110px;
-  max-width: 110px;
-  border: 1px solid #ccc;
-  padding: 1px;
-  border-radius: 1px;
-  background: #1c68b386;
-  scroll-snap-align: start;
-  transition: transform 0.2s ease-in-out;
-}
-.bingo-button {
-  margin-top: 8px;
-  width: 100%;
-  padding: 6px 0;
-  font-size: 1rem;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.bingo-button:hover {
-  background-color: #0056b3;
+  flex-direction: column;
+  background-color: #040d4b;
+  gap: 0px;
 }
 
 .cartela-row {
+  flex: 1;
   display: flex;
-  justify-content: center;
-  gap: 0px; /* Increased gap for better spacing */
-  margin-bottom: 0px; /* Space between rows */
+  gap: 0px;
 }
 
 .cartela-cell {
-  width: 16px; /* Increased width */
-  height: 16px; /* Increased height */
-  font-size: 10px; /* Slightly larger font */
-  text-align: center;
-  line-height: 16px; /* Center text vertically */
-  border: 1px solid #bbb;
-  background: #f9f9f9;
-  border-radius: 3px;
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  font-size: 11px;
+  border: 1px solid #770303;
+  border-radius: 2px;
+  background: #c9bdbd;
 }
 
 .cartela-cell.clicked {
-  background-color: #90ee90;
+  background: #90ee90;
   border-color: #32cd32;
 }
 
-.selected-cartela {
-  border-color: #007bff;
-  box-shadow: 0 0 6px #007bff88;
-}
-
-/* Cartela BINGO header */
-.cartela-header {
-  display: flex;
-  justify-content: center;
-  gap: 2px; /* Same gap as cartela-row */
-  margin-bottom: 4px; /* Space below header */
-}
-
-.cartela-header-cell {
-  width: 16px;   /* Same width as cartela-cell */
-  height: 16px;  /* Same height as cartela-cell */
-  font-size: 10px; /* Same font size as cartela-cell */
-  text-align: center;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 2px;
-  line-height: 1; /* Ensure text is properly centered */
-}
-
-/* Color per letter B-I-N-G-O */
-.cartela-header-cell.b {
-  background-color: yellow;
-  color: black;
-}
-
-.cartela-header-cell.i {
-  background-color: green;
-  color: white;
-}
-
-.cartela-header-cell.n {
-  background-color: red;
-  color: white;
-}
-
-.cartela-header-cell.g {
-  background-color: blue;
-  color: white;
-}
-
-.cartela-header-cell.o {
-  background-color: brown;
-  color: white;
-}
-
-  
-
-/* Cartela footer - index number */
 .cartela-index {
   text-align: center;
-  margin-top: 4px;
-  font-size: 20px;
+  font-size: 12px;
   font-weight: bold;
-  color: #faf7f7;
+  color: #161414;
+  margin-top: 2px;
 }
 
-/* WINNER POPUP */
-.winner-popup {
-  position: fixed;
-  top: 20%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #fff;
-  border: 2px solid #000;
-  padding: 8px;
-  z-index: 9999;
-}
-
-/* --- MOBILE SPECIFIC --- */
-
-
-@media only screen and (max-width: 600px) {
-  .cartela-display {
-    width: 90px; /* Even smaller for very small screens */
-    min-width: 90px;
-    max-width: 90px;
-  }
-  
-  .cartela-cell {
-    width: 12px;
-    height: 12px;
-    font-size: 8px;
-    line-height: 12px;
-  }
-  
-  .cartela-header-cell {
-    width: 12px;
-    height: 12px;
-    font-size: 8px;
-  }
-}
-.cartela-header-cell.o {
-  background-color: brown;
+.bingo-button {
+  width: 100%;
+  padding: 3px 0;
+  font-size: 12px;
+  background: #01060b;
   color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 2px;
 }
 
-/* Cartela footer - index number */
-.cartela-footer {
-  text-align: center;
-  margin-top: 4px;
-  font-size: 10px;
-  font-weight: bold;
-  color: #333;
-}
-
-/* WINNER POPUP */
-.winner-popup {
-  position: fixed;
-  top: 20%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #fff;
-  border: 2px solid #000;
-  padding: 8px;
-  z-index: 9999;
-}
-
-/* --- MOBILE SPECIFIC --- */
+/* --- MOBILE --- */
 @media (max-width: 768px) {
 
-  .bingo-board-wrapper {
-    flex-direction: row;
-    gap: 4px;
-    width: 100%;
-    flex-wrap: nowrap;
+  
+
+
+  /* Bottom container grid */
+.cartelas-container-horizontal {
+  display: flex;
+  gap: 8px;
+  padding: 5px;
+  overflow-x: auto;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.cartelas-container-horizontal > .cartela-display {
+  flex: 1 0 auto; /* expand but don’t shrink below min-width */
+  min-width: 120px; /* keeps cartela readable */
+}
+
+
+/* Each cartela */
+.cartela-display {
+  min-width: 140px;       /* adjust width */
+  height: auto;
+  flex-shrink: 0;         /* prevent shrinking */
+  border: 2px solid #1a0d0c;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgb(154, 144, 144);
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+  /* Header B-I-N-G-O */
+  .cartela-header {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 2px;
   }
 
-  .left-board {
-    flex: 3; /* 30% */
-    max-width: 30%;
-  }
-
-  .right-panel {
-    flex: 7; /* 70% */
-    max-width: 70%;
-  }
-.cartela-header-cell {
-    width: 14px;  /* match mobile cell width */
-    height: 14px; /* match mobile cell height */
-    font-size: 9px;
-  }
-  .letter-button {
-    width: 28px;
+  .cartela-header-cell {
+    flex: 1;
     height: 18px;
-    font-size: 0.65rem;
-    line-height: 18px;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    color: white;
   }
 
-  .number-button {
-    width: 32px;
-    height: 18px;
-    font-size: 16px;
+  .cartela-header-cell.b { background: yellow; color: black; }
+  .cartela-header-cell.i { background: green; color: white; }
+  .cartela-header-cell.n { background: red; color: white; }
+  .cartela-header-cell.g { background: blue; color: white; }
+  .cartela-header-cell.o { background: brown; color: white; }
+
+  /* Rows inside cartela */
+  .cartela-rows-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .cartela-row {
+    display: flex;
+    gap: 2px;
   }
 
   .cartela-cell {
-    width: 18px;
-    height: 18px;
-    font-size: 16px;
-    line-height: 8px;
-  }
-
-  .cartela-display {
-    width: 100%; /* each cartela fills right panel width */
-    min-width: 70px;
-    max-width: none;
-  }
-}
-
-@media only screen and (max-width: 600px) {
-  .bingo-board-wrapper {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    font-size: 12px;
+    font-weight: bold;
     display: flex;
-    flex-direction: row;
-    gap: 0;
-    padding: 0;
-    width: 100vw;
-    height: 100vh;
-    box-sizing: border-box;
-    overflow-x: auto;
-  }
-.left-board,
-.right-panel {
-  flex: 1;           /* equal flex */
-  max-width: 50%;    /* ensures they don’t exceed 50% */
-  min-width: 0;      /* avoid overflow issues */
-}
-  .right-panel.panel {
-    flex: 5; /* 70% */
-    max-width: 50%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 4px;
-    box-sizing: border-box;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #170202;
+    border-radius: 2px;
+    background: #a69f9f;
   }
 
-  .my-cartelas {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    margin-top: 30px;
-    font-size: 8px;
+  .cartela-cell.clicked {
+    background: #90ee90;
+    border-color: #32cd32;
+    color: white;
   }
 
-  .cartelas-container-horizontal {
-    display: flex;
-    gap: 6px; /* keeps cartelas spaced */
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x mandatory;
-  }
 
-  .cartela-display {
-    flex-shrink: 0;
-    width: 100%; /* full width in right panel */
-    border: 1px solid #ccc;
-    padding: 4px;
-    border-radius: 4px;
-    background: #fff;
-    scroll-snap-align: start;
-  }
+
 }

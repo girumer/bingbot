@@ -64,39 +64,61 @@ function Mainmenu() {
     history("/wallet");
   };
 
+  // Table data
+  const roomsData = [
+    { stake: 10, status: "Starting", prize: 800 },
+    { stake: 20, status: "Starting", prize: 1600 },
+    { stake: 30, status: "Starting", prize: 3200 },
+    { stake: 40, status: "Starting", prize: 6800 },
+    { stake: 50, status: "Starting", prize: 9000 },
+  ];
+
   return (
     <React.Fragment>
- 
-
       <Navbar />
+
       {/* Top button bar */}
-      {/* Top button bar */}
-<div className="top-button-bar">
-  <button className="top-btn deposit-btn" onClick={navigateToDeposit}>
-    💳 Witdraw
-  </button>
-  <button className="top-btn deposit-btn" onClick={navigateToDeposit}>
-    ➕ Deposit
-  </button>
-  <button className="top-btn wallet-btn" disabled>
-    💰 Wallet: {wallet}
-  </button>
-</div>
+      <div className="top-button-bar">
+        <button className="top-btn deposit-btn" onClick={navigateToDeposit}>
+          💳 Witdraw
+        </button>
+        <button className="top-btn deposit-btn" onClick={navigateToDeposit}>
+          ➕ Deposit
+        </button>
+        <button className="top-btn wallet-btn" disabled>
+          💰 Wallet: {wallet}
+        </button>
+      </div>
 
       <div className="play-page">
         <h1 className="welcome-text">🎮 Select a Room</h1>
 
-        <div className="rooms">
-          {[10, 20, 30, 40, 50].map((room) => (
-            <div key={room} className="room-card">
-              <h2>Room {room}</h2>
-              <button className="play-btn" onClick={() => joinRoom(room)}>
-                <FontAwesomeIcon icon={faPlay} className="play-icon" />
-                <span> Join</span>
-              </button>
-            </div>
-          ))}
-        </div>
+        {/* Rooms table */}
+        <table className="rooms-table">
+          <thead>
+            <tr>
+              <th>Stake</th>
+              <th>Game Status</th>
+              <th>Possible win</th>
+              <th>Join</th>
+            </tr>
+          </thead>
+          <tbody>
+            {roomsData.map((room) => (
+              <tr key={room.stake}>
+                <td>{room.stake}</td>
+                <td>{room.status}</td>
+                <td>{room.prize}</td>
+                <td>
+                  <button className="play-btn" onClick={() => joinRoom(room.stake)}>
+                    <FontAwesomeIcon icon={faPlay} className="play-icon" />
+                    <span> Join</span>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </React.Fragment>
   );

@@ -4,7 +4,7 @@
   align-items: center;
   padding: 30px 20px;
   background: linear-gradient(135deg, #0e0e11, #030507);
-  color: white;
+  color: rgb(37, 26, 26);
   min-height: 80vh;
 }
 .top-button-bar {
@@ -13,7 +13,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 20px;
-  background: linear-gradient(90deg, #667eea, #764ba2);
+  background: linear-gradient(90deg, #181818, #1f1726);
   border-radius: 15px;
   margin: 15px auto;
   width: 95%;
@@ -57,7 +57,7 @@
   font-size: 28px;
   font-weight: bold;
   margin-bottom: 30px;
-  color: #f9f8f8;
+  color: #ebd6d6;
   text-align: center;
 }
 
@@ -70,13 +70,86 @@
   height: 80%;
   max-width: 400px; /* narrower for mobile */
 }
+/* Rooms Table */
+.rooms-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  background: #302424;
+}
+
+/* Table headers */
+.rooms-table th {
+  background: #101728; /* blue */
+  color: rgb(231, 224, 224);
+  text-align: center;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 15%;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 5px solid #0f0f10;
+}
+
+/* Table rows */
+.rooms-table td {
+  text-align: center;
+  padding: 14px;
+  font-size: 15px;
+  border-radius: 5px;
+  color: #d6dbe0;
+  gap: 5px;
+  font-weight: 500;
+  border-bottom: 5px solid #0f0f10;
+}
+
+/* Zebra striping */
+.rooms-table tr:nth-child(even) td {
+  background: #0c0d0d;
+}
+.rooms-table tr:nth-child(odd) td {
+  background: #242d2d;
+}
+/* Hover effect */
+.rooms-table tr:hover td {
+  background: #1f2122;
+  transition: background 0.3s ease;
+}
+
+/* Play button inside table */
+.rooms-table .play-btn {
+  background: #050a68; /* green */
+  color: white;
+  font-weight: bold;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.rooms-table .play-btn:hover {
+  background: #059669;
+  transform: scale(1.05);
+}
+
+.rooms-table .play-icon {
+  font-size: 14px;
+}
+
 
 .room-card {
-  background: rgb(216, 213, 213);
+  background: rgb(56, 53, 53);
   padding: 5px;
   border-radius: 15px;
   text-align: center;
-   color: white;
+   color: rgb(27, 27, 27);
   box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
   transition: transform 0.2s, box-shadow 0.2s;
 }
@@ -92,7 +165,7 @@
   font-size: 48px;
   border: none;
   border-radius: 10px;
-  background: #0bd945;
+  background: #05117b;
   color: white;
   cursor: pointer;
   display: flex;
@@ -105,7 +178,7 @@
 }
 
 .play-btn:hover {
-  background: #45a049;
+  background: #18035d;
 }
 
 .play-icon {
@@ -128,7 +201,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 20px;
-  background: linear-gradient(90deg, #667eea, #764ba2);
+  background: linear-gradient(90deg, #0b0b0c, #764ba2);
   border-radius: 15px;
   margin: 15px auto;
   width: 95%;

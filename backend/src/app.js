@@ -156,7 +156,8 @@ io.on("connection", (socket) => {
       lastNumber: rooms[rId].calledNumbers.slice(-1)[0] || null,
       timer: rooms[rId].timer,
       totalAward: rooms[rId].totalAward,
-      totalPlayers: Object.keys(rooms[rId].players).length
+      totalPlayers: Object.keys(rooms[rId].players).length,
+       activeGame: rooms[rId].activeGame || false
     });
 
     // 👉 broadcast live player count on join
@@ -223,7 +224,7 @@ socket.on("selectCartela", async ({ roomId, cartelaIndex }) => {
     // Start countdown if 2+ players have at least 1 cartela
     const playersWithCartela = Object.values(rooms[rId].playerCartelas).filter(arr => arr.length > 0).length;
     if (!rooms[rId].timer && playersWithCartela >= 2) {
-      startCountdown(rId, 30);
+      startCountdown(rId, 5);
     }
   } catch (err) {
     console.error("Error selecting cartela:", err);

@@ -214,11 +214,11 @@ useEffect(() => {
           <div className="pending-cartelas">
            
             {selectedCartelas.map((idx, i) => (
-              <div key={`pending-${idx}-${i}`} className="cartela-display pending">
+              <div key={`pending-${idx}-${i}`} className="cartela-display1 pending">
                 {cartela[idx].cart.map((row, rowIndex) => (
-                  <div key={rowIndex} className="cartela-row">
+                  <div key={rowIndex} className="cartela-row1">
                     {row.map((cell, cellIndex) => (
-                      <span key={cellIndex} className="cartela-cell">{cell}</span>
+                      <span key={cellIndex} className="cartela-cell1">{cell}</span>
                     ))}
                   </div>
                 ))}
