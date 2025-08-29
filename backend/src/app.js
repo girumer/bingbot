@@ -689,51 +689,46 @@ const getUsernameFromToken = (req, res, next) => {
   });
 };
 
-app.post("/loginuseradminstre",async(req,res)=>{
-  const{username,password}=req.body
-
-  
-  try{
-      //const check=await BingoBord.findOne({username:username})
-
-    const existinguser=await BingoBord.findOne({username})
-    if(!existinguser){
-        throw new Error("user not found");
+app.post("/loginuseradminstre", async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const existinguser = await BingoBord.findOne({ username });
+    if (!existinguser) {
+      // FIX: Return the response immediately
+      return res.status(401).json({ error: "User not found" }); // ✅ Added 'return' and status
     }
-    const ispasswordvalid= await bcrypt.compare(password,existinguser.password);
-    if(!ispasswordvalid){
-        console.log("invalid password");
+
+    const ispasswordvalid = await bcrypt.compare(password, existinguser.password);
+    if (!ispasswordvalid) {
+      // FIX: Return the response immediately
+      return res.status(401).json({ error: "Invalid password" }); // ✅ Added 'return' and status
     }
-   
-     
-     const accesstoken = jwt.sign( { username: username }, secretkey, { expiresIn: "1d" } )// Access token expires in 1 day
-     const refreshtoken = jwt.sign( { username: username },  refreshKey, { expiresIn: "30d" }  );
-    
-  
+
+    const accesstoken = jwt.sign({ username: username }, secretkey, { expiresIn: "1d" });
+    const refreshtoken = jwt.sign({ username: username }, refreshKey, { expiresIn: "30d" });
+
     res.cookie('accesstoken', accesstoken, {
-      maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
-      httpOnly: false, // Secure from client-side JS
-      secure: true, // Send over HTTPS only
-      sameSite: 'strict' // CSRF protection
-    })
-   
-    const role=existinguser.role;
-   
-    if(role==="admin"){
-      res.json({Admin:true});
-    }
-    if(role=== "client"){
-      res.json({Admin:false});
-    }
-  //  res.json("sucesseded"); 
+      maxAge: 24 * 60 * 60 * 1000,
+      httpOnly: false,
+      secure: true,
+      sameSite: 'strict'
+    });
 
-  }
-  catch(e){
+    const role = existinguser.role;
+    // FIX: Use if/else to ensure only one response is sent
+    if (role === "admin") {
+      return res.json({ Admin: true }); // ✅ Added 'return'
+    } else if (role === "client") {
+      return res.json({ Admin: false }); // ✅ Added 'return'
+    } else {
+      return res.status(403).json({ error: "Unknown role" }); // ✅ Handle unexpected role
+    }
+
+  } catch (e) {
     console.error("Error during user registration:", e);
-      res.json("fail")
+    return res.status(500).json({ error: "Internal server error" }); // ✅ Added 'return'
   }
-
-})
+});
 app.post("/useracess",getUsernameFromToken,(req,res)=>{
   res.json({ valid: true, username: req.username ,role:req.role, phoneNumber:req.phoneNumber});
   //console.log("hay",req.username,req.role);
