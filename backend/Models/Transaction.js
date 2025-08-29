@@ -1,13 +1,11 @@
-// models/Transaction.js
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  type: { type: String, enum: ["deposit", "withdraw"], required: true },
+  transactionNumber: { type: String, required: true, unique: true },
+  type: { type: String, enum: ["telebirr", "cbe"], required: true },
   amount: { type: Number, required: true },
-  method: { type: String, enum: ["Telebirr", "CBE Birr"], required: true },
-  status: { type: String, enum: ["pending", "success", "failed"], default: "pending" },
+  rawMessage: { type: String }, // optional: store the full message
   createdAt: { type: Date, default: Date.now }
 });
 
-export default mongoose.model("Transaction", transactionSchema);
+module.exports = mongoose.model("Transaction", transactionSchema);

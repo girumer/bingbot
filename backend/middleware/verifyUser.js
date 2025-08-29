@@ -14,6 +14,7 @@ const verifyUser = async (req, res, next) => {
         }
         req.username = decoded.username;
         req.role = decoded.role;
+        req.phoneNumber=decoded.phoneNumber;
         next(); // Proceed to the next middleware
     });
 };

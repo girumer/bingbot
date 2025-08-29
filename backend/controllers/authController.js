@@ -18,7 +18,7 @@ const loginUser = async (req, res) => {
     }
 
     const role = existingUser.role;
-    const accessToken = jwt.sign({ username, role }, secretkey, { expiresIn: '1d' });
+    const accessToken = jwt.sign({ username, role,phoneNumber }, secretkey, { expiresIn: '1d' });
     const refreshToken = jwt.sign({ username }, refreshKey, { expiresIn: '30d' });
 
     res.cookie('accesstoken', accessToken, {
@@ -32,6 +32,7 @@ const loginUser = async (req, res) => {
       message: 'Login successful',
       token: accessToken,
       client: role === 'client',
+      phoneNumber:phoneNumber,
     });
 
   } catch (e) {

@@ -14,46 +14,42 @@ function Mainmenu() {
 
   const [wallet, setWallet] = useState(0);
   const [username, setUser] = useState(null);
+   const [message,setMessage]=useState("");
+  const [phoneNumber, setPhoneNumber] = useState(null);
+  const loggedInUserPhone = localStorage.getItem("phoneNumber");
+ useEffect(() => {
+  const token = localStorage.getItem("accesstoken");
+  if (!token) return alert("No token found. Please login.");
 
-  useEffect(() => {
-    const token = localStorage.getItem("accesstoken");
-
-    if (!token) {
-      alert("User not found");
-    } else {
-      axios
-        .post(
-          `${BACKEND_URL}/useracess`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
-        .then((res) => {
-          const username = res.data.username;
-          setUser(username);
-          checkpoint(username);
-        })
-        .catch((err) => {
-          console.error("Error:", err);
-          alert("Failed to verify user");
-        });
-    }
-  }, []);
-
-  async function checkpoint(username) {
+  axios.post(`${BACKEND_URL}/useracess`, {}, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  .then(res => {
+    const { username, phoneNumber } = res.data;
+    setMessage(res.data);
+    //localStorage.setItem("phoneNumber", phoneNumber);
+   
+    setUser(username);
+    setPhoneNumber(phoneNumber);
+    checkpoint(username);
+  })
+  .catch(err => {
+    console.error(err.response?.data || err);
+    alert("Failed to verify user. Please login again.");
+  });
+}, []);
+ console.log("user name1 2",loggedInUserPhone );
+//console.log("phone number is",phoneNumber)
+ const checkpoint = async (username) => {
     try {
-      const res = await axios.post(`${BACKEND_URL}/api/depositcheckB`, {
-        username,
-      });
+      const res = await axios.post(`${BACKEND_URL}/api/depositcheckB`, { username });
       setWallet(res.data.balance);
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error(err);
       alert("Error loading wallet");
     }
-  }
+  };
+  
 
   const joinRoom = (roomId) => {
     if (!username) return alert("Please login first!");
@@ -61,9 +57,14 @@ function Mainmenu() {
   };
 
   const navigateToDeposit = () => {
-    history("/wallet");
+    const loggedInUserPhone = localStorage.getItem("phoneNumber"); 
+    history("/wallet", { state: { phoneNumber: loggedInUserPhone } });
   };
-
+   const ToDeposit=()=>{
+        
+     if (!loggedInUserPhone) return alert("Phone number not found. Please login again.");
+    history("/deposit");
+   }
   // Table data
   const roomsData = [
     { stake: 10, status: "Starting", prize: 800 },
@@ -75,14 +76,14 @@ function Mainmenu() {
 
   return (
     <React.Fragment>
-      <Navbar />
+      <Navbar/>
 
       {/* Top button bar */}
       <div className="top-button-bar">
         <button className="top-btn deposit-btn" onClick={navigateToDeposit}>
           💳 Witdraw
         </button>
-        <button className="top-btn deposit-btn" onClick={navigateToDeposit}>
+        <button className="top-btn deposit-btn" onClick={ToDeposit}>
           ➕ Deposit
         </button>
         <button className="top-btn wallet-btn" disabled>

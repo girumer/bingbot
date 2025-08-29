@@ -5,12 +5,14 @@ const async = require('async');
 const cartela = require('./cartela.json');
 const BingoBord=require("../Models/BingoBord")
 const adminRouter = require('../routes/admin'); 
+const Transaction = require("../Models/Transaction");
 const jwt=require('jsonwebtoken')
 const cors = require("cors")
 const bcrypt = require('bcryptjs');
 const { deductWallet } = require('../controllers/walletController');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('../routes/authRoutes');
+const adminsRoutes = require("../routes/admins");
 const userRoutes = require('../routes/userRoutes');
 const walletRoutes = require("../routes/walletRoutes");
 const alluserRoutes = require('../routes/alluserRoutes');
@@ -21,6 +23,7 @@ const adminRoutes = require('../routes/admin');
 const authRouter = require('../routes/auth');
 const reportRoutes = require('../routes/reportRoutes');
 const transactionRoutes = require("../routes/transactionRoutes");
+const transactionRoutesd = require("../routes/transaction");
 const path = require('path');
 const secretkey=process.env.JWT_SECRET;
 const refreshKey=process.env.JwT_PRIVATE;
@@ -514,12 +517,13 @@ app.use('/api', reportRoutes);
 app.use('/auth', authRoutessignup);
 app.use('/api', gameHistoryRoutes);
 app.use('/api', depositRoutes);
+app.use("/api/admins", adminsRoutes);
 app.use('/api', alluserRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/gameHistory", gameHistoryRoutes);
 app.use("/api/wallet", walletRoutes);
-
+app.use("/api", transactionRoutesd);
 app.use('/admin', adminRoutes);
 app.use('/admin-api', adminRouter);
 app.use('/auth', authRouter);
@@ -590,7 +594,80 @@ app.post("/deleteuser",async(req,res)=>{
     }
   });
 
- 
+
+// routes/admin.js
+
+// Register Admin (only once)
+
+
+
+// API: Receive SMS message (TeleBirr or CBE) and store transaction
+app.post("/api/parse-transaction", async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ error: "Message is required" });
+
+    let type, amount, transactionNumber;
+
+    // --- Detect Telebirr ---
+    if (message.includes("telebirr")) {
+      type = "telebirr";
+      const amountMatch = message.match(/ETB\s*([\d,]+\.\d{2})/);
+      const transMatch = message.match(/transaction number is (\w+)/i);
+
+      if (amountMatch) amount = parseFloat(amountMatch[1].replace(/,/g, ""));
+      if (transMatch) transactionNumber = transMatch[1];
+    }
+
+    // --- Detect CBE ---
+    if (message.includes("CBE") || message.includes("Commercial Bank")) {
+      type = "cbe";
+      const amountMatch = message.match(/ETB\s*([\d,]+\.\d{2})/);
+      const transMatch = message.match(/Txn[:\s]+(\w+)/i);
+
+      if (amountMatch) amount = parseFloat(amountMatch[1].replace(/,/g, ""));
+      if (transMatch) transactionNumber = transMatch[1];
+    }
+
+    if (!type || !amount || !transactionNumber) {
+      return res.status(400).json({ error: "Failed to parse transaction message" });
+    }
+
+    // Save to DB
+    const newTx = new Transaction({
+      transactionNumber,
+      type,
+      amount,
+      rawMessage: message,
+    });
+
+    await newTx.save();
+
+    res.json({
+      success: true,
+      transaction: {
+        transactionNumber,
+        type,
+        amount,
+      }
+    });
+
+  } catch (err) {
+    console.error("Error saving transaction:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+app.get("/admin-api/transactions-list", async (req, res) => {
+  try {
+    const transactions = await Transaction.find()
+      .sort({ createdAt: -1 })
+      .limit(50); // latest 50
+    res.json(transactions);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch transactions" });
+  }
+});
 const getUsernameFromToken = (req, res, next) => {
   const accessToken = req.headers.authorization && req.headers.authorization.split(' ')[1];
 //console.log(accessToken);
@@ -658,12 +735,12 @@ app.post("/loginuseradminstre",async(req,res)=>{
 
 })
 app.post("/useracess",getUsernameFromToken,(req,res)=>{
-  res.json({ valid: true, username: req.username ,role:req.role});
+  res.json({ valid: true, username: req.username ,role:req.role, phoneNumber:req.phoneNumber});
   //console.log("hay",req.username,req.role);
 })
 app.post("/loginacess",getUsernameFromToken,(req,res)=>{
  
-  res.json({ valid: true, username: req.username,role:req.role });
+  res.json({ valid: true, username: req.username,role:req.role,phoneNumber:req.phoneNumber });
 }
 ) 
 app.post("/depositcheckB",async(req,res)=>{

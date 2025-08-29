@@ -14,7 +14,7 @@ function Logins() {
 
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
+  const [dataa,setadataa]=useState();
   // If token exists, redirect to Mainmenu
   useEffect(() => {
     const token = localStorage.getItem('accesstoken');
@@ -41,9 +41,10 @@ function Logins() {
       );
 
       const resData = response.data;
-
+setadataa(response.data);
       if (resData.token) {
         localStorage.setItem('accesstoken', resData.token);
+        localStorage.setItem("phoneNumber",resData.phoneNumber);
         navigate('/Mainmenu', { state: { id: username } });
       } else if (resData.message) {
         setMessage(resData.message);
@@ -59,7 +60,7 @@ function Logins() {
       setIsLoading(false);
     }
   };
-
+console.log(dataa);
   return (
     <div className="container">
       <div className="login-container">

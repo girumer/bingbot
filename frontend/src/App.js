@@ -12,15 +12,17 @@ import Signups from "./components/Signups";
 import Logins from "./components/Logins";
 import Dashbord from "./components/Dashboard";
 import Report from './components/Report';
+import DepositPage from './components/DepositPage';
 import AdminLogin from './components/AdminLogin';
 import TransactionHistoryPage from './components/TransactionHistoryPage';
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 import { ToastContainer } from "react-toastify";
 import AdminDashboard from './components/AdminDashboard';
+import AdminSignup from './components/AdminSignup';
 import WalletPage from './components/WalletPage';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AdminPasswordReset from './components/AdminPasswordReset';
-import AdminSignup from "./components/AdminSignup";
+
 import ProtectedRoute from './components/ProtectedRoute';
 import axios from "axios"
 function App() {
@@ -52,7 +54,7 @@ function App() {
          
           <Route path="/qazxsw" element={<AdminSignup/>}/>
            <Route path="/AdminPasswordReset" element={<AdminPasswordReset/>}/>
-          
+            <Route path="/Adminsu" element={<AdminSignup/>}/>
           <Route path="/Logins"  element={<Logins/>}/>
           <Route path="/signups" element={<Signups /> }/>
           <Route path="/admin" element={<AdminLogin />} />
@@ -70,7 +72,7 @@ function App() {
            <Route path="/GameHistory" element={<GameHistory/>}/>
           <Route path="/transhistory" element={< TransactionHistoryPage/>}/>
            <Route path="/CartelaSelction" element={<CartelaSelction/>}/>
-        
+            <Route  path="/deposit" element={<DepositPage/>}/>
           <Route path="/AdminDashboard" element={<AdminDashboard />} />
           <Route path="/BingoBoard" element={<BingoBoard/>}/>
           

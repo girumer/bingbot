@@ -10,6 +10,7 @@ const LIMIT = 5;
 export default function AdminDashboard() {
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
   const token = localStorage.getItem("admintoken");
+  const [transactions, setTransactions] = useState([]);
 
 const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -63,6 +64,12 @@ const navigate = useNavigate();
     setLoading(false);
   };
 
+
+useEffect(() => {
+  axios.get(`${BACKEND_URL}/admin-api/transactions-list`, { headers: authHeader })
+    .then(res => setTransactions(res.data))
+    .catch(err => console.error("Error fetching transactions", err));
+}, []);
   useEffect(() => { loadAll(page); }, []);
 
   const onChange = (e) => { setForm({ ...form, [e.target.name]: e.target.value }); };
@@ -175,6 +182,33 @@ const handleLogout = () => {
           ))}
         </div>
       </section>
+      <section>
+  <h2>Recent Transactions</h2>
+  <table className="users-table">
+    <thead>
+      <tr>
+        <th>Transaction #</th>
+        <th>Type</th>
+        <th>Amount</th>
+        <th>Message</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {transactions.length ? transactions.map((t) => (
+        <tr key={t._id}>
+          <td>{t.transactionNumber}</td>
+          <td>{t.type}</td>
+          <td>{t.amount}</td>
+          <td>{t.rawMessage}</td>
+          <td>{new Date(t.createdAt).toLocaleString()}</td>
+        </tr>
+      )) : (
+        <tr><td colSpan="5" style={{ textAlign: "center" }}>No transactions yet</td></tr>
+      )}
+    </tbody>
+  </table>
+</section>
     </div>
   );
 }
