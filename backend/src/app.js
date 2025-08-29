@@ -519,7 +519,7 @@ app.use('/api', gameHistoryRoutes);
 app.use('/api', depositRoutes);
 app.use("/api/admins", adminsRoutes);
 app.use('/api', alluserRoutes);
-app.use("/api/admin", adminRoutes);
+app.use("/admin", adminRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/gameHistory", gameHistoryRoutes);
 app.use("/api/wallet", walletRoutes);
@@ -689,46 +689,7 @@ const getUsernameFromToken = (req, res, next) => {
   });
 };
 
-app.post("/loginuseradminstre", async (req, res) => {
-  const { username, password } = req.body;
-  try {
-    const existinguser = await BingoBord.findOne({ username });
-    if (!existinguser) {
-      // FIX: Return the response immediately
-      return res.status(401).json({ error: "User not found" }); // ✅ Added 'return' and status
-    }
 
-    const ispasswordvalid = await bcrypt.compare(password, existinguser.password);
-    if (!ispasswordvalid) {
-      // FIX: Return the response immediately
-      return res.status(401).json({ error: "Invalid password" }); // ✅ Added 'return' and status
-    }
-
-    const accesstoken = jwt.sign({ username: username }, secretkey, { expiresIn: "1d" });
-    const refreshtoken = jwt.sign({ username: username }, refreshKey, { expiresIn: "30d" });
-
-    res.cookie('accesstoken', accesstoken, {
-      maxAge: 24 * 60 * 60 * 1000,
-      httpOnly: false,
-      secure: true,
-      sameSite: 'strict'
-    });
-
-    const role = existinguser.role;
-    // FIX: Use if/else to ensure only one response is sent
-    if (role === "admin") {
-      return res.json({ Admin: true }); // ✅ Added 'return'
-    } else if (role === "client") {
-      return res.json({ Admin: false }); // ✅ Added 'return'
-    } else {
-      return res.status(403).json({ error: "Unknown role" }); // ✅ Handle unexpected role
-    }
-
-  } catch (e) {
-    console.error("Error during user registration:", e);
-    return res.status(500).json({ error: "Internal server error" }); // ✅ Added 'return'
-  }
-});
 app.post("/useracess",getUsernameFromToken,(req,res)=>{
   res.json({ valid: true, username: req.username ,role:req.role, phoneNumber:req.phoneNumber});
   //console.log("hay",req.username,req.role);

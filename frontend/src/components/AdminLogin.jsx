@@ -22,7 +22,7 @@ function AdminLogin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${BACKEND_URL}/loginuseradminstre`, formData, { withCredentials: true });
+      const response = await axios.post(`${BACKEND_URL}/admin/login`, formData, { withCredentials: true });
       if (response.data.token) {
         localStorage.setItem('admintoken', response.data.token);
         console.log(response.data.token);
