@@ -5,6 +5,9 @@ const { verifyAdmin } = require('../middleware/adminMiddleware'); // optional mi
 
 // Admin login
 router.post('/login', adminLogin);
+router.get('/login', (req, res) => {
+  res.send('Admin login endpoint works. Use POST to login.');
+});
 router.post('/register-user', verifyAdmin, registerUser);
 router.delete('/delete-user/:userId', verifyAdmin, deleteUser);
 // Protected admin routes

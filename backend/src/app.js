@@ -525,7 +525,7 @@ app.use("/api/gameHistory", gameHistoryRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api", transactionRoutesd);
 app.use('/admin', adminRoutes);
-app.use('/admin-api', adminRouter);
+
 app.use('/auth', authRouter);
 app.post("/deleteuser",async(req,res)=>{
     const{username}=req.body
