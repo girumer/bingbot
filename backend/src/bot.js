@@ -43,6 +43,7 @@ let userStates = {}; // { chatId: { step: "askName" | "askPhone" } }
 // ----------------------
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
+  const contact = msg.contact;
 
   let user = await BingoBord.findOne({ phoneNumber: contact.phone_number });
 
