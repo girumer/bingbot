@@ -40,7 +40,7 @@ const navigate = useNavigate();
 
   const fetchSummary = async () => {
   try {
-    const { data } = await axios.get(`${BACKEND_URL}/admin-api/transactions`, { headers: authHeader });
+    const { data } = await axios.get(`${BACKEND_URL}/admin/transactions`, { headers: authHeader });
     
     // Handle different response structures
     const transactionsArray = Array.isArray(data) ? data : (data.transactions || []);
@@ -60,16 +60,12 @@ const navigate = useNavigate();
 };
 const fetchtransaction=async () => {
   try {
-    const { data } = await axios.get(`${BACKEND_URL}/admin-api/transactions-list`, { headers: authHeader });
+    const { data } = await axios.get(`${BACKEND_URL}/admin/transactions-list`, { headers: authHeader });
     
     // Handle different response structures
     const transactionsArray = Array.isArray(data) ? data : (data.transactions || []);
     
-    setSummary({
-      totalDeposit: data?.totalDeposit ?? 0,
-      totalWithdraw: data?.totalWithdraw ?? 0,
-     
-    });
+    
     
     // Also set transactions if needed, or keep separate call
     settransactionlist(transactionsArray);
@@ -80,7 +76,7 @@ const fetchtransaction=async () => {
 const fetchUsers = async (p = 1) => {
   try {
     const { data } = await axios.get(
-      `${BACKEND_URL}/admin-api/users?page=${p}&limit=${LIMIT}`,
+      `${BACKEND_URL}/admin/users?page=${p}&limit=${LIMIT}`,
       { headers: authHeader }
     );
 
@@ -104,7 +100,7 @@ const fetchUsers = async (p = 1) => {
 
 
 useEffect(() => {
-  axios.get(`${BACKEND_URL}/admin-api/transactions-list`, { headers: authHeader })
+  axios.get(`${BACKEND_URL}/admin/transactions-list`, { headers: authHeader })
     .then(res => {
       // Check if response contains transactions array or use empty array
       const transactionsData = Array.isArray(res.data) 
@@ -127,7 +123,7 @@ useEffect(() => {
     e.preventDefault(); setFormMsg("");
     try {
       const payload = form.role === "admin" ? form : { username: form.username, phoneNumber: form.phoneNumber, role: "client" };
-      const { data } = await axios.post(`${BACKEND_URL}/admin-api/register-user`, payload, { headers: authHeader });
+      const { data } = await axios.post(`${BACKEND_URL}/admin/register-user`, payload, { headers: authHeader });
       setFormMsg(data?.message || "User registered");
       setForm({ username: "", phoneNumber: "", role: "client", password: "" });
       await Promise.all([fetchUsers(page), fetchSummary()]);
@@ -136,7 +132,7 @@ useEffect(() => {
 
   const onDelete = async (id) => {
     if (!window.confirm("Delete this user?")) return;
-    try { await axios.delete(`${BACKEND_URL}/admin-api/delete-user/${id}`, { headers: authHeader }); await Promise.all([fetchUsers(page), fetchSummary()]); } 
+    try { await axios.delete(`${BACKEND_URL}/admin/delete-user/${id}`, { headers: authHeader }); await Promise.all([fetchUsers(page), fetchSummary()]); } 
     catch (err) { console.error(err); alert(err?.response?.data?.message || "Delete failed"); }
   };
 
@@ -241,7 +237,7 @@ const handleLogout = () => {
       </tr>
     </thead>
     <tbody>
-      {transactions.length ? transactions.map((t) => (
+      {transactionlist.length ? transactionlist.map((t) => (
         <tr key={t._id}>
           <td>{t.transactionNumber}</td>
           <td>{t.type}</td>

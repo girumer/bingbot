@@ -532,7 +532,7 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/gameHistory", gameHistoryRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api", transactionRoutesd);
-app.use('/admin-api', adminRoutes);
+app.use('/admin', adminRoutes);
 
 app.use('/auth', authRouter);
 app.post("/deleteuser",async(req,res)=>{
@@ -665,7 +665,7 @@ app.post("/api/parse-transaction", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-app.get("/admin-api/transactions-list", async (req, res) => {
+app.get("/admin/transactions-list", async (req, res) => {
   try {
     const transactions = await Transaction.find()
       .sort({ createdAt: -1 })

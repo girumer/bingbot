@@ -21,7 +21,7 @@ function AdminLogin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {const response = await axios.post(`${BACKEND_URL}/admin-api/login`, formData, {
+    try {const response = await axios.post(`${BACKEND_URL}/admin/login`, formData, {
   headers: { "Content-Type": "application/json" }
 });
 
