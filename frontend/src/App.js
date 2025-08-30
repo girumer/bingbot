@@ -50,14 +50,14 @@ function App() {
       <Router>
         <Routes>
         
-          <Route path="/" element={<AdminLogin/>}/>
+          <Route path="/" element={<Logins/>}/>
          
           <Route path="/qazxsw" element={<AdminSignup/>}/>
            <Route path="/AdminPasswordReset" element={<AdminPasswordReset/>}/>
             <Route path="/Adminsu" element={<AdminSignup/>}/>
           <Route path="/Logins"  element={<Logins/>}/>
           <Route path="/signups" element={<Signups /> }/>
-          <Route path="/admin" element={<AdminLogin />} />
+          <Route path="/qbzxsw" element={<AdminLogin />} />
           <Route element={<ProtectedAdminRoute />}>
   <Route path="/AdminDashboard" element={<AdminDashboard />} />
 </Route>
