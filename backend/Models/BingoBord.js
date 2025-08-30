@@ -19,6 +19,11 @@ const transactionSchema = new mongoose.Schema({
 
 // Main BingoBord schema
 const BingoBordSchema = new mongoose.Schema({
+  telegramId: {
+    type: Number,   // or String, both work, I suggest Number since Telegram IDs are numbers
+    
+    unique: true
+  },
   username: {
     type: String,
     required: true,

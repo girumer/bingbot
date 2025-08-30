@@ -88,7 +88,7 @@ bot.on("contact", async (msg) => {
 
   if (userStates[chatId] && userStates[chatId].step === "askPhone") {
     // check if phone number already exists
-    let existingUser = await BingoBord.findOne({ phoneNumber: contact.phone_number });
+   let existingUser = await BingoBord.findOne({ telegramId: chatId });
     if (existingUser) {
       bot.sendMessage(chatId, "⚠️ This phone number is already registered.");
       delete userStates[chatId];
