@@ -815,21 +815,20 @@ let depo1 = (check.gameHistory.length > 0)
   }
 });
 
+app.post("/login", async (req, res) => {
+  const { username, password, } = req.body;
 
-app.post("/login", async(req,res)=>{
-  const {username,password}=req.body
-  res.json({mssg:'login user'})
-  
-  try{
-    const user=await BingoBord.login(username,password)
-    const token= createToken(user._id)
-    res.status(200).json({username,token})
+  try {
+    const user = await BingoBord.login(username, password); // your login logic
+    const token = createToken(user._id);
 
-}
-catch(error){
-    res.status(400).json({error:error.message})
-}
-})
+    return res.status(200).json({ username, token }); // send one response and return
+  } catch (error) {
+    return res.status(400).json({ error: error.message }); // only sent if error occurs
+  }
+});
+
+
 
 app.post("/gameid",async(req,res)=>{
  
