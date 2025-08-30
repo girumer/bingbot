@@ -86,7 +86,7 @@ useEffect(() => {
     e.preventDefault(); setFormMsg("");
     try {
       const payload = form.role === "admin" ? form : { username: form.username, phoneNumber: form.phoneNumber, role: "client" };
-      const { data } = await axios.post(`${BACKEND_URL}/admin/register-user`, payload, { headers: authHeader });
+      const { data } = await axios.post(`${BACKEND_URL}/admin-api/register-user`, payload, { headers: authHeader });
       setFormMsg(data?.message || "User registered");
       setForm({ username: "", phoneNumber: "", role: "client", password: "" });
       await Promise.all([fetchUsers(page), fetchSummary()]);
