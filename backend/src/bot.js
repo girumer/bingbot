@@ -43,18 +43,17 @@ let userStates = {}; // { chatId: { step: "askName" | "askPhone" } }
 // ----------------------
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  const contacts = msg.contact;
 
-  let user = await BingoBord.findOne({ phoneNumber: contacts.phone_number });
+  // check if user already exists by telegramId
+  let user = await BingoBord.findOne({ telegramId: chatId });
 
   if (!user) {
     userStates[chatId] = { step: "askName" };
     bot.sendMessage(chatId, "Welcome! Please enter your name:");
   } else {
-    bot.sendMessage(chatId, `Welcome back, ${user.name}!`, mainMenu);
+    bot.sendMessage(chatId, `Welcome back, ${user.username}!`, mainMenu);
   }
 });
-
 // ----------------------
 // Handle normal text (registration flow)
 // ----------------------
@@ -88,8 +87,16 @@ bot.on("contact", async (msg) => {
   const contact = msg.contact;
 
   if (userStates[chatId] && userStates[chatId].step === "askPhone") {
+    // check if phone number already exists
+    let existingUser = await BingoBord.findOne({ phoneNumber: contact.phone_number });
+    if (existingUser) {
+      bot.sendMessage(chatId, "⚠️ This phone number is already registered.");
+      delete userStates[chatId];
+      return;
+    }
+
     const newUser = new BingoBord({
-      
+      telegramId: chatId,              // ✅ store telegramId
       username: userStates[chatId].name,
       phoneNumber: contact.phone_number,
       Wallet: 100, // default coins
