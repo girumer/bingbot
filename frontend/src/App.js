@@ -57,7 +57,7 @@ function App() {
             <Route path="/Adminsu" element={<AdminSignup/>}/>
           <Route path="/Logins"  element={<Logins/>}/>
           <Route path="/signups" element={<Signups /> }/>
-          <Route path="/qbzxsw" element={<AdminLogin />} />
+          <Route path="/admines" element={<AdminLogin />} />
           <Route element={<ProtectedAdminRoute />}>
   <Route path="/AdminDashboard" element={<AdminDashboard />} />
 </Route>
