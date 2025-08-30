@@ -11,6 +11,7 @@ export default function AdminDashboard() {
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
   const token = localStorage.getItem("admintoken");
   const [transactions, setTransactions] = useState([]);
+  const [transactionlist,settransactionlist]=useState([]);
 
 const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -19,7 +20,7 @@ const navigate = useNavigate();
   const [summary, setSummary] = useState({
     totalDeposit: 0,
     totalWithdraw: 0,
-    totalTransactions: 0,
+   
   });
 
   const [users, setUsers] = useState([]);
@@ -38,15 +39,44 @@ const navigate = useNavigate();
   const authHeader = { Authorization: `Bearer ${token}` };
 
   const fetchSummary = async () => {
-    try {
-      const { data } = await axios.get(`${BACKEND_URL}/admin-api/transactions-list`, { headers: authHeader });
-      setSummary({
-        totalDeposit: data?.totalDeposit ?? 0,
-        totalWithdraw: data?.totalWithdraw ?? 0,
-        totalTransactions: data?.totalTransactions ?? 0,
-      });
-    } catch (err) { console.error(err); }
-  };
+  try {
+    const { data } = await axios.get(`${BACKEND_URL}/admin-api/transactions`, { headers: authHeader });
+    
+    // Handle different response structures
+    const transactionsArray = Array.isArray(data) ? data : (data.transactions || []);
+    
+    setSummary({
+      totalDeposit: data?.totalDeposit ?? 0,
+      totalWithdraw: data?.totalWithdraw ?? 0,
+     
+    });
+    
+    // Also set transactions if needed, or keep separate call
+    setTransactions(transactionsArray);
+  } catch (err) { 
+    console.error(err);
+    setTransactions([]); // Set empty array on error
+  }
+};
+const fetchtransaction=async () => {
+  try {
+    const { data } = await axios.get(`${BACKEND_URL}/admin-api/transactions-list`, { headers: authHeader });
+    
+    // Handle different response structures
+    const transactionsArray = Array.isArray(data) ? data : (data.transactions || []);
+    
+    setSummary({
+      totalDeposit: data?.totalDeposit ?? 0,
+      totalWithdraw: data?.totalWithdraw ?? 0,
+     
+    });
+    
+    // Also set transactions if needed, or keep separate call
+    settransactionlist(transactionsArray);
+  } catch (err) { 
+    settransactionlist([]); // Set empty array on error
+  }
+};
 const fetchUsers = async (p = 1) => {
   try {
     const { data } = await axios.get(
@@ -68,15 +98,26 @@ const fetchUsers = async (p = 1) => {
 
   const loadAll = async (p = 1) => {
     setLoading(true); setErrMsg("");
-    await Promise.all([fetchSummary(), fetchUsers(p)]);
+    await Promise.all([fetchSummary(), fetchUsers(p),fetchtransaction()]);
     setLoading(false);
   };
 
 
 useEffect(() => {
   axios.get(`${BACKEND_URL}/admin-api/transactions-list`, { headers: authHeader })
-    .then(res => setTransactions(res.data))
-    .catch(err => console.error("Error fetching transactions", err));
+    .then(res => {
+      // Check if response contains transactions array or use empty array
+      const transactionsData = Array.isArray(res.data) 
+        ? res.data 
+        : Array.isArray(res.data.transactions) 
+          ? res.data.transactions 
+          : [];
+      setTransactions(transactionsData);
+    })
+    .catch(err => {
+      console.error("Error fetching transactions", err);
+      setTransactions([]); // Set empty array on error
+    });
 }, []);
   useEffect(() => { loadAll(page); }, []);
 
@@ -124,10 +165,7 @@ const handleLogout = () => {
           <div className="label">Total Withdrawals</div>
           <div className="value">{summary.totalWithdraw}</div>
         </div>
-        <div className="summary-card">
-          <div className="label">Total Transactions</div>
-          <div className="value">{summary.totalTransactions}</div>
-        </div>
+       
         <div className="summary-card">
           <div className="label">Total Clients</div>
           <div className="value">{totalClients}</div>
