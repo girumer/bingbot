@@ -89,8 +89,8 @@ bot.on("contact", async (msg) => {
   if (userStates[chatId] && userStates[chatId].step === "askPhone") {
     const newUser = new BingoBord({
       telegramId: chatId,
-      name: userStates[chatId].name,
-      phone: contact.phone_number,
+      username: userStates[chatId].name,
+      phoneNumber: contact.phone_number,
       Wallet: 100, // default coins
       gameHistory: []
     });
