@@ -12,7 +12,7 @@ function Signups() {
   const [formData, setFormData] = useState({
     username: '',
     phoneNumber: '',
-    role: role || 'client',
+  
   });
 
   const handleInputChange = (event) => {
