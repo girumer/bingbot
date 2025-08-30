@@ -44,7 +44,7 @@ let userStates = {}; // { chatId: { step: "askName" | "askPhone" } }
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
 
-  let user = await BingoBord.findOne({ telegramId: chatId });
+  let user = await BingoBord.findOne({ phoneNumber: contact.phone_number });
 
   if (!user) {
     userStates[chatId] = { step: "askName" };
@@ -88,7 +88,7 @@ bot.on("contact", async (msg) => {
 
   if (userStates[chatId] && userStates[chatId].step === "askPhone") {
     const newUser = new BingoBord({
-      telegramId: chatId,
+      
       username: userStates[chatId].name,
       phoneNumber: contact.phone_number,
       Wallet: 100, // default coins
