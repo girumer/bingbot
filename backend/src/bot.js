@@ -3,116 +3,104 @@ const TelegramBot = require('node-telegram-bot-api');
 const mongoose = require('mongoose');
 const BingoBord = require('../Models/BingoBord'); // your model
 
-// Connect to MongoDB
+// 1️⃣ Connect to MongoDB
 mongoose.connect(process.env.DATABASE_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
 .then(() => console.log("MongoDB connected"))
-.catch((e) => console.log(e));
+.catch((e) => console.log("MongoDB connection error:", e));
 
-// Create bot
+// 2️⃣ Create the bot
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
-bot.setWebHook(`https://adeyebingo.com/bot${process.env.BOT_TOKEN}`);
-// Temporary user states
-let userStates = {}; // { chatId: { step: "askName" } }
+console.log("Telegram bot is running...");
 
-// ===== /start command =====
+// 3️⃣ Temporary user state storage
+let userStates = {}; // { chatId: { step: "askName" | "askContact", username } }
+
+// 4️⃣ /start command
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
 
-  // Check if user already registered by telegramId
-  const existingUser = await BingoBord.findOne({ telegramId: chatId });
+  try {
+    // Check if user already registered using Telegram ID
+    const existingUser = await BingoBord.findOne({ telegramId: chatId });
+    if (existingUser) {
+      bot.sendMessage(chatId, `Welcome back, ${existingUser.username}! You are logged in.`);
+      return;
+    }
 
-  if (existingUser) {
-    bot.sendMessage(chatId, `Welcome back, ${existingUser.username}!`);
-    showMenu(chatId);
-    return;
+    // New user: ask for username
+    bot.sendMessage(chatId, "Welcome! Please enter your username:");
+    userStates[chatId] = { step: "askName" };
+  } catch (err) {
+    console.error(err);
+    bot.sendMessage(chatId, "Error checking user. Please try again.");
   }
-
-  // New user, ask for username
-  bot.sendMessage(chatId, "Welcome! Please enter your username:");
-  userStates[chatId] = { step: "askName" };
 });
 
-// ===== Handle text messages =====
+// 5️⃣ Listen for messages
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
+
+  // Ignore messages without text or contact
+  if (!msg) return;
+
   const text = msg.text;
-
-  // Ignore commands
-  if (text.startsWith("/")) return;
-
+  const contact = msg.contact;
   const state = userStates[chatId];
-  if (!state) return; // no registration in progress
+
+  // Ignore messages if no ongoing registration
+  if (!state) return;
 
   try {
-    if (state.step === "askName") {
-      userStates[chatId].username = text;
-      userStates[chatId].step = "askPhone";
+    // Step 1: Ask username
+    if (state.step === "askName" && text) {
+      userStates[chatId].username = text.trim();
+      userStates[chatId].step = "askContact";
 
-      // Ask for phone number via contact button
-      bot.sendMessage(chatId, "Great! Please share your phone number:", {
+      // Ask user to share contact
+      bot.sendMessage(chatId, "Please share your contact (phone number) using the button below:", {
         reply_markup: {
           keyboard: [[{ text: "Share Contact", request_contact: true }]],
-          resize_keyboard: true,
           one_time_keyboard: true,
+          resize_keyboard: true
         }
       });
     }
+
+    // Step 2: Receive contact
+    else if (state.step === "askContact" && contact) {
+      const phoneNumber = contact.phone_number;
+
+      // Check if phone already exists
+      const exists = await BingoBord.findOne({ phoneNumber });
+      if (exists) {
+        bot.sendMessage(chatId, "This phone number is already registered. Please /start again.");
+        delete userStates[chatId];
+        return;
+      }
+
+      // Save user in MongoDB
+      const username = userStates[chatId].username;
+      const newUser = new BingoBord({
+        username,
+        phoneNumber,
+        role: "client",
+        telegramId: chatId, // store Telegram ID
+        Wallet: 0,
+        coins: 0,
+        gameHistory: [],
+        transactions: []
+      });
+      await newUser.save();
+
+      bot.sendMessage(chatId, `Registration successful! Welcome, ${username}.`);
+      delete userStates[chatId];
+    }
   } catch (err) {
     console.error(err);
-    bot.sendMessage(chatId, "An error occurred. Please try again later.");
+    bot.sendMessage(chatId, "An error occurred. Please try again.");
     delete userStates[chatId];
   }
 });
-
-// ===== Handle phone contact =====
-bot.on('contact', async (msg) => {
-  const chatId = msg.chat.id;
-  const state = userStates[chatId];
-
-  if (!state || state.step !== "askPhone") return;
-
-  const phoneNumber = msg.contact.phone_number;
-  const username = state.username;
-
-  // Check if phone already registered
-  const exists = await BingoBord.findOne({ phoneNumber });
-  if (exists) {
-    bot.sendMessage(chatId, "This phone number is already registered. Please /start again.");
-    delete userStates[chatId];
-    return;
-  }
-
-  // Save new user
-  const newUser = new BingoBord({
-    username,
-    phoneNumber,
-    telegramId: chatId,
-    role: "client",
-  });
-
-  await newUser.save();
-  bot.sendMessage(chatId, `Registration successful! Welcome, ${username}.`);
-
-  delete userStates[chatId];
-  showMenu(chatId);
-});
-
-// ===== Show menu after login/registration =====
-function showMenu(chatId) {
-  const menuKeyboard = {
-    reply_markup: {
-      keyboard: [
-        ["🎮 Play Bingo", "💰 Check Wallet"],
-        ["📜 Game History", "⚙️ Settings"]
-      ],
-      resize_keyboard: true,
-      one_time_keyboard: true,
-    }
-  };
-  bot.sendMessage(chatId, "What would you like to do?", menuKeyboard);
-}
-
-console.log("Telegram bot is running...");
