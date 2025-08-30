@@ -21,10 +21,11 @@ function AdminLogin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const response = await axios.post(`${BACKEND_URL}/admin/login`, formData, {
-    headers: { "Content-Type": "application/json" }
+    try {const response = await axios.post(`${BACKEND_URL}/admin/login`, formData, {
+  headers: { "Content-Type": "application/json" }
 });
+
+   
       if (response.data.token) {
         localStorage.setItem('admintoken', response.data.token);
         console.log(response.data.token);
