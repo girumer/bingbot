@@ -43,9 +43,9 @@ let userStates = {}; // { chatId: { step: "askName" | "askPhone" } }
 // ----------------------
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  const contact = msg.contact;
+  const contacts = msg.contact;
 
-  let user = await BingoBord.findOne({ phoneNumber: contact.phone_number });
+  let user = await BingoBord.findOne({ phoneNumber: contacts.phone_number });
 
   if (!user) {
     userStates[chatId] = { step: "askName" };
