@@ -13,7 +13,7 @@ mongoose.connect(process.env.DATABASE_URL, {
 
 // Create bot
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
-
+bot.setWebHook(`https://yourdomain.com/bot${process.env.BOT_TOKEN}`);
 // Temporary user states
 let userStates = {}; // { chatId: { step: "askName" } }
 
