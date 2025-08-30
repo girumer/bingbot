@@ -39,7 +39,7 @@ const navigate = useNavigate();
 
   const fetchSummary = async () => {
     try {
-      const { data } = await axios.get(`${BACKEND_URL}/admin-api/transactions`, { headers: authHeader });
+      const { data } = await axios.get(`${BACKEND_URL}/admin-api/transactions-list`, { headers: authHeader });
       setSummary({
         totalDeposit: data?.totalDeposit ?? 0,
         totalWithdraw: data?.totalWithdraw ?? 0,
@@ -47,16 +47,24 @@ const navigate = useNavigate();
       });
     } catch (err) { console.error(err); }
   };
+const fetchUsers = async (p = 1) => {
+  try {
+    const { data } = await axios.get(
+      `${BACKEND_URL}/admin-api/users?page=${p}&limit=${LIMIT}`,
+      { headers: authHeader }
+    );
 
-  const fetchUsers = async (p = 1) => {
-    try {
-      const { data } = await axios.get(`${BACKEND_URL}/admin-api/users?page=${p}&limit=${LIMIT}`, { headers: authHeader });
-      setUsers(Array.isArray(data.users) ? data.users : []);
-      setTotalClients(data.totalUsers ?? 0);
-      setTotalPages(data.totalPages ?? 1);
-      setPage(data.currentPage ?? p);
-    } catch (err) { console.error(err); setUsers([]); setTotalClients(0); }
-  };
+    setUsers(Array.isArray(data.users) ? data.users : []);
+    setTotalClients(data.totalUsers ?? 0);
+    setTotalPages(data.totalPages ?? 1);
+    setPage(data.currentPage ?? p);
+  } catch (err) {
+    console.error(err);
+    setUsers([]);
+    setTotalClients(0);
+  }
+};
+
 
   const loadAll = async (p = 1) => {
     setLoading(true); setErrMsg("");
@@ -78,7 +86,7 @@ useEffect(() => {
     e.preventDefault(); setFormMsg("");
     try {
       const payload = form.role === "admin" ? form : { username: form.username, phoneNumber: form.phoneNumber, role: "client" };
-      const { data } = await axios.post(`${BACKEND_URL}/admin-api/register-user`, payload, { headers: authHeader });
+      const { data } = await axios.post(`${BACKEND_URL}/admin/register-user`, payload, { headers: authHeader });
       setFormMsg(data?.message || "User registered");
       setForm({ username: "", phoneNumber: "", role: "client", password: "" });
       await Promise.all([fetchUsers(page), fetchSummary()]);

@@ -4,7 +4,7 @@ const express = require("express")
 const async = require('async');
 const cartela = require('./cartela.json');
 const BingoBord=require("../Models/BingoBord")
-const adminRouter = require('../routes/admin'); 
+
 const Transaction = require("../Models/Transaction");
 const jwt=require('jsonwebtoken')
 const cors = require("cors")
@@ -12,6 +12,8 @@ const bcrypt = require('bcryptjs');
 const { deductWallet } = require('../controllers/walletController');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('../routes/authRoutes');
+
+
 const adminsRoutes = require("../routes/admins");
 const userRoutes = require('../routes/userRoutes');
 const walletRoutes = require("../routes/walletRoutes");
@@ -98,6 +100,11 @@ app.use(cors({
 
 
 
+// backend/routes/adminRoutes.js
+
+const router = express.Router();
+
+// Example: fetch all transactions with pagination
 
 
 
@@ -513,18 +520,19 @@ async function checkWinners(roomId, calledNumber) {
 });
   app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
+
 app.use('/api', reportRoutes);
 app.use('/auth', authRoutessignup);
 app.use('/api', gameHistoryRoutes);
 app.use('/api', depositRoutes);
 app.use("/api/admins", adminsRoutes);
 app.use('/api', alluserRoutes);
-app.use("/admin", adminRoutes);
+
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/gameHistory", gameHistoryRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api", transactionRoutesd);
-app.use('/admin', adminRoutes);
+app.use('/admin-api', adminRoutes);
 
 app.use('/auth', authRouter);
 app.post("/deleteuser",async(req,res)=>{
@@ -668,6 +676,7 @@ app.get("/admin-api/transactions-list", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch transactions" });
   }
 });
+
 const getUsernameFromToken = (req, res, next) => {
   const accessToken = req.headers.authorization && req.headers.authorization.split(' ')[1];
 //console.log(accessToken);

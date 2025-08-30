@@ -67,5 +67,43 @@ router.get("/history/:username", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+// Get all users' transactions (for admin dashboard)
+router.get("/all", async (req, res) => {
+  try {
+    const users = await BingoBord.find({}, "username transactions");
+    const allTransactions = users.map(u => ({
+      username: u.username,
+      transactions: u.transactions
+    }));
+    res.json(allTransactions);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+// Get paginated list of users (Admin only)
+router.get("/admin-api/users", async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const totalUsers = await BingoBord.countDocuments();
+    const users = await BingoBord.find()
+      .skip(skip)
+      .limit(limit)
+      .select("username phoneNumber Wallet"); // only send safe fields
+
+    res.json({
+      users,
+      totalUsers,
+      totalPages: Math.ceil(totalUsers / limit),
+      currentPage: page,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 module.exports = router;
