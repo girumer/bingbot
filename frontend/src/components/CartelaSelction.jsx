@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import "./CartelaSelction.css";
 import cartela from "./cartela.json";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import socket from "../socket";
 import axios from "axios";
 
@@ -12,10 +13,11 @@ import "react-toastify/dist/ReactToastify.css";
 function CartelaSelction() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const username = location.state?.username || "Guest";
   const roomId = String(location.state?.roomId || "default");
-  const stake = Number(location.state?.stake ?? location.state?.roomId);
-
+  //const stake = Number(location.state?.stake ?? location.state?.roomId);
+const stake = Number(searchParams.get("stake")) || Number(roomId);
   const [selectedCartelas, setSelectedCartelas] = useState([]); // currently pending
   const [finalSelectedCartelas, setFinalSelectedCartelas] = useState([]); // already accepted
   const [timer, setTimer] = useState(null);
