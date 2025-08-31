@@ -113,22 +113,21 @@ bot.on("contact", async (msg) => {
 // ----------------------
 // Handle Menu Buttons
 // ----------------------
+
 bot.on('callback_query', async (callbackQuery) => {
   const chatId = callbackQuery.message.chat.id;
-  const data = callbackQuery.data; // this is the button callback
+  const data = callbackQuery.data;
 
-  // Fetch user
   const user = await BingoBord.findOne({ telegramId: chatId });
   if (!user) {
     bot.sendMessage(chatId, "You are not registered. Use /start to register.");
     return;
   }
 
-  // Handle regular menu actions
   switch (data) {
     case "balance":
       bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} coins`);
-      return;
+      break;
 
     case "history":
       if (!user.gameHistory || user.gameHistory.length === 0) {
@@ -140,7 +139,7 @@ bot.on('callback_query', async (callbackQuery) => {
         historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, Date: ${g.timestamp.toLocaleString()}\n`;
       });
       bot.sendMessage(chatId, historyText);
-      return;
+      break;
 
     case "play":
       bot.sendMessage(chatId, "Select a room to play:", {
@@ -152,44 +151,45 @@ bot.on('callback_query', async (callbackQuery) => {
           ]
         }
       });
-      return;
+      break;
 
     case "help":
       bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history.");
-      return;
+      break;
+
+    case "room_10":
+    case "room_20":
+    case "room_30":
+      let stake = parseInt(data.split("_")[1]);
+
+      if (user.Wallet < stake) {
+        bot.sendMessage(chatId, "⚠️ Not enough coins. Earn more to play.");
+        return;
+      }
+
+      // Deduct coins and save history
+      user.Wallet -= stake;
+      user.gameHistory.push({
+        roomId: stake,
+        stake: stake,
+        outcome: "pending"
+      });
+      await user.save();
+
+      // Open Web App (React page) inside Telegram
+      const webAppUrl = `${process.env.FRONTEND_URL}/cartelaselection?username=${encodeURIComponent(user.username)}&roomId=${stake}&stake=${stake}`;
+
+      bot.sendMessage(chatId, `✅ You joined Room ${stake}! ${stake} coins deducted. Click below to select your cartelas:`, {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: `Open Cartela Selection`, web_app: { url: webAppUrl } }]
+          ]
+        }
+      });
+      break;
+
+    default:
+      bot.sendMessage(chatId, "Unknown action.");
   }
-
-  // Handle room selection (room_10, room_20, room_30)
-  let stake;
-  if (data === "room_10") stake = 10;
-  else if (data === "room_20") stake = 20;
-  else if (data === "room_30") stake = 30;
-  else {
-    bot.sendMessage(chatId, "Unknown action.");
-    return;
-  }
-
-  // Check wallet
-  if (user.Wallet < stake) {
-    bot.sendMessage(chatId, "⚠️ Not enough coins. Earn more to play.");
-    return;
-  }
-
-  // Deduct coins and update history
-  user.Wallet -= stake;
-  user.gameHistory.push({
-    roomId: stake,
-    stake: stake,
-    outcome: "pending"
-  });
-  await user.save();
-
-  // Send link to CartelaSelction page
-  const url = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&roomId=${stake}&stake=${stake}`;
-  bot.sendMessage(chatId, `✅ You joined Room ${stake}! ${stake} coins deducted. Click below to select your cartelas:`, {
-    reply_markup: {
-      inline_keyboard: [[{ text: `Join Room ${stake}`, url }]]
-    }
-  });
 });
 

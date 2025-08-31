@@ -46,7 +46,12 @@ useEffect(() => {
 
   return () => socket.off("roomAvailable", handleRoomAvailable);
 }, []);
-
+useEffect(() => {
+    if (window.Telegram?.WebApp) {
+      const tg = window.Telegram.WebApp;
+      tg.ready(); // notify Telegram that web app is ready
+    }
+  }, []);
   // Fetch wallet
   useEffect(() => {
     const fetchWallet = async () => {
