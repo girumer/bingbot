@@ -708,31 +708,32 @@ app.post("/loginacess",getUsernameFromToken,(req,res)=>{
   res.json({ valid: true, username: req.username,role:req.role,phoneNumber:req.phoneNumber });
 }
 ) 
-app.post("/depositcheckB",async(req,res)=>{
-  const{username}=req.body
-  console.log(username);
-  const data1 = await BingoBord.findOne({ username: username });
-  
-    let depo1=parseInt(`${data1.Wallet}`);
-   // console.log("user name is ",data1);
+app.post("/depositcheckB", async (req, res) => {
+    const { telegramId } = req.body;
+    console.log("Checking balance for Telegram ID:", telegramId);
 
-  try{
- 
-      if(data1){
-          res.json(depo1)
-          console.log("your balance is ",depo1);
-      }
-      else{
-          res.json("notexist")
-      }
+    if (!telegramId) {
+        return res.status(400).json({ error: "Telegram ID is required." });
+    }
 
-  }
-  catch(e){
-    console.log(e);
-      res.json("fail")
-  }
+    try {
+        // Correctly find the user using the unique telegramId
+        const data1 = await BingoBord.findOne({ telegramId: telegramId });
 
-})    
+        if (data1) {
+            const depo1 = parseInt(data1.Wallet);
+            res.json(depo1);
+            console.log("User found. Balance is:", depo1);
+        } else {
+            // Send a specific message if the user is not found
+            res.status(404).json({ error: "User not found." });
+            console.log("User with Telegram ID", telegramId, "not found.");
+        }
+    } catch (e) {
+        console.error("Error during balance check:", e);
+        res.status(500).json({ error: "Internal server error." });
+    }
+});  
 app.get("/dashboard", verfyuser, async (req, res) => {
   console.log("Dashboard route hit");
   try {

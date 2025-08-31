@@ -13,8 +13,9 @@ function CartelaSelction() {
   const navigate = useNavigate();
 
   // --- Read query params ---
-  const usernameParam = searchParams.get("username") || "Guest";
-  const roomId = searchParams.get("roomId") || "default";
+  const usernameParam = searchParams.get("username") ;
+  const roomId = searchParams.get("roomId") ;
+  const telegramIdParam = searchParams.get("telegramId");
   const stake = Number(searchParams.get("stake")) || 0;
 
   // --- States (MUST be at top, no conditions before them) ---
@@ -67,20 +68,34 @@ function CartelaSelction() {
   }, []);
 
   // --- Fetch wallet ---
-  useEffect(() => {
+ 
+ useEffect(() => {
+    // Only fetch if telegramId is available
+    if (!telegramIdParam) {
+        console.error("Telegram ID is missing from URL. Cannot fetch wallet.");
+        // You might want to navigate back to a safe page or show a generic error
+        navigate("/", { replace: true });
+        return;
+    }
+
     const fetchWallet = async () => {
       try {
         const response = await axios.post(
           `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
-          { username: usernameParam }
+          // Use telegramId for a reliable lookup
+          { telegramId: telegramIdParam } 
         );
         setWallet(Number(response.data));
       } catch (err) {
         console.error("Failed to fetch wallet:", err);
+        // Display a user-friendly error
+        toast.error("Failed to load user data. Please try again.");
+        // Redirect to a safe page after an error
+        setTimeout(() => navigate("/", { replace: true }), 3000); 
       }
     };
     fetchWallet();
-  }, [usernameParam]);
+  }, [telegramIdParam, navigate]); // Add telegramIdParam and navigate to dependency array
 
   // --- Join room & get current state ---
   useEffect(() => {

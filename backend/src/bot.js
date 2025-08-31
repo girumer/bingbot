@@ -168,7 +168,7 @@ bot.on('callback_query', async (callbackQuery) => {
       }
 
       // Deduct coins and save history
-      user.Wallet -= stake;
+      
       user.gameHistory.push({
         roomId: stake,
         stake: stake,
@@ -177,7 +177,7 @@ bot.on('callback_query', async (callbackQuery) => {
       await user.save();
 
       // Open Web App (React page) inside Telegram
-      const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&roomId=${stake}&stake=${stake}`;
+      const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;
 
       bot.sendMessage(chatId, `✅ You joined Room ${stake}! ${stake} coins deducted. Click below to select your cartelas:`, {
         reply_markup: {
