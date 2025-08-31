@@ -134,47 +134,60 @@ io.on("connection", (socket) => {
   console.log("New connection:", socket.id);
 
   // --- JOIN ROOM ---
-  socket.on("joinRoom", ({ roomId, username, clientId }) => {
-    const rId = String(roomId);
-    socket.join(rId);
+socket.on("joinRoom", ({ roomId, username, telegramId, clientId }) => {
+  const rId = String(roomId);
+  socket.join(rId);
 
-    if (!rooms[rId]) {
-      rooms[rId] = {
-        players: {},
-        socketClient: {},
-        selectedIndexes: [],
-        playerCartelas: {},
-        timer: null,
-        calledNumbers: [],
-        numberInterval: null,
-        alreadyWon: [],
-        totalAward: 0,
-      };
-      console.log(`Room created: ${rId}`);
-    }
+  if (!rooms[rId]) {
+    rooms[rId] = {
+      players: {},          // maps socket.id -> username
+      telegramMap: {},      // maps socket.id -> telegramId ✅
+      socketClient: {},     // maps socket.id -> clientId
+      selectedIndexes: [],
+      playerCartelas: {},   // maps clientId -> cartelas
+      timer: null,
+      calledNumbers: [],
+      numberInterval: null,
+      alreadyWon: [],
+      totalAward: 0,
+    };
+    console.log(`Room created: ${rId}`);
+  }
 
-    rooms[rId].players[socket.id] = username;
-    rooms[rId].socketClient[socket.id] = clientId;
+  // ✅ Store player info
+  rooms[rId].players[socket.id] = username || `Guest-${socket.id}`;
+  rooms[rId].telegramMap[socket.id] = telegramId || null;
+  rooms[rId].socketClient[socket.id] = clientId;
 
-    if (!rooms[rId].playerCartelas[clientId]) rooms[rId].playerCartelas[clientId] = [];
-    const myCartelas = rooms[rId].playerCartelas[clientId];
+  // ✅ Ensure player has a cartela slot
+  if (!rooms[rId].playerCartelas[clientId]) {
+    rooms[rId].playerCartelas[clientId] = [];
+  }
+  const myCartelas = rooms[rId].playerCartelas[clientId];
 
-    // 👉 include totalPlayers here too
-    socket.emit("currentGameState", {
-      calledNumbers: rooms[rId].calledNumbers,
-      myCartelas,
-      selectedIndexes: rooms[rId].selectedIndexes,
-      lastNumber: rooms[rId].calledNumbers.slice(-1)[0] || null,
-      timer: rooms[rId].timer,
-      totalAward: rooms[rId].totalAward,
-      totalPlayers: Object.keys(rooms[rId].players).length,
-       activeGame: rooms[rId].activeGame || false
-    });
-
-    // 👉 broadcast live player count on join
-    const activePlayers = Object.values(rooms[rId].playerCartelas).filter(arr => arr.length > 0).length;
-  io.to(rId).emit("playerCount", { totalPlayers: activePlayers });
+  // ✅ Emit state to this player
+  socket.emit("currentGameState", {
+    calledNumbers: rooms[rId].calledNumbers,
+    myCartelas,
+    selectedIndexes: rooms[rId].selectedIndexes,
+    lastNumber: rooms[rId].calledNumbers.slice(-1)[0] || null,
+    timer: rooms[rId].timer,
+    totalAward: rooms[rId].totalAward,
+    totalPlayers: Object.keys(rooms[rId].players).length,
+    activeGame: rooms[rId].activeGame || false,
   });
+
+  // ✅ Broadcast updated player count
+  const activePlayers = Object.values(rooms[rId].playerCartelas).filter(
+    (arr) => arr.length > 0
+  ).length;
+  io.to(rId).emit("playerCount", { totalPlayers: activePlayers });
+
+  console.log(
+    `New connection: ${socket.id}, username=${username}, telegramId=${telegramId}, clientId=${clientId}`
+  );
+});
+
 
   // --- SELECT CARTELA ---
 // --- SELECT CARTELA ---

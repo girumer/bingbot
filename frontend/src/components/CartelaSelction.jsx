@@ -98,21 +98,28 @@ function CartelaSelction() {
   }, [telegramIdParam, navigate]); // Add telegramIdParam and navigate to dependency array
 
   // --- Join room & get current state ---
-  useEffect(() => {
-    socket.emit("joinRoom", { roomId, username: usernameParam, clientId, stake });
+// --- Join room & get current state ---
+useEffect(() => {
+  socket.emit("joinRoom", {
+    roomId,
+    username: usernameParam,   // keep it if needed
+    telegramId: telegramIdParam, // ✅ send telegramId also
+    clientId,
+   
+  });
 
-    const handleGameState = (state) => {
-      setFinalSelectedCartelas(Array.from(new Set(state.selectedIndexes || [])));
-      setSelectedCartelas((prev) =>
-        prev.filter((idx) => !(state.selectedIndexes || []).includes(idx))
-      );
-      if (state.timer != null) setTimer(state.timer);
-      if (state.activeGame != null) setActiveGame(state.activeGame);
-    };
+  const handleGameState = (state) => {
+    setFinalSelectedCartelas(Array.from(new Set(state.selectedIndexes || [])));
+    setSelectedCartelas((prev) =>
+      prev.filter((idx) => !(state.selectedIndexes || []).includes(idx))
+    );
+    if (state.timer != null) setTimer(state.timer);
+    if (state.activeGame != null) setActiveGame(state.activeGame);
+  };
 
-    socket.on("currentGameState", handleGameState);
-    return () => socket.off("currentGameState", handleGameState);
-  }, [roomId, usernameParam, clientId, stake]);
+  socket.on("currentGameState", handleGameState);
+  return () => socket.off("currentGameState", handleGameState);
+}, [roomId, usernameParam, telegramIdParam, clientId]);
 
   // --- Socket events ---
   useEffect(() => {
