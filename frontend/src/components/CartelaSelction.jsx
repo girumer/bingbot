@@ -12,10 +12,18 @@ function CartelaSelction() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Read data from query parameters
-  const username = searchParams.get("username") || "Guest";
+  // --- Read query params ---
+  const usernameParam = searchParams.get("username") || "Guest";
   const roomId = searchParams.get("roomId") || "default";
   const stake = Number(searchParams.get("stake")) || 0;
+
+  // --- Set Telegram login in localStorage (prevents redirect) ---
+  useEffect(() => {
+    if (usernameParam) {
+      localStorage.setItem("username", usernameParam);
+      localStorage.setItem("isLoggedIn", "true");
+    }
+  }, [usernameParam]);
 
   const [selectedCartelas, setSelectedCartelas] = useState([]);
   const [finalSelectedCartelas, setFinalSelectedCartelas] = useState([]);
@@ -23,7 +31,6 @@ function CartelaSelction() {
   const [wallet, setWallet] = useState(0);
   const [activeGame, setActiveGame] = useState(false);
 
-  // Generate unique client ID
   const getClientId = () => {
     let cid = localStorage.getItem("clientId");
     if (!cid) {
@@ -33,23 +40,19 @@ function CartelaSelction() {
     return cid;
   };
   const clientId = getClientId();
-useEffect(() => {
-  if (window.Telegram?.WebApp) {
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    console.log("Telegram Web App ready", tg.initData); // check initData
-  } else {
-    console.warn("Telegram WebApp for this not available");
-  }
-}, []);
-useEffect(() => {
-  const usernameParam = searchParams.get("username");
-  if (usernameParam) {
-    localStorage.setItem("username", usernameParam);
-    // Also set auth context if you use one
-  }
-}, []);
-  // Listen for roomAvailable
+
+  // Telegram WebApp ready check
+  useEffect(() => {
+    if (window.Telegram?.WebApp) {
+      const tg = window.Telegram.WebApp;
+      tg.ready();
+      console.log("Telegram Web App ready", tg.initData);
+    } else {
+      console.warn("Telegram WebApp not available");
+    }
+  }, []);
+
+  // --- Listen for roomAvailable ---
   useEffect(() => {
     const handleRoomAvailable = () => {
       setActiveGame(false);
@@ -61,13 +64,13 @@ useEffect(() => {
     return () => socket.off("roomAvailable", handleRoomAvailable);
   }, []);
 
-  // Fetch wallet
+  // --- Fetch wallet ---
   useEffect(() => {
     const fetchWallet = async () => {
       try {
         const response = await axios.post(
           `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
-          { username }
+          { username: usernameParam }
         );
         setWallet(Number(response.data));
       } catch (err) {
@@ -75,11 +78,11 @@ useEffect(() => {
       }
     };
     fetchWallet();
-  }, [username]);
+  }, [usernameParam]);
 
-  // Join room
+  // --- Join room & get current state ---
   useEffect(() => {
-    socket.emit("joinRoom", { roomId, username, clientId, stake });
+    socket.emit("joinRoom", { roomId, username: usernameParam, clientId, stake });
 
     const handleGameState = (state) => {
       setFinalSelectedCartelas(Array.from(new Set(state.selectedIndexes || [])));
@@ -92,9 +95,9 @@ useEffect(() => {
 
     socket.on("currentGameState", handleGameState);
     return () => socket.off("currentGameState", handleGameState);
-  }, [roomId, username, clientId, stake]);
+  }, [roomId, usernameParam, clientId, stake]);
 
-  // Socket events
+  // --- Socket events ---
   useEffect(() => {
     const onCartelaAccepted = ({ cartelaIndex, Wallet: updatedWallet }) => {
       setSelectedCartelas(prev => prev.filter(idx => idx !== cartelaIndex));
@@ -102,9 +105,7 @@ useEffect(() => {
       if (updatedWallet != null) setWallet(updatedWallet);
     };
 
-    const onCartelaError = ({ message }) => {
-      toast.error(message || "Cartela selection error");
-    };
+    const onCartelaError = ({ message }) => toast.error(message || "Cartela selection error");
 
     const onCountdown = (seconds) => setTimer(seconds);
 
@@ -115,7 +116,7 @@ useEffect(() => {
       }
       localStorage.setItem("myCartelas", JSON.stringify(cartelasFromServer));
       navigate("/BingoBoard", {
-        state: { username, roomId, stake, myCartelas: cartelasFromServer },
+        state: { username: usernameParam, roomId, stake, myCartelas: cartelasFromServer },
       });
     };
 
@@ -141,9 +142,9 @@ useEffect(() => {
       socket.off("updateSelectedCartelas", onUpdateSelectedCartelas);
       socket.off("activeGameStatus", onActiveGameStatus);
     };
-  }, [navigate, roomId, username, stake]);
+  }, [navigate, roomId, usernameParam, stake]);
 
-  // Handle selection
+  // --- Handle cartela selection ---
   const handleButtonClick = (index) => {
     if (activeGame) return toast.error("Game in progress – wait until it ends");
     if (finalSelectedCartelas.includes(index)) return;
@@ -168,7 +169,6 @@ useEffect(() => {
     setSelectedCartelas([]);
   };
 
-  // Cartela rejected
   useEffect(() => {
     const onCartelaRejected = ({ message }) => toast.error(message || "Cannot select this cartela");
     socket.on("cartelaRejected", onCartelaRejected);
