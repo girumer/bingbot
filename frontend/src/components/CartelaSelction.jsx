@@ -33,6 +33,15 @@ function CartelaSelction() {
     return cid;
   };
   const clientId = getClientId();
+useEffect(() => {
+  if (window.Telegram?.WebApp) {
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    console.log("Telegram Web App ready", tg.initData); // check initData
+  } else {
+    console.warn("Telegram WebApp not available");
+  }
+}, []);
 
   // Listen for roomAvailable
   useEffect(() => {
