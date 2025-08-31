@@ -71,47 +71,41 @@ function CartelaSelction() {
   }, []);
 
   // --- Fetch wallet ---
-  useEffect(() => {
+ useEffect(() => {
+    // Only fetch if telegramId is available
     if (!telegramIdParam) {
-      console.error("Telegram ID is missing. Cannot fetch wallet.");
-      toast.error("Authentication error. Please access through Telegram.");
-      navigate("/", { replace: true });
+      console.log("Frontend: Waiting for Telegram ID...");
       return;
     }
 
     const fetchWallet = async () => {
       try {
-        console.log("Fetching wallet for Telegram ID:", telegramIdParam);
-        
+        console.log("Frontend: Sending request for wallet balance with Telegram ID:", telegramIdParam);
         const response = await axios.post(
           `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
-          { telegramId: telegramIdParam }
+          { telegramId: telegramIdParam } 
         );
         
-        console.log("Wallet response:", response.data);
-        
-        // Handle numeric response from backend
-        let balance = 0;
-        if (typeof response.data === 'number') {
-          balance = response.data;
-        } else if (response.data && typeof response.data === 'object') {
-          balance = response.data.balance || response.data.amount || 0;
-        }
-        
-        console.log("Parsed balance:", balance);
-        setWallet(balance);
-      } catch (err) {
-        console.error("Failed to fetch wallet:", err);
-        if (err.response && err.response.status === 404) {
-          toast.error("User not found. Please check your Telegram ID.");
+        console.log("Frontend: Raw response data from server:", response.data);
+        console.log("Frontend: Response status:", response.status);
+
+        const walletValue = Number(response.data);
+        if (isNaN(walletValue)) {
+            console.error("Frontend: Received non-numeric wallet value:", response.data);
+            toast.error("Invalid wallet data received.");
+            setWallet(0);
         } else {
-          toast.error("Failed to load user data. Please try again.");
+            setWallet(walletValue);
         }
+
+      } catch (err) {
+        console.error("Frontend: Failed to fetch wallet:", err.response ? err.response.data : err.message);
+        toast.error("Failed to load user data. Please try again.");
+        // We will no longer redirect on a generic fetch error
       }
     };
-    
     fetchWallet();
-  }, [telegramIdParam, navigate]);
+  }, [telegramIdParam]);
 
   // --- Join room & get current state ---
   useEffect(() => {
