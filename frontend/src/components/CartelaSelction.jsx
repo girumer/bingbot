@@ -39,7 +39,7 @@ useEffect(() => {
     tg.ready();
     console.log("Telegram Web App ready", tg.initData); // check initData
   } else {
-    console.warn("Telegram WebApp not available");
+    console.warn("Telegram WebApp for this not available");
   }
 }, []);
 useEffect(() => {
