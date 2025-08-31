@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import "./CartelaSelction.css";
 import cartela from "./cartela.json";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useOutletContext } from "react-router-dom";
 import socket from "../socket";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
@@ -11,14 +11,15 @@ import "react-toastify/dist/ReactToastify.css";
 function CartelaSelction() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { usernameFromUrl, telegramIdFromUrl } = useOutletContext();
 
-  // --- Read query params ---
-  const usernameParam = searchParams.get("username") ;
-  const roomId = searchParams.get("roomId") ;
-  const telegramIdParam = searchParams.get("telegramId");
+  // --- Use parameters from context or URL as fallback ---
+  const usernameParam = usernameFromUrl || searchParams.get("username");
+  const roomId = searchParams.get("roomId");
+  const telegramIdParam = telegramIdFromUrl || searchParams.get("telegramId");
   const stake = Number(searchParams.get("stake")) || 0;
 
-  // --- States (MUST be at top, no conditions before them) ---
+  // --- States ---
   const [selectedCartelas, setSelectedCartelas] = useState([]);
   const [finalSelectedCartelas, setFinalSelectedCartelas] = useState([]);
   const [timer, setTimer] = useState(null);
@@ -37,10 +38,12 @@ function CartelaSelction() {
   };
   const clientId = getClientId();
 
-  // --- Mark user as logged in (fixes redirect) ---
+  // --- Mark user as logged in ---
   useEffect(() => {
-    localStorage.setItem("username", usernameParam);
-    localStorage.setItem("isLoggedIn", "true");
+    if (usernameParam) {
+      localStorage.setItem("username", usernameParam);
+      localStorage.setItem("isLoggedIn", "true");
+    }
     setIsReady(true);
   }, [usernameParam]);
 
@@ -68,73 +71,71 @@ function CartelaSelction() {
   }, []);
 
   // --- Fetch wallet ---
- 
-// --- Fetch wallet ---
-useEffect(() => {
-  // Only fetch if telegramId is available
-  if (!telegramIdParam) {
-    console.error("Telegram ID is missing from URL. Cannot fetch wallet.");
-    navigate("/", { replace: true });
-    return;
-  }
-
-  const fetchWallet = async () => {
-    try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
-        { telegramId: telegramIdParam }
-      );
-    alert("Full response:", response);
-      // Handle both number and object responses
-      let balance = 0;
-      if (typeof response.data === 'number') {
-        balance = response.data;
-      } else if (response.data && typeof response.data === 'object') {
-        balance = response.data.balance || response.data.amount || 0;
-      }
-      
-      console.log("Wallet balance:", balance);
-      setWallet(balance);
-    } catch (err) {
-      console.error("Failed to fetch wallet:", err);
-      
-      // Check if it's a 404 error (user not found)
-      if (err.response && err.response.status === 404) {
-        toast.error("User not found. Please check your Telegram ID.");
-      } else {
-        toast.error("Failed to load user data. Please try again.");
-      }
-      
-      setTimeout(() => navigate("/", { replace: true }), 3000);
+  useEffect(() => {
+    if (!telegramIdParam) {
+      console.error("Telegram ID is missing. Cannot fetch wallet.");
+      toast.error("Authentication error. Please access through Telegram.");
+      navigate("/", { replace: true });
+      return;
     }
-  };
-  
-  fetchWallet();
-}, [telegramIdParam, navigate]);// Add telegramIdParam and navigate to dependency array
+
+    const fetchWallet = async () => {
+      try {
+        console.log("Fetching wallet for Telegram ID:", telegramIdParam);
+        
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
+          { telegramId: telegramIdParam }
+        );
+        
+        console.log("Wallet response:", response.data);
+        
+        // Handle numeric response from backend
+        let balance = 0;
+        if (typeof response.data === 'number') {
+          balance = response.data;
+        } else if (response.data && typeof response.data === 'object') {
+          balance = response.data.balance || response.data.amount || 0;
+        }
+        
+        console.log("Parsed balance:", balance);
+        setWallet(balance);
+      } catch (err) {
+        console.error("Failed to fetch wallet:", err);
+        if (err.response && err.response.status === 404) {
+          toast.error("User not found. Please check your Telegram ID.");
+        } else {
+          toast.error("Failed to load user data. Please try again.");
+        }
+      }
+    };
+    
+    fetchWallet();
+  }, [telegramIdParam, navigate]);
 
   // --- Join room & get current state ---
-// --- Join room & get current state ---
-useEffect(() => {
-  socket.emit("joinRoom", {
-    roomId,
-    username: usernameParam,   // keep it if needed
-    telegramId: telegramIdParam, // ✅ send telegramId also
-    clientId,
-   
-  });
+  useEffect(() => {
+    if (!roomId || !usernameParam || !telegramIdParam) return;
+    
+    socket.emit("joinRoom", {
+      roomId,
+      username: usernameParam,
+      telegramId: telegramIdParam,
+      clientId,
+    });
 
-  const handleGameState = (state) => {
-    setFinalSelectedCartelas(Array.from(new Set(state.selectedIndexes || [])));
-    setSelectedCartelas((prev) =>
-      prev.filter((idx) => !(state.selectedIndexes || []).includes(idx))
-    );
-    if (state.timer != null) setTimer(state.timer);
-    if (state.activeGame != null) setActiveGame(state.activeGame);
-  };
+    const handleGameState = (state) => {
+      setFinalSelectedCartelas(Array.from(new Set(state.selectedIndexes || [])));
+      setSelectedCartelas((prev) =>
+        prev.filter((idx) => !(state.selectedIndexes || []).includes(idx))
+      );
+      if (state.timer != null) setTimer(state.timer);
+      if (state.activeGame != null) setActiveGame(state.activeGame);
+    };
 
-  socket.on("currentGameState", handleGameState);
-  return () => socket.off("currentGameState", handleGameState);
-}, [roomId, usernameParam, telegramIdParam, clientId]);
+    socket.on("currentGameState", handleGameState);
+    return () => socket.off("currentGameState", handleGameState);
+  }, [roomId, usernameParam, telegramIdParam, clientId]);
 
   // --- Socket events ---
   useEffect(() => {
@@ -158,7 +159,13 @@ useEffect(() => {
       }
       localStorage.setItem("myCartelas", JSON.stringify(cartelasFromServer));
       navigate("/BingoBoard", {
-        state: { username: usernameParam, roomId, stake, myCartelas: cartelasFromServer },
+        state: { 
+          username: usernameParam, 
+          roomId, 
+          stake, 
+          myCartelas: cartelasFromServer,
+          telegramId: telegramIdParam 
+        },
       });
     };
 
@@ -188,7 +195,7 @@ useEffect(() => {
       socket.off("updateSelectedCartelas", onUpdateSelectedCartelas);
       socket.off("activeGameStatus", onActiveGameStatus);
     };
-  }, [navigate, roomId, usernameParam, stake]);
+  }, [navigate, roomId, usernameParam, stake, telegramIdParam]);
 
   // --- Cartela Rejected ---
   useEffect(() => {
