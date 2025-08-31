@@ -1,23 +1,28 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
-function ProtectedRoute({ children }) {
+function ProtectedRoute() {
   const location = useLocation();
-  const token = localStorage.getItem('accesstoken');
   
-  // Get the username from the URL query parameters
+  // Get parameters from the URL
   const searchParams = new URLSearchParams(location.search);
   const usernameFromUrl = searchParams.get('username');
+  const telegramIdFromUrl = searchParams.get('telegramId');
   
-  // A simple flag to check if the user is considered "authenticated"
-  // This is true if an access token exists OR if the app is launched from the bot
-  const isAuthenticated = !!token || !!usernameFromUrl;
+  // Only allow access if coming from Telegram bot with required parameters
+  const isFromTelegramBot = !!usernameFromUrl && !!telegramIdFromUrl;
+  
+  // Also allow access with token for other authentication methods (optional)
+  const token = localStorage.getItem('accesstoken');
+  const isAuthenticated = isFromTelegramBot || !!token;
 
-  // The is-logged-in flag in localStorage is now redundant since we are checking
-  // the token or URL parameter, which are the sources of truth.
+  if (!isAuthenticated) {
+    // Redirect to home page if not authenticated
+    return <Navigate to="/" replace />;
+  }
 
-  // Use the isAuthenticated flag to decide where to navigate
-  return isAuthenticated ? <Outlet /> : <Navigate to="/" replace />;
+  // Pass the URL parameters to child components using location state
+  return <Outlet context={{ usernameFromUrl, telegramIdFromUrl }} />;
 }
 
 export default ProtectedRoute;
