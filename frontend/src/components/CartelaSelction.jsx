@@ -42,7 +42,13 @@ useEffect(() => {
     console.warn("Telegram WebApp not available");
   }
 }, []);
-
+useEffect(() => {
+  const usernameParam = searchParams.get("username");
+  if (usernameParam) {
+    localStorage.setItem("username", usernameParam);
+    // Also set auth context if you use one
+  }
+}, []);
   // Listen for roomAvailable
   useEffect(() => {
     const handleRoomAvailable = () => {
