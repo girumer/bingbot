@@ -69,33 +69,48 @@ function CartelaSelction() {
 
   // --- Fetch wallet ---
  
- useEffect(() => {
-    // Only fetch if telegramId is available
-    if (!telegramIdParam) {
-        console.error("Telegram ID is missing from URL. Cannot fetch wallet.");
-        // You might want to navigate back to a safe page or show a generic error
-        navigate("/", { replace: true });
-        return;
-    }
+// --- Fetch wallet ---
+useEffect(() => {
+  // Only fetch if telegramId is available
+  if (!telegramIdParam) {
+    console.error("Telegram ID is missing from URL. Cannot fetch wallet.");
+    navigate("/", { replace: true });
+    return;
+  }
 
-    const fetchWallet = async () => {
-      try {
-        const response = await axios.post(
-          `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
-          // Use telegramId for a reliable lookup
-          { telegramId: telegramIdParam } 
-        );
-        setWallet(Number(response.data));
-      } catch (err) {
-        console.error("Failed to fetch wallet:", err);
-        // Display a user-friendly error
-        toast.error("Failed to load user data. Please try again.");
-        // Redirect to a safe page after an error
-        setTimeout(() => navigate("/", { replace: true }), 3000); 
+  const fetchWallet = async () => {
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
+        { telegramId: telegramIdParam }
+      );
+    alert("Full response:", response);
+      // Handle both number and object responses
+      let balance = 0;
+      if (typeof response.data === 'number') {
+        balance = response.data;
+      } else if (response.data && typeof response.data === 'object') {
+        balance = response.data.balance || response.data.amount || 0;
       }
-    };
-    fetchWallet();
-  }, [telegramIdParam, navigate]); // Add telegramIdParam and navigate to dependency array
+      
+      console.log("Wallet balance:", balance);
+      setWallet(balance);
+    } catch (err) {
+      console.error("Failed to fetch wallet:", err);
+      
+      // Check if it's a 404 error (user not found)
+      if (err.response && err.response.status === 404) {
+        toast.error("User not found. Please check your Telegram ID.");
+      } else {
+        toast.error("Failed to load user data. Please try again.");
+      }
+      
+      setTimeout(() => navigate("/", { replace: true }), 3000);
+    }
+  };
+  
+  fetchWallet();
+}, [telegramIdParam, navigate]);// Add telegramIdParam and navigate to dependency array
 
   // --- Join room & get current state ---
 // --- Join room & get current state ---
