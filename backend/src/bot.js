@@ -185,7 +185,7 @@ bot.on('callback_query', async (callbackQuery) => {
   await user.save();
 
   // Send link to CartelaSelction page
-  const url = `${process.env.FRONTEND_URL}/cartelaselection?username=${encodeURIComponent(user.username)}&roomId=${stake}&stake=${stake}`;
+  const url = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&roomId=${stake}&stake=${stake}`;
   bot.sendMessage(chatId, `✅ You joined Room ${stake}! ${stake} coins deducted. Click below to select your cartelas:`, {
     reply_markup: {
       inline_keyboard: [[{ text: `Join Room ${stake}`, url }]]
