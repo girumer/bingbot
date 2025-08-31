@@ -17,20 +17,15 @@ function CartelaSelction() {
   const roomId = searchParams.get("roomId") || "default";
   const stake = Number(searchParams.get("stake")) || 0;
 
-  // --- Set Telegram login in localStorage (prevents redirect) ---
-  useEffect(() => {
-    if (usernameParam) {
-      localStorage.setItem("username", usernameParam);
-      localStorage.setItem("isLoggedIn", "true");
-    }
-  }, [usernameParam]);
-
+  // --- States (MUST be at top, no conditions before them) ---
   const [selectedCartelas, setSelectedCartelas] = useState([]);
   const [finalSelectedCartelas, setFinalSelectedCartelas] = useState([]);
   const [timer, setTimer] = useState(null);
   const [wallet, setWallet] = useState(0);
   const [activeGame, setActiveGame] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
+  // --- Generate clientId ---
   const getClientId = () => {
     let cid = localStorage.getItem("clientId");
     if (!cid) {
@@ -41,7 +36,14 @@ function CartelaSelction() {
   };
   const clientId = getClientId();
 
-  // Telegram WebApp ready check
+  // --- Mark user as logged in (fixes redirect) ---
+  useEffect(() => {
+    localStorage.setItem("username", usernameParam);
+    localStorage.setItem("isLoggedIn", "true");
+    setIsReady(true);
+  }, [usernameParam]);
+
+  // --- Telegram WebApp ready check ---
   useEffect(() => {
     if (window.Telegram?.WebApp) {
       const tg = window.Telegram.WebApp;
@@ -86,8 +88,8 @@ function CartelaSelction() {
 
     const handleGameState = (state) => {
       setFinalSelectedCartelas(Array.from(new Set(state.selectedIndexes || [])));
-      setSelectedCartelas(prev =>
-        prev.filter(idx => !(state.selectedIndexes || []).includes(idx))
+      setSelectedCartelas((prev) =>
+        prev.filter((idx) => !(state.selectedIndexes || []).includes(idx))
       );
       if (state.timer != null) setTimer(state.timer);
       if (state.activeGame != null) setActiveGame(state.activeGame);
@@ -100,12 +102,15 @@ function CartelaSelction() {
   // --- Socket events ---
   useEffect(() => {
     const onCartelaAccepted = ({ cartelaIndex, Wallet: updatedWallet }) => {
-      setSelectedCartelas(prev => prev.filter(idx => idx !== cartelaIndex));
-      setFinalSelectedCartelas(prev => Array.from(new Set([...prev, cartelaIndex])));
+      setSelectedCartelas((prev) => prev.filter((idx) => idx !== cartelaIndex));
+      setFinalSelectedCartelas((prev) =>
+        Array.from(new Set([...prev, cartelaIndex]))
+      );
       if (updatedWallet != null) setWallet(updatedWallet);
     };
 
-    const onCartelaError = ({ message }) => toast.error(message || "Cartela selection error");
+    const onCartelaError = ({ message }) =>
+      toast.error(message || "Cartela selection error");
 
     const onCountdown = (seconds) => setTimer(seconds);
 
@@ -121,8 +126,12 @@ function CartelaSelction() {
     };
 
     const onUpdateSelectedCartelas = ({ selectedIndexes }) => {
-      setFinalSelectedCartelas(prev => Array.from(new Set([...prev, ...selectedIndexes])));
-      setSelectedCartelas(prev => prev.filter(idx => !selectedIndexes.includes(idx)));
+      setFinalSelectedCartelas((prev) =>
+        Array.from(new Set([...prev, ...selectedIndexes]))
+      );
+      setSelectedCartelas((prev) =>
+        prev.filter((idx) => !selectedIndexes.includes(idx))
+      );
     };
 
     const onActiveGameStatus = ({ activeGame }) => setActiveGame(activeGame);
@@ -144,13 +153,21 @@ function CartelaSelction() {
     };
   }, [navigate, roomId, usernameParam, stake]);
 
-  // --- Handle cartela selection ---
+  // --- Cartela Rejected ---
+  useEffect(() => {
+    const onCartelaRejected = ({ message }) =>
+      toast.error(message || "Cannot select this cartela");
+    socket.on("cartelaRejected", onCartelaRejected);
+    return () => socket.off("cartelaRejected", onCartelaRejected);
+  }, []);
+
+  // --- Button Handlers ---
   const handleButtonClick = (index) => {
     if (activeGame) return toast.error("Game in progress – wait until it ends");
     if (finalSelectedCartelas.includes(index)) return;
 
-    setSelectedCartelas(prev => {
-      if (prev.includes(index)) return prev.filter(i => i !== index);
+    setSelectedCartelas((prev) => {
+      if (prev.includes(index)) return prev.filter((i) => i !== index);
       if (prev.length >= 4) {
         toast.error("You can only select up to 4 cartelas");
         return prev;
@@ -163,17 +180,14 @@ function CartelaSelction() {
     if (activeGame) return toast.error("Cannot add cartela – game in progress");
     if (!selectedCartelas.length) return toast.error("Select at least one cartela first");
 
-    selectedCartelas.forEach(idx => {
+    selectedCartelas.forEach((idx) => {
       socket.emit("selectCartela", { roomId, cartelaIndex: idx, clientId });
     });
     setSelectedCartelas([]);
   };
 
-  useEffect(() => {
-    const onCartelaRejected = ({ message }) => toast.error(message || "Cannot select this cartela");
-    socket.on("cartelaRejected", onCartelaRejected);
-    return () => socket.off("cartelaRejected", onCartelaRejected);
-  }, []);
+  // --- Wait until ready ---
+  if (!isReady) return <div>Loading...</div>;
 
   return (
     <React.Fragment>
@@ -216,7 +230,9 @@ function CartelaSelction() {
                 {cartela[idx].cart.map((row, rowIndex) => (
                   <div key={rowIndex} className="cartela-row1">
                     {row.map((cell, cellIndex) => (
-                      <span key={cellIndex} className="cartela-cell1">{cell}</span>
+                      <span key={cellIndex} className="cartela-cell1">
+                        {cell}
+                      </span>
                     ))}
                   </div>
                 ))}
