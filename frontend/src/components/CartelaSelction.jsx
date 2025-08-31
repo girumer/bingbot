@@ -71,8 +71,8 @@ function CartelaSelction() {
   }, []);
 
   // --- Fetch wallet ---
- useEffect(() => {
-    // Only fetch if telegramId is available
+  useEffect(() => {
+    // Only fetch if a valid telegramId is available
     if (!telegramIdParam) {
       console.log("Frontend: Waiting for Telegram ID...");
       return;
@@ -91,17 +91,16 @@ function CartelaSelction() {
 
         const walletValue = Number(response.data);
         if (isNaN(walletValue)) {
-            console.error("Frontend: Received non-numeric wallet value:", response.data);
-            toast.error("Invalid wallet data received.");
-            setWallet(0);
+          console.error("Frontend: Received non-numeric wallet value:", response.data);
+          toast.error("Invalid wallet data received.");
+          setWallet(0);
         } else {
-            setWallet(walletValue);
+          setWallet(walletValue);
         }
 
       } catch (err) {
         console.error("Frontend: Failed to fetch wallet:", err.response ? err.response.data : err.message);
         toast.error("Failed to load user data. Please try again.");
-        // We will no longer redirect on a generic fetch error
       }
     };
     fetchWallet();
@@ -109,7 +108,10 @@ function CartelaSelction() {
 
   // --- Join room & get current state ---
   useEffect(() => {
-    if (!roomId || !usernameParam || !telegramIdParam) return;
+    if (!roomId || !usernameParam || !telegramIdParam) {
+      console.log("Frontend: Waiting for room data to join room...");
+      return;
+    }
     
     socket.emit("joinRoom", {
       roomId,
@@ -214,14 +216,32 @@ function CartelaSelction() {
     });
   };
 
-  const handleAddCartela = () => {
+  const handleAddCartela = async () => {
     if (activeGame) return toast.error("Cannot add cartela – game in progress");
     if (!selectedCartelas.length) return toast.error("Select at least one cartela first");
+    if (!telegramIdParam) return toast.error("User not found. Cannot proceed.");
 
-    selectedCartelas.forEach((idx) => {
-      socket.emit("selectCartela", { roomId, cartelaIndex: idx, clientId });
-    });
-    setSelectedCartelas([]);
+    try {
+      // DEDUCT COINS ON THE BACKEND
+      const deductResponse = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/deductCoins`,
+        { telegramId: telegramIdParam, stake: stake }
+      );
+
+      // Check for success or failure from the new endpoint
+      if (deductResponse.data.success) {
+        // EMIT TO SOCKET ONCE DEDUCTION IS SUCCESSFUL
+        selectedCartelas.forEach((idx) => {
+          socket.emit("selectCartela", { roomId, cartelaIndex: idx, clientId });
+        });
+        setSelectedCartelas([]);
+      } else {
+        toast.error(deductResponse.data.message || "Failed to deduct coins. Please try again.");
+      }
+    } catch (err) {
+      console.error("Failed to deduct coins:", err);
+      toast.error("Failed to finalize selection. Please try again.");
+    }
   };
 
   // --- Wait until ready ---
@@ -233,7 +253,7 @@ function CartelaSelction() {
       <div className="Cartelacontainer-wrapper">
         <div className="wallet-stake-display">
           <div className="display-btn">Wallet: {wallet}</div>
-          <div className="display-btn">Active Game: {activeGame ? 1 : 0}</div>
+          <div className="display-btn">Active Game: {activeGame ? "Yes" : "No"}</div>
           <div className="display-btn">Stake: {stake}</div>
         </div>
 
