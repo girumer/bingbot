@@ -8,6 +8,7 @@ const BingoBord=require("../Models/BingoBord")
 const Transaction = require("../Models/Transaction");
 const jwt=require('jsonwebtoken')
 const cors = require("cors")
+const TelegramBot = require('node-telegram-bot-api');
 const bcrypt = require('bcryptjs');
 const { deductWallet } = require('../controllers/walletController');
 const cookieParser = require('cookie-parser');
