@@ -722,7 +722,7 @@ app.post("/loginacess",getUsernameFromToken,(req,res)=>{
   res.json({ valid: true, username: req.username,role:req.role,phoneNumber:req.phoneNumber });
 }
 ) 
-app.post("/depositcheckB", async (req, res) => {
+ app.post("/depositcheckB", async (req, res) => {
     const { telegramId } = req.body;
     console.log("Checking balance for Telegram ID:", telegramId);
 
@@ -736,7 +736,7 @@ app.post("/depositcheckB", async (req, res) => {
 
         if (data1) {
             const depo1 = parseInt(data1.Wallet);
-            res.json(depo1);
+            res.json({ wallet: depo1 }); // Corrected line
             console.log("User found. Balance is:", depo1);
         } else {
             // Send a specific message if the user is not found
@@ -747,7 +747,7 @@ app.post("/depositcheckB", async (req, res) => {
         console.error("Error during balance check:", e);
         res.status(500).json({ error: "Internal server error." });
     }
-});  
+});
 app.get("/dashboard", verfyuser, async (req, res) => {
   console.log("Dashboard route hit");
   try {
