@@ -736,7 +736,7 @@ app.post("/depositcheckB", async (req, res) => {
 
         if (data1) {
             const depo1 = parseInt(data1.Wallet);
-            res.json({ wallet: depo1 });
+            res.json(depo1);
             console.log("User found. Balance is:", depo1);
         } else {
             // Send a specific message if the user is not found
