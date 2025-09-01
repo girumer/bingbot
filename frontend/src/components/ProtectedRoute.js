@@ -1,39 +1,52 @@
-import React from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+// New and Improved ProtectedRoute.js
+import React from "react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 function ProtectedRoute() {
   const location = useLocation();
-  
-  // Get parameters from the URL
   const searchParams = new URLSearchParams(location.search);
-  const usernameFromUrl = searchParams.get('username');
-  const telegramIdFromUrl = searchParams.get('telegramId');
   
-  // Check if we have Telegram authentication from URL
-  const isFromTelegramBot = !!usernameFromUrl && !!telegramIdFromUrl;
-  
-  // Check if we have stored credentials
-  const storedUsername = localStorage.getItem('username');
-  const storedTelegramId = localStorage.getItem('telegramId');
-  const hasStoredCredentials = !!storedUsername && !!storedTelegramId;
-  
-  // Check if we have token authentication
-  const token = localStorage.getItem('accesstoken');
-  
-  // Allow access if any authentication method is available
-  const isAuthenticated = isFromTelegramBot || hasStoredCredentials || !!token;
+  // Get all required parameters from the URL
+  const usernameFromUrl = searchParams.get("username");
+  const telegramIdFromUrl = searchParams.get("telegramId");
+  const roomIdFromUrl = searchParams.get("roomId"); // ✅ Get roomId from URL
+  const stakeFromUrl = searchParams.get("stake"); // ✅ Get stake from URL
+
+  // Stored credentials
+  const storedUsername = localStorage.getItem("username");
+  const storedTelegramId = localStorage.getItem("telegramId");
+
+  // Token
+  const token = localStorage.getItem("accesstoken");
+
+  // Decide which values to use (prioritizing URL)
+  const username = usernameFromUrl || storedUsername;
+  const telegramId = telegramIdFromUrl || storedTelegramId;
+
+  // Auth check
+  const isAuthenticated = (username && telegramId) || token;
 
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }
-  
-  // If we have URL parameters, store them
-  if (isFromTelegramBot) {
-    localStorage.setItem('username', usernameFromUrl);
-    localStorage.setItem('telegramId', telegramIdFromUrl);
+
+  // Save fresh values if coming from URL
+  if (usernameFromUrl && telegramIdFromUrl) {
+    localStorage.setItem("username", usernameFromUrl);
+    localStorage.setItem("telegramId", telegramIdFromUrl);
   }
 
-  return <Outlet />;
+  // ✅ Pass all parameters to children via context
+  return (
+    <Outlet 
+        context={{ 
+            usernameFromUrl: username, 
+            telegramIdFromUrl: telegramId,
+            roomIdFromUrl: roomIdFromUrl, // ✅ Pass roomId
+            stakeFromUrl: stakeFromUrl,   // ✅ Pass stake
+        }} 
+    />
+  );
 }
 
 export default ProtectedRoute;
