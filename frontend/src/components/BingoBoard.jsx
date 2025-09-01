@@ -128,7 +128,7 @@ function BingoBoard() {
   const navigate = useNavigate();
 
   const storedCartelas = JSON.parse(localStorage.getItem("myCartelas") || "[]");
-  const { username, roomId, myCartelas: initialCartelas } = location.state || {};
+ const { username, roomId, myCartelas: initialCartelas } = location.state || {};
   const [totalPlayers, setTotalPlayers] = useState(0);
     const [highlightCartelas, setHighlightCartelas] = useState(true);
   const [myCartelas, setMyCartelas] = useState(initialCartelas || storedCartelas);

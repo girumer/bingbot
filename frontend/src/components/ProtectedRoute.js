@@ -20,7 +20,10 @@ function ProtectedRoute() {
     // Redirect to home page if not authenticated
     return <Navigate to="/" replace />;
   }
-
+if (isFromTelegramBot) {
+    localStorage.setItem('username', usernameFromUrl);
+    localStorage.setItem('telegramId', telegramIdFromUrl);
+  }
   // Pass the URL parameters to child components using location state
   return <Outlet context={{ usernameFromUrl, telegramIdFromUrl }} />;
 }
