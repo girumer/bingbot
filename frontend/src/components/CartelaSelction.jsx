@@ -100,7 +100,7 @@ function CartelaSelction() {
 
       } catch (err) {
         console.error("Frontend: Failed to fetch wallet:", err.response ? err.response.data : err.message);
-        toast.error("Failed to load user data. Please try again.");
+        toast.error("Failed to load user data. Please try again.",response.data);
         // We will no longer redirect on a generic fetch error
       }
     };
