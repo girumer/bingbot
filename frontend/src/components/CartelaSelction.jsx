@@ -58,42 +58,43 @@ function CartelaSelction() {
       return;
     }
 
-    const initializeGame = async () => {
-      try {
-        // 1. Fetch wallet balance
-        console.log("Frontend: Sending request for wallet balance with Telegram ID:", telegramIdParam);
-        const response = await axios.post(
-          `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
-          { telegramId: telegramIdParam } 
-        );
-        
-        console.log("Frontend: Raw response data from server:", response.data);
-        const walletValue = Number(response.data);
-        if (isNaN(walletValue)) {
-            console.error("Frontend: Received non-numeric wallet value:", response.data);
-            toast.error("Invalid wallet data received.");
-            setWallet(0);
-        } else {
-            setWallet(walletValue);
-        }
+ const initializeGame = async () => {
+      try {
+        // 1. Fetch wallet balance
+        console.log("Frontend: Sending request for wallet balance with Telegram ID:", telegramIdParam);
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
+          { telegramId: telegramIdParam } 
+        );
+        
+        console.log("Frontend: Raw response data from server:", response.data);
+        // CORRECTED: Access the 'wallet' property from the response data
+        const walletValue = response.data.wallet;
 
-        // 2. Join the game room
-        socket.emit("joinRoom", {
-          roomId,
-          username: usernameParam,
-          telegramId: telegramIdParam,
-          clientId,
-          
-        });
+        if (isNaN(walletValue)) {
+            console.error("Frontend: Received non-numeric wallet value:", response.data);
+            toast.error("Invalid wallet data received.");
+            setWallet(0);
+        } else {
+            setWallet(walletValue);
+        }
 
-      } catch (err) {
-        console.error("Frontend: Failed to initialize. Error:", err.response ? err.response.data : err.message);
-        toast.error("Failed to load user data. Please try again.", err.response ? err.response.data : err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+        // 2. Join the game room
+        socket.emit("joinRoom", {
+          roomId,
+          username: usernameParam,
+          telegramId: telegramIdParam,
+          clientId,
+          
+        });
 
+      } catch (err) {
+        console.error("Frontend: Failed to initialize. Error:", err.response ? err.response.data : err.message);
+        toast.error("Failed to load user data. Please try again.", err.response ? err.response.data : err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     initializeGame();
 
     // Set up socket event listeners
