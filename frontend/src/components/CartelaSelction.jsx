@@ -25,7 +25,7 @@ function CartelaSelction() {
   const [timer, setTimer] = useState(null);
   const [wallet, setWallet] = useState(0);
   const [activeGame, setActiveGame] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isReady, setIsReady] = useState(false);
 
   // --- Generate clientId ---
   const getClientId = () => {
@@ -38,6 +38,15 @@ function CartelaSelction() {
   };
   const clientId = getClientId();
 
+  // --- Mark user as logged in ---
+  useEffect(() => {
+    if (usernameParam) {
+      localStorage.setItem("username", usernameParam);
+      localStorage.setItem("isLoggedIn", "true");
+    }
+    setIsReady(true);
+  }, [usernameParam]);
+
   // --- Telegram WebApp ready check ---
   useEffect(() => {
     if (window.Telegram?.WebApp) {
@@ -49,40 +58,59 @@ function CartelaSelction() {
     }
   }, []);
 
-  // --- MAIN INITIALIZATION EFFECT ---
-  // This hook will only run when all required data is available
+  // --- Listen for roomAvailable ---
   useEffect(() => {
-    // Wait until all parameters are present
-    if (!roomId || !usernameParam || !telegramIdParam) {
-      console.log("Frontend: Waiting for all required URL parameters...");
+    const handleRoomAvailable = () => {
+      setActiveGame(false);
+      setSelectedCartelas([]);
+      setFinalSelectedCartelas([]);
+      setTimer(null);
+    };
+    socket.on("roomAvailable", handleRoomAvailable);
+    return () => socket.off("roomAvailable", handleRoomAvailable);
+  }, []);
+
+  // --- Fetch wallet ---
+ useEffect(() => {
+    // Only fetch if telegramId is available
+    if (!telegramIdParam) {
+      console.log("Frontend: Waiting for Telegram ID...");
       return;
     }
-const initializeGame = async () => {
-  try {
-    console.log("Frontend: Sending request for wallet balance with Telegram ID:", telegramIdParam);
-    const response = await axios.post(
-      `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
-      { telegramId: telegramIdParam } 
-    );
-    
-    console.log("Frontend: Raw response data from server:", response.data);
-    
-    // Handle both object and number responses
-    let walletValue;
-    if (typeof response.data === 'object' && response.data !== null) {
-      walletValue = response.data.wallet || response.data.balance || 0;
-    } else if (typeof response.data === 'number') {
-      walletValue = response.data;
-    } else if (typeof response.data === 'string' && !isNaN(response.data)) {
-      walletValue = parseFloat(response.data);
-    } else {
-      console.error("Frontend: Unexpected response format:", response.data);
-      walletValue = 0;
-    }
 
-    setWallet(walletValue);
+    const fetchWallet = async () => {
+      try {
+        console.log("Frontend: Sending request for wallet balance with Telegram ID:", telegramIdParam);
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
+          { telegramId: telegramIdParam } 
+        );
+        
+        console.log("Frontend: Raw response data from server:", response.data);
+        console.log("Frontend: Response status:", response.status);
 
-    // 2. Join the game room
+        const walletValue = Number(response.data);
+        if (isNaN(walletValue)) {
+            console.error("Frontend: Received non-numeric wallet value:", response.data);
+            toast.error("Invalid wallet data received.");
+            setWallet(0);
+        } else {
+            setWallet(walletValue);
+        }
+
+      } catch (err) {
+        console.error("Frontend: Failed to fetch wallet:", err.response ? err.response.data : err.message);
+        toast.error("Failed to load user data. Please try again.");
+        // We will no longer redirect on a generic fetch error
+      }
+    };
+    fetchWallet();
+  }, [telegramIdParam]);
+
+  // --- Join room & get current state ---
+  useEffect(() => {
+    if (!roomId || !usernameParam || !telegramIdParam) return;
+    
     socket.emit("joinRoom", {
       roomId,
       username: usernameParam,
@@ -90,24 +118,6 @@ const initializeGame = async () => {
       clientId,
     });
 
-  } catch (err) {
-    console.error("Frontend: Failed to initialize. Error:", err.response ? err.response.data : err.message);
-    toast.error("Frontend", err.response ? err.response.data : err.message);
-    if (err.response && err.response.status === 404) {
-      toast.error("User not found. Please check your Telegram ID.");
-    } else if (err.response && err.response.status === 400) {
-      toast.error("Invalid request. Please try again.");
-    } else {
-      toast.error("Failed to load user data. Please try again.");
-    }
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-    initializeGame();
-
-    // Set up socket event listeners
     const handleGameState = (state) => {
       setFinalSelectedCartelas(Array.from(new Set(state.selectedIndexes || [])));
       setSelectedCartelas((prev) =>
@@ -116,16 +126,12 @@ const initializeGame = async () => {
       if (state.timer != null) setTimer(state.timer);
       if (state.activeGame != null) setActiveGame(state.activeGame);
     };
+
     socket.on("currentGameState", handleGameState);
-    
-    // Clean up
-    return () => {
-        socket.off("currentGameState", handleGameState);
-    };
+    return () => socket.off("currentGameState", handleGameState);
+  }, [roomId, usernameParam, telegramIdParam, clientId]);
 
-  }, [roomId, usernameParam, telegramIdParam, clientId, stake]);
-
-  // --- Separate Socket events (for cleaner logic) ---
+  // --- Socket events ---
   useEffect(() => {
     const onCartelaAccepted = ({ cartelaIndex, Wallet: updatedWallet }) => {
       setSelectedCartelas((prev) => prev.filter((idx) => idx !== cartelaIndex));
@@ -141,24 +147,21 @@ const initializeGame = async () => {
     const onCountdown = (seconds) => setTimer(seconds);
 
     const onCountdownEnd = (cartelasFromServer) => {
-  if (!cartelasFromServer || cartelasFromServer.length === 0) {
-    toast.error("You did not select any cartela. Please select at least one.");
-    return;
-  }
-  
-  localStorage.setItem("myCartelas", JSON.stringify(cartelasFromServer));
-  
-  // Include parameters in the URL
-  navigate(`/BingoBoard?username=${encodeURIComponent(usernameParam)}&telegramId=${encodeURIComponent(telegramIdParam)}&roomId=${roomId}&stake=${stake}`, {
-    state: { 
-      username: usernameParam, 
-      roomId, 
-      stake, 
-      myCartelas: cartelasFromServer,
-      telegramId: telegramIdParam 
-    },
-  });
-};
+      if (!cartelasFromServer || cartelasFromServer.length === 0) {
+        toast.error("You did not select any cartela. Please select at least one.");
+        return;
+      }
+      localStorage.setItem("myCartelas", JSON.stringify(cartelasFromServer));
+      navigate("/BingoBoard", {
+        state: { 
+          username: usernameParam, 
+          roomId, 
+          stake, 
+          myCartelas: cartelasFromServer,
+          telegramId: telegramIdParam 
+        },
+      });
+    };
 
     const onUpdateSelectedCartelas = ({ selectedIndexes }) => {
       setFinalSelectedCartelas((prev) =>
@@ -170,8 +173,6 @@ const initializeGame = async () => {
     };
 
     const onActiveGameStatus = ({ activeGame }) => setActiveGame(activeGame);
-    const onCartelaRejected = ({ message }) =>
-      toast.error(message || "Cannot select this cartela");
 
     socket.on("cartelaAccepted", onCartelaAccepted);
     socket.on("cartelaError", onCartelaError);
@@ -179,7 +180,6 @@ const initializeGame = async () => {
     socket.on("myCartelas", onCountdownEnd);
     socket.on("updateSelectedCartelas", onUpdateSelectedCartelas);
     socket.on("activeGameStatus", onActiveGameStatus);
-    socket.on("cartelaRejected", onCartelaRejected);
 
     return () => {
       socket.off("cartelaAccepted", onCartelaAccepted);
@@ -188,9 +188,16 @@ const initializeGame = async () => {
       socket.off("myCartelas", onCountdownEnd);
       socket.off("updateSelectedCartelas", onUpdateSelectedCartelas);
       socket.off("activeGameStatus", onActiveGameStatus);
-      socket.off("cartelaRejected", onCartelaRejected);
     };
   }, [navigate, roomId, usernameParam, stake, telegramIdParam]);
+
+  // --- Cartela Rejected ---
+  useEffect(() => {
+    const onCartelaRejected = ({ message }) =>
+      toast.error(message || "Cannot select this cartela");
+    socket.on("cartelaRejected", onCartelaRejected);
+    return () => socket.off("cartelaRejected", onCartelaRejected);
+  }, []);
 
   // --- Button Handlers ---
   const handleButtonClick = (index) => {
@@ -207,41 +214,26 @@ const initializeGame = async () => {
     });
   };
 
-const handleAddCartela = async () => {
-    if (activeGame) {
-      return toast.error("Cannot add cartela – game in progress");
-    }
-    if (!selectedCartelas.length) {
-      return toast.error("Select at least one cartela first");
-    }
-    if (!telegramIdParam) {
-      toast.error("User not found. Cannot proceed.");
-      return;
-    }
+  const handleAddCartela = () => {
+    if (activeGame) return toast.error("Cannot add cartela – game in progress");
+    if (!selectedCartelas.length) return toast.error("Select at least one cartela first");
 
-    // Now, we directly emit the socket event without a separate API call.
-    // The backend's 'selectCartela' handler will now be responsible for deducting coins.
     selectedCartelas.forEach((idx) => {
-        socket.emit("selectCartela", { roomId, cartelaIndex: idx, clientId });
+      socket.emit("selectCartela", { roomId, cartelaIndex: idx, clientId });
     });
     setSelectedCartelas([]);
-};
-  // --- Render based on loading state ---
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-lg">
-        Loading...
-      </div>
-    );
-  }
+  };
+
+  // --- Wait until ready ---
+  if (!isReady) return <div>Loading...</div>;
 
   return (
     <React.Fragment>
-  
+      <Navbar />
       <div className="Cartelacontainer-wrapper">
         <div className="wallet-stake-display">
           <div className="display-btn">Wallet: {wallet}</div>
-          <div className="display-btn">Active Game: {activeGame ? "Yes" : "No"}</div>
+          <div className="display-btn">Active Game: {activeGame ? 1 : 0}</div>
           <div className="display-btn">Stake: {stake}</div>
         </div>
 
