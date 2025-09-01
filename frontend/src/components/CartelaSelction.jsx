@@ -57,44 +57,54 @@ function CartelaSelction() {
       console.log("Frontend: Waiting for all required URL parameters...");
       return;
     }
+const initializeGame = async () => {
+  try {
+    console.log("Frontend: Sending request for wallet balance with Telegram ID:", telegramIdParam);
+    const response = await axios.post(
+      `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
+      { telegramId: telegramIdParam } 
+    );
+    
+    console.log("Frontend: Raw response data from server:", response.data);
+    
+    // Handle both object and number responses
+    let walletValue;
+    if (typeof response.data === 'object' && response.data !== null) {
+      walletValue = response.data.wallet || response.data.balance || 0;
+    } else if (typeof response.data === 'number') {
+      walletValue = response.data;
+    } else if (typeof response.data === 'string' && !isNaN(response.data)) {
+      walletValue = parseFloat(response.data);
+    } else {
+      console.error("Frontend: Unexpected response format:", response.data);
+      walletValue = 0;
+    }
 
- const initializeGame = async () => {
-      try {
-        // 1. Fetch wallet balance
-        console.log("Frontend: Sending request for wallet balance with Telegram ID:", telegramIdParam);
-        const response = await axios.post(
-          `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
-          { telegramId: telegramIdParam } 
-        );
-        
-        console.log("Frontend: Raw response data from server:", response.data);
-        // CORRECTED: Access the 'wallet' property from the response data
-        const walletValue = response.data.wallet;
+    setWallet(walletValue);
 
-        if (isNaN(walletValue)) {
-            console.error("Frontend: Received non-numeric wallet value:", response.data);
-            toast.error("Invalid wallet data received.");
-            setWallet(0);
-        } else {
-            setWallet(walletValue);
-        }
+    // 2. Join the game room
+    socket.emit("joinRoom", {
+      roomId,
+      username: usernameParam,
+      telegramId: telegramIdParam,
+      clientId,
+    });
 
-        // 2. Join the game room
-        socket.emit("joinRoom", {
-          roomId,
-          username: usernameParam,
-          telegramId: telegramIdParam,
-          clientId,
-          
-        });
+  } catch (err) {
+    console.error("Frontend: Failed to initialize. Error:", err.response ? err.response.data : err.message);
+    toast.error("Frontend", err.response ? err.response.data : err.message);
+    if (err.response && err.response.status === 404) {
+      toast.error("User not found. Please check your Telegram ID.");
+    } else if (err.response && err.response.status === 400) {
+      toast.error("Invalid request. Please try again.");
+    } else {
+      toast.error("Failed to load user data. Please try again.");
+    }
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-      } catch (err) {
-        console.error("Frontend: Failed to initialize. Error:", err.response ? err.response.data : err.message);
-        toast.error("Failed to load user data. Please try again.", err.response ? err.response.data : err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     initializeGame();
 
     // Set up socket event listeners

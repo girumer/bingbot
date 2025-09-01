@@ -736,7 +736,7 @@ app.post("/loginacess",getUsernameFromToken,(req,res)=>{
 
         if (data1) {
             const depo1 = parseInt(data1.Wallet);
-            res.json({ wallet: depo1 }); // Corrected line
+            res.json( depo1 ); // Corrected line
             console.log("User found. Balance is:", depo1);
         } else {
             // Send a specific message if the user is not found
