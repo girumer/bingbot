@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate,useSearchParams } from "react-router-dom";
 import "./BingoBoard.css";
 import cartela from "./cartela.json";
 import socket from "../socket";
@@ -126,9 +126,23 @@ const isWinningCell = (cell, rowIndex, cellIndex, pattern) => {
 function BingoBoard() {
   const location = useLocation();
   const navigate = useNavigate();
-
+const [searchParams] = useSearchParams();
+ // const storedCartelas = JSON.parse(localStorage.getItem("myCartelas") || "[]");
+// const { username, roomId, myCartelas: initialCartelas } = location.state || {};
+const usernameFromState = location.state?.username;
+  const roomIdFromState = location.state?.roomId;
+  const telegramIdFromState = location.state?.telegramId;
+  const usernameFromUrl = searchParams.get("username");
+  const roomIdFromUrl = searchParams.get("roomId");
+  const telegramIdFromUrl = searchParams.get("telegramId");
+  const stakeFromUrl = Number(searchParams.get("stake")) || 0;
+  const username = usernameFromState || usernameFromUrl;
+  const roomId = roomIdFromState || roomIdFromUrl;
+  const telegramId = telegramIdFromState || telegramIdFromUrl;
+  const stake = location.state?.stake || stakeFromUrl;
   const storedCartelas = JSON.parse(localStorage.getItem("myCartelas") || "[]");
- const { username, roomId, myCartelas: initialCartelas } = location.state || {};
+  const { myCartelas: initialCartelas } = location.state || {};
+ //const [myCartelas, setMyCartelas] = useState(initialCartelas || storedCartelas);
   const [totalPlayers, setTotalPlayers] = useState(0);
     const [highlightCartelas, setHighlightCartelas] = useState(true);
   const [myCartelas, setMyCartelas] = useState(initialCartelas || storedCartelas);
@@ -169,11 +183,22 @@ function BingoBoard() {
       prev.includes(num) ? prev.filter((n) => n !== num) : [...prev, num]
     );
   };
-
+useEffect(() => {
+    if (!username || !telegramId) {
+      console.error("Missing authentication parameters");
+      toast.error("Authentication required. Redirecting...");
+      setTimeout(() => navigate("/"), 2000);
+      return;
+    }
+    
+    // Store parameters for future use
+    localStorage.setItem("username", username);
+    localStorage.setItem("telegramId", telegramId);
+  }, [username, telegramId, navigate]);
   // --- SOCKETS ---
   useEffect(() => {
     if (!roomId) return;
-    socket.emit("joinRoom", { roomId, username, clientId });
+    socket.emit("joinRoom", { roomId, username, telegramId,clientId });
 
     const handleGameState = (state) => {
       setAllCalledNumbers(state.calledNumbers || []);
