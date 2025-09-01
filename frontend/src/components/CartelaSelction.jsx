@@ -141,21 +141,24 @@ const initializeGame = async () => {
     const onCountdown = (seconds) => setTimer(seconds);
 
     const onCountdownEnd = (cartelasFromServer) => {
-      if (!cartelasFromServer || cartelasFromServer.length === 0) {
-        toast.error("You did not select any cartela. Please select at least one.");
-        return;
-      }
-      localStorage.setItem("myCartelas", JSON.stringify(cartelasFromServer));
-      navigate("/BingoBoard", {
-        state: { 
-          username: usernameParam, 
-          roomId, 
-          stake, 
-          myCartelas: cartelasFromServer,
-          telegramId: telegramIdParam 
-        },
-      });
-    };
+  if (!cartelasFromServer || cartelasFromServer.length === 0) {
+    toast.error("You did not select any cartela. Please select at least one.");
+    return;
+  }
+  
+  localStorage.setItem("myCartelas", JSON.stringify(cartelasFromServer));
+  
+  // Include parameters in the URL
+  navigate(`/BingoBoard?username=${encodeURIComponent(usernameParam)}&telegramId=${encodeURIComponent(telegramIdParam)}&roomId=${roomId}&stake=${stake}`, {
+    state: { 
+      username: usernameParam, 
+      roomId, 
+      stake, 
+      myCartelas: cartelasFromServer,
+      telegramId: telegramIdParam 
+    },
+  });
+};
 
     const onUpdateSelectedCartelas = ({ selectedIndexes }) => {
       setFinalSelectedCartelas((prev) =>

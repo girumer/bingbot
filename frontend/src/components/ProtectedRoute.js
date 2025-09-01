@@ -9,23 +9,30 @@ function ProtectedRoute() {
   const usernameFromUrl = searchParams.get('username');
   const telegramIdFromUrl = searchParams.get('telegramId');
   
-  // Only allow access if coming from Telegram bot with required parameters
-  const isFromTelegramBot = !!usernameFromUrl && !!telegramIdFromUrl;
+  // Check for stored credentials (from previous authentication)
+  const storedUsername = localStorage.getItem('username');
+  const storedTelegramId = localStorage.getItem('telegramId');
   
-  // Also allow access with token for other authentication methods (optional)
+  // Check for token authentication
   const token = localStorage.getItem('accesstoken');
-  const isAuthenticated = isFromTelegramBot || !!token;
+  
+  // Allow access if any authentication method is available
+  const isAuthenticated = 
+    (!!usernameFromUrl && !!telegramIdFromUrl) || 
+    (!!storedUsername && !!storedTelegramId) || 
+    !!token;
 
   if (!isAuthenticated) {
-    // Redirect to home page if not authenticated
     return <Navigate to="/" replace />;
   }
-if (isFromTelegramBot) {
+  
+  // If we have URL parameters, store them for future use
+  if (usernameFromUrl && telegramIdFromUrl) {
     localStorage.setItem('username', usernameFromUrl);
     localStorage.setItem('telegramId', telegramIdFromUrl);
   }
-  // Pass the URL parameters to child components using location state
-  return <Outlet context={{ usernameFromUrl, telegramIdFromUrl }} />;
+
+  return <Outlet />;
 }
 
 export default ProtectedRoute;
