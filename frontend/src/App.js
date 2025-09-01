@@ -60,8 +60,7 @@ function App() {
           <Route path="/admines" element={<AdminLogin />} />
           <Route element={<ProtectedAdminRoute />}>
   <Route path="/AdminDashboard" element={<AdminDashboard />} />
-   <Route path="/CartelaSelction" element={<CartelaSelction/>}/>
-           <Route path="/BingoBoard" element={<BingoBoard/>}/>
+   
 </Route>
 
           {/* protected toutes*/ }
@@ -78,7 +77,8 @@ function App() {
           <Route path="/AdminDashboard" element={<AdminDashboard />} />
          
           
-         
+         <Route path="/CartelaSelction" element={<CartelaSelction/>}/>
+           <Route path="/BingoBoard" element={<BingoBoard/>}/>
           </Route>
         </Routes>
       </Router>
