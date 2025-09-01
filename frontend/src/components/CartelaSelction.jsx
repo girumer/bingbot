@@ -204,34 +204,25 @@ const initializeGame = async () => {
     });
   };
 
-  const handleAddCartela = async () => {
-    if (activeGame) return toast.error("Cannot add cartela – game in progress");
-    if (!selectedCartelas.length) return toast.error("Select at least one cartela first");
+const handleAddCartela = async () => {
+    if (activeGame) {
+      return toast.error("Cannot add cartela – game in progress");
+    }
+    if (!selectedCartelas.length) {
+      return toast.error("Select at least one cartela first");
+    }
     if (!telegramIdParam) {
       toast.error("User not found. Cannot proceed.");
       return;
     }
 
-    try {
-      const deductResponse = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/deductCoins`,
-        { telegramId: telegramIdParam, stake: stake }
-      );
-
-      if (deductResponse.data.success) {
-        selectedCartelas.forEach((idx) => {
-          socket.emit("selectCartela", { roomId, cartelaIndex: idx, clientId });
-        });
-        setSelectedCartelas([]);
-      } else {
-        toast.error(deductResponse.data.message || "Failed to deduct coins. Please try again.");
-      }
-    } catch (err) {
-      console.error("Failed to deduct coins:", err);
-      toast.error("Failed to finalize selection. Please try again.");
-    }
-  };
-
+    // Now, we directly emit the socket event without a separate API call.
+    // The backend's 'selectCartela' handler will now be responsible for deducting coins.
+    selectedCartelas.forEach((idx) => {
+        socket.emit("selectCartela", { roomId, cartelaIndex: idx, clientId });
+    });
+    setSelectedCartelas([]);
+};
   // --- Render based on loading state ---
   if (isLoading) {
     return (

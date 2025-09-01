@@ -221,6 +221,7 @@ socket.on("selectCartela", async ({ roomId, cartelaIndex }) => {
 
     if (!user || user.Wallet < stake) {
       socket.emit("cartelaRejected", { message: "Insufficient balance or user not found" });
+      
       return;
     }
 
@@ -243,6 +244,7 @@ socket.on("selectCartela", async ({ roomId, cartelaIndex }) => {
     rooms[rId].selectedIndexes.push(cartelaIndex);
 
     socket.emit("cartelaAccepted", { cartelaIndex, Wallet: user.Wallet });
+    console.log("caretela accepted now");
     io.to(rId).emit("updateSelectedCartelas", { selectedIndexes: rooms[rId].selectedIndexes });
 
     // Start countdown if 2+ players have at least 1 cartela
