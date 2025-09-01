@@ -1,38 +1,23 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
-function ProtectedRoute() {
+function ProtectedRoute({ children }) {
   const location = useLocation();
-  
-  // Get parameters from the URL
-  const searchParams = new URLSearchParams(location.search);
-  const usernameFromUrl = searchParams.get('username');
-  const telegramIdFromUrl = searchParams.get('telegramId');
-  
-  // Check for stored credentials (from previous authentication)
-  const storedUsername = localStorage.getItem('username');
-  const storedTelegramId = localStorage.getItem('telegramId');
-  
-  // Check for token authentication
   const token = localStorage.getItem('accesstoken');
   
-  // Allow access if any authentication method is available
-  const isAuthenticated = 
-    (!!usernameFromUrl && !!telegramIdFromUrl) || 
-    (!!storedUsername && !!storedTelegramId) || 
-    !!token;
-
-  if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
+  // Get the username from the URL query parameters
+  const searchParams = new URLSearchParams(location.search);
+  const usernameFromUrl = searchParams.get('username');
   
-  // If we have URL parameters, store them for future use
-  if (usernameFromUrl && telegramIdFromUrl) {
-    localStorage.setItem('username', usernameFromUrl);
-    localStorage.setItem('telegramId', telegramIdFromUrl);
-  }
+  // A simple flag to check if the user is considered "authenticated"
+  // This is true if an access token exists OR if the app is launched from the bot
+  const isAuthenticated = !!token || !!usernameFromUrl;
 
-  return <Outlet />;
+  // The is-logged-in flag in localStorage is now redundant since we are checking
+  // the token or URL parameter, which are the sources of truth.
+
+  // Use the isAuthenticated flag to decide where to navigate
+  return isAuthenticated ? <Outlet /> : <Navigate to="/" replace />;
 }
 
 export default ProtectedRoute;
