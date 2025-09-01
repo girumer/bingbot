@@ -206,7 +206,7 @@ function CartelaSelction() {
 
     return (
         <React.Fragment>
-            <Navbar />
+          
             <div className="Cartelacontainer-wrapper">
                 <div className="wallet-stake-display">
                     <div className="display-btn">Wallet: {wallet}</div>
