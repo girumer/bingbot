@@ -62,10 +62,13 @@ bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
 
-  if (!userStates[chatId]) return; // only handle if in registration flow
+  if (!userStates[chatId]) return; // only handle if user is in registration/deposit flow
 
   const step = userStates[chatId].step;
- 
+
+  // -------------------------------
+  // Step 1: Ask for Name (Registration)
+  // -------------------------------
   if (step === "askName") {
     userStates[chatId].name = text;
     userStates[chatId].step = "askPhone";
@@ -77,8 +80,13 @@ bot.on("message", async (msg) => {
         one_time_keyboard: true
       }
     });
+    return;
   }
-  if (userStates[chatId]?.step === "depositAmount") {
+
+  // -------------------------------
+  // Step 2: Ask for Deposit Amount
+  // -------------------------------
+  if (step === "depositAmount") {
     const amount = parseFloat(text);
     if (isNaN(amount) || amount <= 0) {
       bot.sendMessage(chatId, "⚠️ Please enter a valid amount.");
@@ -96,8 +104,40 @@ bot.on("message", async (msg) => {
         ]
       }
     });
+
+    // Move to next step: wait for transaction message
+    userStates[chatId].step = "depositMessage";
     return;
   }
+
+  // -------------------------------
+  // Step 3: User Sends Transaction Message
+  // -------------------------------
+  if (step === "depositMessage") {
+    try {
+      const user = await BingoBord.findOne({ telegramId: chatId });
+      if (!user) {
+        bot.sendMessage(chatId, "User not found. Please /start first.");
+        return;
+      }
+
+      // Call your deposit API
+      const res = await axios.post(  `${process.env.FRONTEND_URL}api/deposit`, {
+        message: text,
+        phoneNumber: user.phoneNumber
+      });
+
+      bot.sendMessage(chatId, res.data.message || "Deposit claimed successfully! 🎉");
+    } catch (err) {
+      console.error(err);
+      bot.sendMessage(chatId, err.response?.data?.error || "Failed to claim deposit.");
+    }
+
+    // Clear state after deposit is handled
+    delete userStates[chatId];
+    return;
+  }
+
 });
 
 // ----------------------
@@ -199,7 +239,9 @@ bot.on('callback_query', async (callbackQuery) => {
 ⚠️ ማሳሰቢያ፡ ዲፖዚት ባረጋቹ ቁጥር ቦቱ የሚያገናኛቹ ኤጀንቶች ስለሚለያዩ ከላይ ወደሚሰጣቹ የቴሌብር አካውንት ብቻ ብር መላካችሁን እርግጠኛ ይሁኑ።
 `; // your manual deposit instructions
         bot.sendMessage(chatId, instructions);
-        delete userStates[chatId];
+
+      // Set state to wait for transaction message
+      userStates[chatId].step = "depositMessage";
         break;
 
     case "room_10":

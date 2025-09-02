@@ -84,30 +84,38 @@ exports.parseTransaction = async (req, res) => {
 exports.depositAmount = async (req, res) => {
   try {
     const { message, phoneNumber } = req.body;
-    if (!message) return res.status(400).json({ error: "Message or transaction number is required" });
-
-    // Check if it's just a transaction number
-    const txs = message.match(/[A-Z0-9]{8,}/g); // matches transaction IDs like CHQ8FN7FGM
-    if (!txs || txs.length === 0) return res.status(404).json({ error: "No transaction number found" });
+    if (!message) return res.status(400).json({ error: "Message is required" });
 
     const user = await BingoBord.findOne({ phoneNumber });
     if (!user) return res.status(404).json({ error: "User not found" });
 
+    // Step 1: Parse transactions from message
+    let transactions = [];
+    if (message.toLowerCase().includes("telebirr")) {
+      transactions = parseTelebirrMessage(message); // your parser
+    } else if (message.toLowerCase().includes("cbe") || message.toLowerCase().includes("commercial bank")) {
+      transactions = parseCBEMessages(message); // your parser
+    }
+
+    if (transactions.length === 0) {
+      return res.status(404).json({ error: "No valid transactions found" });
+    }
+
+    // Step 2: Deposit amounts
     let totalDeposited = 0;
+    for (const tx of transactions) {
+      const txInDb = await Transaction.findOne({ transactionNumber: tx.transactionNumber });
+      if (!txInDb) continue;
 
-    for (const txNumber of txs) {
-      const tx = await Transaction.findOne({ transactionNumber: txNumber });
-      if (!tx) continue; // skip if transaction not found
-
-      user.Wallet += tx.amount;
-      totalDeposited += tx.amount;
-      await Transaction.deleteOne({ _id: tx._id });
+      user.Wallet += txInDb.amount;
+      totalDeposited += txInDb.amount;
+      await Transaction.deleteOne({ _id: txInDb._id });
     }
 
     await user.save();
 
     if (totalDeposited === 0) {
-      return res.status(404).json({ error: "No valid transactions found" });
+      return res.status(404).json({ error: "No new transactions to deposit" });
     }
 
     res.json({ success: true, message: `Deposited total of ${totalDeposited} ETB to ${user.username}` });
@@ -117,6 +125,7 @@ exports.depositAmount = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
 
 
 // Get all pending transactions
