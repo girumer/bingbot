@@ -2,7 +2,7 @@ require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const mongoose = require('mongoose');
 const BingoBord = require('../Models/BingoBord');
-
+const axios = require('axios');
 // ----------------------
 // Connect to MongoDB
 // ----------------------
