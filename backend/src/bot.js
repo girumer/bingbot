@@ -122,7 +122,7 @@ bot.on("message", async (msg) => {
       }
 
       // Call your deposit API
-      const res = await axios.post(  `${process.env.FRONTEND_URL}api/deposit`, {
+      const res = await axios.post( `${process.env.REACT_APP_BACKEND_URL}api/deposit`, {
         message: text,
         phoneNumber: user.phoneNumber
       });
