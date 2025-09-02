@@ -65,7 +65,7 @@ bot.on("message", async (msg) => {
   if (!userStates[chatId]) return; // only handle if in registration flow
 
   const step = userStates[chatId].step;
-
+ 
   if (step === "askName") {
     userStates[chatId].name = text;
     userStates[chatId].step = "askPhone";
@@ -77,6 +77,26 @@ bot.on("message", async (msg) => {
         one_time_keyboard: true
       }
     });
+  }
+  if (userStates[chatId]?.step === "depositAmount") {
+    const amount = parseFloat(text);
+    if (isNaN(amount) || amount <= 0) {
+      bot.sendMessage(chatId, "⚠️ Please enter a valid amount.");
+      return;
+    }
+
+    // Save the amount in userStates
+    userStates[chatId].amount = amount;
+
+    // Show manual deposit button
+    bot.sendMessage(chatId, "💵 Click below to see deposit instructions:", {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "Manual Deposit", callback_data: "manualDeposit" }]
+        ]
+      }
+    });
+    return;
   }
 });
 
