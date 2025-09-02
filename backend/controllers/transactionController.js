@@ -125,6 +125,7 @@ exports.getPendingTransactions = async (req, res) => {
     // You can add filters if needed, e.g., by type or date
     const transactions = await Transaction.find({});
     res.json({ success: true, transactions });
+    console.log("transaction append sucessfuly");
   } catch (err) {
     console.error("Error fetching pending transactions:", err);
     res.status(500).json({ error: "Server error" });

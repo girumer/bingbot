@@ -27,6 +27,7 @@ const mainMenu = {
     inline_keyboard: [
       [{ text: "💰 Balance", callback_data: "balance" }],
       [{ text: "🎮 Play", callback_data: "play" }],
+      [{ text: "📥 Deposit", callback_data: "deposit" }],
       [{ text: "📜 History", callback_data: "history" }],
       [{ text: "ℹ️ Help", callback_data: "help" }]
     ]
@@ -123,7 +124,24 @@ bot.on('callback_query', async (callbackQuery) => {
     bot.sendMessage(chatId, "You are not registered. Use /start to register.");
     return;
   }
+if (data === "manualDeposit") {
+    const amount = userStates[chatId]?.amount || "N/A";
 
+    const instructions = `
+የቴሌብር አካውንት
+0932157512
+
+1. ከላይ ባለው የቴሌብር አካውንት ${amount} ብር ያስገቡ
+2. የምትልኩት የገንዘብ መጠን እና እዚ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ
+3. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከቴሌብር ይደርሳችኋል
+4. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት
+
+⚠️ ማሳሰቢያ፡ ዲፖዚት ባረጋቹ ቁጥር ቦቱ የሚያገናኛቹ ኤጀንቶች ስለሚለያዩ ከላይ ወደሚሰጣቹ የቴሌብር አካውንት ብቻ ብር መላካችሁን እርግጠኛ ይሁኑ።
+`;
+
+    bot.sendMessage(chatId, instructions);
+    delete userStates[chatId]; // clear state
+  }
   switch (data) {
     case "balance":
       bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} coins`);
@@ -150,6 +168,7 @@ bot.on('callback_query', async (callbackQuery) => {
             [{ text: "Room 30 (Stake 30)", callback_data: "room_30" }]
           ]
         }
+        
       });
       break;
 
@@ -186,6 +205,14 @@ bot.on('callback_query', async (callbackQuery) => {
           ]
         }
       });
+      switch (data) {
+    case "deposit":
+      bot.sendMessage(chatId, "💵 How much money do you want to deposit?");
+      userStates[chatId] = { step: "depositAmount" }; // track state
+      break;
+
+    // existing cases...
+  }
       break;
 
     default:

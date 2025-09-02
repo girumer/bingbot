@@ -183,6 +183,20 @@ const usernameFromState = location.state?.username;
       prev.includes(num) ? prev.filter((n) => n !== num) : [...prev, num]
     );
   };
+  // ✅ Corrected code in BingoBoard.js
+useEffect(() => {
+    const handleReset = () =>
+      navigate("/CartelaSelction", { 
+        state: { 
+          username, 
+          roomId,
+          stake,       // ✅ Pass the stake value
+          telegramId   // ✅ Pass the telegramId
+        } 
+      });
+    socket.on("resetRoom", handleReset);
+    return () => socket.off("resetRoom", handleReset);
+}, [navigate, username, roomId, stake, telegramId]);
 useEffect(() => {
     if (!username || !telegramId) {
       console.error("Missing authentication parameters");
