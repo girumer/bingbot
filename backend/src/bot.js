@@ -124,24 +124,7 @@ bot.on('callback_query', async (callbackQuery) => {
     bot.sendMessage(chatId, "You are not registered. Use /start to register.");
     return;
   }
-if (data === "manualDeposit") {
-    const amount = userStates[chatId]?.amount || "N/A";
 
-    const instructions = `
-የቴሌብር አካውንት
-0932157512
-
-1. ከላይ ባለው የቴሌብር አካውንት ${amount} ብር ያስገቡ
-2. የምትልኩት የገንዘብ መጠን እና እዚ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ
-3. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከቴሌብር ይደርሳችኋል
-4. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት
-
-⚠️ ማሳሰቢያ፡ ዲፖዚት ባረጋቹ ቁጥር ቦቱ የሚያገናኛቹ ኤጀንቶች ስለሚለያዩ ከላይ ወደሚሰጣቹ የቴሌብር አካውንት ብቻ ብር መላካችሁን እርግጠኛ ይሁኑ።
-`;
-
-    bot.sendMessage(chatId, instructions);
-    delete userStates[chatId]; // clear state
-  }
   switch (data) {
     case "balance":
       bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} coins`);
@@ -176,6 +159,29 @@ if (data === "manualDeposit") {
       bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history.");
       break;
 
+    case "deposit":
+      bot.sendMessage(chatId, "💵 How much money do you want to deposit?");
+      userStates[chatId] = { step: "depositAmount" }; // track state
+      break;
+
+    // existing cases...
+     case "manualDeposit":
+        const amount = userStates[chatId]?.amount || "N/A";
+       const instructions = `
+የቴሌብር አካውንት
+0932157512
+
+1. ከላይ ባለው የቴሌብር አካውንት ${amount} ብር ያስገቡ
+2. የምትልኩት የገንዘብ መጠን እና እዚ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ
+3. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከቴሌብር ይደርሳችኋል
+4. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት
+
+⚠️ ማሳሰቢያ፡ ዲፖዚት ባረጋቹ ቁጥር ቦቱ የሚያገናኛቹ ኤጀንቶች ስለሚለያዩ ከላይ ወደሚሰጣቹ የቴሌብር አካውንት ብቻ ብር መላካችሁን እርግጠኛ ይሁኑ።
+`; // your manual deposit instructions
+        bot.sendMessage(chatId, instructions);
+        delete userStates[chatId];
+        break;
+
     case "room_10":
     case "room_20":
     case "room_30":
@@ -205,15 +211,7 @@ if (data === "manualDeposit") {
           ]
         }
       });
-      switch (data) {
-    case "deposit":
-      bot.sendMessage(chatId, "💵 How much money do you want to deposit?");
-      userStates[chatId] = { step: "depositAmount" }; // track state
-      break;
-
-    // existing cases...
-  }
-      break;
+      
 
     default:
       bot.sendMessage(chatId, "Unknown action.");
