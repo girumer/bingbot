@@ -21,57 +21,129 @@ console.log("Telegram bot is running...");
 
 // ----------------------
 // Main Menu
-const mainMenu = {
-  reply_markup: {
-    inline_keyboard: [
-      [{ text: "💰 Balance", callback_data: "balance" }],
-      [{ text: "🎮 Play", callback_data: "play" }],
-      [{ text: "📥 Deposit", callback_data: "deposit" }],
-      [{ text: "📜 History", callback_data: "history" }],
-      [{ text: "ℹ️ Help", callback_data: "help" }]
-    ]
-  }
-};
+
+
 // ----------------------
 const commands = [
-  { command: "balance", description: "💰 Check your balance" },
-  { command: "play", description: "🎮 Play Bingo" },
-  { command: "deposit", description: "📥 Deposit funds" },
-  { command: "history", description: "📜 Transaction history" },
-  { command: "help", description: "ℹ️ Help info" }
+  { command: "balance",callback_data: "balance" , description: "💰 Check your balance" },
+  { command: "play", callback_data: "play",description: "🎮 Play Bingo" },
+  { command: "deposit", callback_data: "deposit",description: "📥 Deposit funds" },
+  { command: "history", callback_data: "deposit",description: "📜 Transaction history" },
+  { command: "help", callback_data: "deposit",description: "ℹ️ Help info" }
 ];
 bot.setMyCommands(commands)
   .then(() => console.log("Bot menu commands set successfully"))
   .catch(console.error);
+
+  let userStates = {};
+async function handleAction(chatId, action) {
+  const user = await BingoBord.findOne({ telegramId: chatId });
+
+  // Registration check
+  if (!user && !["askName","askPhone","depositAmount","depositMessage"].includes(userStates[chatId]?.step)) {
+    bot.sendMessage(chatId, "You are not registered. Use /start to register.");
+    return;
+  }
+
+  switch (action) {
+    case "balance":
+      bot.sendMessage(chatId, `💰 Your balance: ${user.Wallet} coins`);
+      break;
+
+    case "play":
+      bot.sendMessage(chatId, "Select a room to play:", {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "Room 10 (Stake 10)", callback_data: "room_10" }],
+            [{ text: "Room 20 (Stake 20)", callback_data: "room_20" }],
+            [{ text: "Room 30 (Stake 30)", callback_data: "room_30" }]
+          ]
+        }
+      });
+      break;
+
+    case "deposit":
+      bot.sendMessage(chatId, "💵 How much money do you want to deposit?");
+      userStates[chatId] = { step: "depositAmount" };
+      break;
+
+    case "history":
+      if (!user.gameHistory || user.gameHistory.length === 0) {
+        bot.sendMessage(chatId, "You have no game history yet.");
+        return;
+      }
+      let historyText = "📜 Your game history:\n";
+      user.gameHistory.forEach((g, i) => {
+        historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, Date: ${g.timestamp.toLocaleString()}\n`;
+      });
+      bot.sendMessage(chatId, historyText);
+      break;
+
+    case "help":
+      bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history.");
+      break;
+
+    // Inline buttons like rooms or manual deposit
+    case "manualDeposit":
+      const amount = userStates[chatId]?.amount || "N/A";
+      const instructions = `
+የቴሌብር አካውንት: 0932157512
+1. ከላይ ባለው የቴሌብር አካውንት ${amount} ብር ያስገቡ
+...
+⚠️ ማሳሰቢያ፡ ዲፖዚት ባረጋቹ ቁጥር ቦቱ የሚያገናኛቹ ኤጀንቶች ስለሚለያዩ
+`;
+      bot.sendMessage(chatId, instructions);
+      userStates[chatId].step = "depositMessage";
+      break;
+
+    case "room_10":
+    case "room_20":
+    case "room_30":
+      let stake = parseInt(action.split("_")[1]);
+      if (user.Wallet < stake) {
+        bot.sendMessage(chatId, "⚠️ Not enough coins. Earn more to play.");
+        return;
+      }
+
+      user.Wallet -= stake;
+      user.gameHistory.push({
+        roomId: stake,
+        stake,
+        outcome: "pending",
+        timestamp: new Date()
+      });
+      await user.save();
+
+      const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;
+      bot.sendMessage(chatId, `✅ You joined Room ${stake}! Click below to select your cartelas:`, {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: `Open Cartela Selection`, web_app: { url: webAppUrl } }]
+          ]
+        }
+      });
+      break;
+
+    default:
+      bot.sendMessage(chatId, "Unknown action.");
+  }
+}
+
 bot.onText(/\/(.+)/, (msg, match) => {
   const chatId = msg.chat.id;
   const cmd = match[1];
+  handleAction(chatId, cmd);
+});
 
-  switch (cmd) {
-    case "balance":
-      bot.sendMessage(chatId, "Your balance is 1000 ETB 💵");
-      break;
-    case "play":
-      bot.sendMessage(chatId, "Starting Bingo game...");
-      break;
-    case "deposit":
-      bot.sendMessage(chatId, "Enter deposit amount:");
-      break;
-    case "history":
-      bot.sendMessage(chatId, "Your transaction history is:");
-      break;
-    case "help":
-      bot.sendMessage(chatId, "This bot helps you play Bingo and manage deposits.");
-      break;
-    default:
-      bot.sendMessage(chatId, "Unknown command. Use the menu buttons.");
-      break;
-  }
+bot.on('callback_query', async (callbackQuery) => {
+  const chatId = callbackQuery.message.chat.id;
+  const data = callbackQuery.data;
+  await handleAction(chatId, data);
 });
 // ----------------------
 // Temporary user states
 // ----------------------
-let userStates = {}; // { chatId: { step: "askName" | "askPhone" } }
+ // { chatId: { step: "askName" | "askPhone" } }
 
 // ----------------------
 // /start command
@@ -218,99 +290,7 @@ bot.on('callback_query', async (callbackQuery) => {
     bot.sendMessage(chatId, "You are not registered. Use /start to register.");
     return;
   }
+ handleAction(chatId, data);
 
-  switch (data) {
-    case "balance":
-      bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} coins`);
-      break;
-
-    case "history":
-      if (!user.gameHistory || user.gameHistory.length === 0) {
-        bot.sendMessage(chatId, "You have no game history yet.");
-        return;
-      }
-      let historyText = "📜 Your game history:\n";
-      user.gameHistory.forEach((g, i) => {
-        historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, Date: ${g.timestamp.toLocaleString()}\n`;
-      });
-      bot.sendMessage(chatId, historyText);
-      break;
-
-    case "play":
-      bot.sendMessage(chatId, "Select a room to play:", {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: "Room 10 (Stake 10)", callback_data: "room_10" }],
-            [{ text: "Room 20 (Stake 20)", callback_data: "room_20" }],
-            [{ text: "Room 30 (Stake 30)", callback_data: "room_30" }]
-          ]
-        }
-        
-      });
-      break;
-
-    case "help":
-      bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history.");
-      break;
-
-    case "deposit":
-      bot.sendMessage(chatId, "💵 How much money do you want to deposit?");
-      userStates[chatId] = { step: "depositAmount" }; // track state
-      break;
-
-    // existing cases...
-     case "manualDeposit":
-        const amount = userStates[chatId]?.amount || "N/A";
-       const instructions = `
-የቴሌብር አካውንት
-0932157512
-
-1. ከላይ ባለው የቴሌብር አካውንት ${amount} ብር ያስገቡ
-2. የምትልኩት የገንዘብ መጠን እና እዚ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ
-3. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከቴሌብር ይደርሳችኋል
-4. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት
-
-⚠️ ማሳሰቢያ፡ ዲፖዚት ባረጋቹ ቁጥር ቦቱ የሚያገናኛቹ ኤጀንቶች ስለሚለያዩ ከላይ ወደሚሰጣቹ የቴሌብር አካውንት ብቻ ብር መላካችሁን እርግጠኛ ይሁኑ።
-`; // your manual deposit instructions
-        bot.sendMessage(chatId, instructions);
-
-      // Set state to wait for transaction message
-      userStates[chatId].step = "depositMessage";
-        break;
-
-    case "room_10":
-    case "room_20":
-    case "room_30":
-      let stake = parseInt(data.split("_")[1]);
-
-      if (user.Wallet < stake) {
-        bot.sendMessage(chatId, "⚠️ Not enough coins. Earn more to play.");
-        return;
-      }
-
-      // Deduct coins and save history
-      
-      user.gameHistory.push({
-        roomId: stake,
-        stake: stake,
-        outcome: "pending"
-      });
-      await user.save();
-
-      // Open Web App (React page) inside Telegram
-      const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;
-
-      bot.sendMessage(chatId, `✅ You joined Room ${stake}! ${stake} coins deducted. Click below to select your cartelas:`, {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: `Open Cartela Selection`, web_app: { url: webAppUrl } }]
-          ]
-        }
-      });
-      
-
-    default:
-      bot.sendMessage(chatId, "Unknown action.");
-  }
 });
 
