@@ -127,140 +127,139 @@ const router = express.Router();
 
  // Your cartela data
 
+
+
+
+
+
+const rooms = {}; // rooms = { roomId: { players, selectedIndexes, playerCartelas, ... } }
 const socketIdToClientId = new Map();
 const clientIdToSocketId = new Map();
-const rooms = {}; // rooms = { roomId: { players, socketClient, selectedIndexes, playerCartelas, timer, calledNumbers, numberInterval, alreadyWon, totalAward } }
 
 io.on("connection", (socket) => {
   console.log("New connection:", socket.id);
 
   // --- JOIN ROOM ---
-socket.on("joinRoom", ({ roomId, username, telegramId, clientId }) => {
-  const rId = String(roomId);
-  socket.join(rId);
+  socket.on("joinRoom", ({ roomId, username, telegramId, clientId }) => {
+    const rId = String(roomId);
+    socket.join(rId);
 
-  if (!rooms[rId]) {
-    rooms[rId] = {
-      players: {},          // maps socket.id -> username
-      telegramMap: {},      // maps socket.id -> telegramId ✅
-      socketClient: {},     // maps socket.id -> clientId
-      selectedIndexes: [],
-      playerCartelas: {},   // maps clientId -> cartelas
-      timer: null,
-      calledNumbers: [],
-      numberInterval: null,
-      alreadyWon: [],
-      totalAward: 0,
-    };
-    console.log(`Room created: ${rId}`);
-  }
-socketIdToClientId.set(socket.id, clientId);
+    // ✅ Map socketId to clientId
+    socketIdToClientId.set(socket.id, clientId);
     clientIdToSocketId.set(clientId, socket.id);
-  // ✅ Store player info
-  rooms[rId].players[clientId] = username || `Guest-${socket.id}`;
-  rooms[rId].telegramMap[clientId] = telegramId || null;
-  rooms[rId].socketClient[clientId] = clientId;
 
-  // ✅ Ensure player has a cartela slot
-  if (!rooms[rId].playerCartelas[clientId]) {
-    rooms[rId].playerCartelas[clientId] = [];
-  }
-  const myCartelas = rooms[rId].playerCartelas[clientId];
+    if (!rooms[rId]) {
+      rooms[rId] = {
+        players: {},
+        selectedIndexes: [],
+        playerCartelas: {},
+        timer: null,
+        calledNumbers: [],
+        numberInterval: null,
+        alreadyWon: [],
+        totalAward: 0,
+      };
+      console.log(`Room created: ${rId}`);
+    }
 
-  // ✅ Emit state to this player
-  socket.emit("currentGameState", {
-    calledNumbers: rooms[rId].calledNumbers,
-    myCartelas,
-    selectedIndexes: rooms[rId].selectedIndexes,
-    lastNumber: rooms[rId].calledNumbers.slice(-1)[0] || null,
-    timer: rooms[rId].timer,
-    totalAward: rooms[rId].totalAward,
-    totalPlayers: Object.keys(rooms[rId].players).length,
-    activeGame: rooms[rId].activeGame || false,
+    // ✅ Use clientId as the key for all player info
+    rooms[rId].players[clientId] = username || `Guest-${clientId}`;
+
+    // ✅ Ensure player has a cartela slot
+    if (!rooms[rId].playerCartelas[clientId]) {
+      rooms[rId].playerCartelas[clientId] = [];
+    }
+    const myCartelas = rooms[rId].playerCartelas[clientId];
+
+    // ✅ Emit state to this player
+    socket.emit("currentGameState", {
+      calledNumbers: rooms[rId].calledNumbers,
+      myCartelas,
+      selectedIndexes: rooms[rId].selectedIndexes,
+      lastNumber: rooms[rId].calledNumbers.slice(-1)[0] || null,
+      timer: rooms[rId].timer,
+      totalAward: rooms[rId].totalAward,
+      totalPlayers: Object.keys(rooms[rId].players).length,
+      activeGame: rooms[rId].activeGame || false,
+    });
+
+    // ✅ Broadcast updated player count
+    const activePlayers = Object.values(rooms[rId].playerCartelas).filter(
+      (arr) => arr.length > 0
+    ).length;
+    io.to(rId).emit("playerCount", { totalPlayers: activePlayers });
+
+    console.log(`New connection: ${socket.id}, username=${username}, telegramId=${telegramId}, clientId=${clientId}`);
   });
 
-  // ✅ Broadcast updated player count
-  const activePlayers = Object.values(rooms[rId].playerCartelas).filter(
-    (arr) => arr.length > 0
-  ).length;
-  io.to(rId).emit("playerCount", { totalPlayers: activePlayers });
-
-  console.log(
-    `New connection: ${socket.id}, username=${username}, telegramId=${telegramId}, clientId=${clientId}`
-  );
-});
-
-
   // --- SELECT CARTELA ---
-// --- SELECT CARTELA ---
-// --- SELECT CARTELA ---
-// --- SELECT CARTELA ---
-socket.on("selectCartela", async ({ roomId, cartelaIndex }) => {
-  const rId = String(roomId);
-  const socketId = socket.id;
-
-  // ✅ Get clientId from this socket
-  const clientId = rooms[rId]?.socketClient?.[socketId];
-  if (!clientId) {
-    socket.emit("cartelaRejected", { message: "Client ID not found" });
-    return;
-  }
-
-  if (!rooms[rId] || rooms[rId].selectedIndexes.includes(cartelaIndex)) {
-    socket.emit("cartelaRejected", { message: "Cartela already taken or room not found" });
-    return;
-  }
-
-  try {
-    const username = rooms[rId].players[socketId];
-    if (!username) {
-      socket.emit("cartelaRejected", { message: "User not found in room" });
+  socket.on("selectCartela", async ({ roomId, cartelaIndex }) => {
+    const rId = String(roomId);
+    
+    // ✅ CORRECT: Get clientId from the global map using the socket.id
+    const clientId = socketIdToClientId.get(socket.id);
+    if (!clientId) {
+      socket.emit("cartelaRejected", { message: "Client ID not found. Please refresh." });
       return;
     }
 
-    const user = await BingoBord.findOne({ username });
-    const stake = Number(rId);
-
-    if (!user || user.Wallet < stake) {
-      socket.emit("cartelaRejected", { message: "Insufficient balance or user not found" });
-      
+    if (!rooms[rId] || rooms[rId].selectedIndexes.includes(cartelaIndex)) {
+      socket.emit("cartelaRejected", {
+        message: "Cartela already taken or room not found",
+      });
       return;
     }
 
-    // ✅ Use clientId here
-    if (!rooms[rId].playerCartelas[clientId]) rooms[rId].playerCartelas[clientId] = [];
-    const userCartelas = rooms[rId].playerCartelas[clientId];
+    try {
+      // ✅ CORRECT: Get username directly from the rooms object using clientId
+      const username = rooms[rId].players[clientId];
+      if (!username) {
+        socket.emit("cartelaRejected", { message: "User not found in room" });
+        return;
+      }
 
-    // Limit per user to 4 cartelas
-    if (userCartelas.length >= 4) {
-      socket.emit("cartelaRejected", { message: "You can only select up to 4 cartelas" });
-      return;
+      const user = await BingoBord.findOne({ username });
+      const stake = Number(rId);
+
+      if (!user || user.Wallet < stake) {
+        socket.emit("cartelaRejected", { message: "Insufficient balance or user not found" });
+        return;
+      }
+
+      // ✅ Use clientId to get cartela array
+      if (!rooms[rId].playerCartelas[clientId])
+        rooms[rId].playerCartelas[clientId] = [];
+      const userCartelas = rooms[rId].playerCartelas[clientId];
+
+      // Limit per user to 4 cartelas
+      if (userCartelas.length >= 4) {
+        socket.emit("cartelaRejected", { message: "You can only select up to 4 cartelas" });
+        return;
+      }
+
+      user.Wallet -= stake;
+      await user.save();
+
+      userCartelas.push(cartelaIndex);
+      rooms[rId].selectedIndexes.push(cartelaIndex);
+
+      socket.emit("cartelaAccepted", { cartelaIndex, Wallet: user.Wallet });
+      console.log("caretela accepted now");
+      io.to(rId).emit("updateSelectedCartelas", {
+        selectedIndexes: rooms[rId].selectedIndexes,
+      });
+
+      const playersWithCartela = Object.values(rooms[rId].playerCartelas).filter(
+        (arr) => arr.length > 0
+      ).length;
+      if (!rooms[rId].timer && playersWithCartela >= 2) {
+        startCountdown(rId, 30);
+      }
+    } catch (err) {
+      console.error("Error selecting cartela:", err);
+      socket.emit("cartelaRejected", { message: "Server error" });
     }
-
-    // Deduct stake
-    user.Wallet -= stake;
-    await user.save();
-
-    // Update room data
-    userCartelas.push(cartelaIndex);
-    rooms[rId].selectedIndexes.push(cartelaIndex);
-
-    socket.emit("cartelaAccepted", { cartelaIndex, Wallet: user.Wallet });
-    console.log("caretela accepted now");
-    io.to(rId).emit("updateSelectedCartelas", { selectedIndexes: rooms[rId].selectedIndexes });
-
-    // Start countdown if 2+ players have at least 1 cartela
-    const playersWithCartela = Object.values(rooms[rId].playerCartelas).filter(arr => arr.length > 0).length;
-    if (!rooms[rId].timer && playersWithCartela >= 2) {
-      startCountdown(rId, 30);
-    }
-  } catch (err) {
-    console.error("Error selecting cartela:", err);
-    socket.emit("cartelaRejected", { message: "Server error" });
-  }
-});
-
-
+  });
 
   // --- CALL NUMBER ---
   socket.on("callNumber", ({ roomId, number }) => {
@@ -269,28 +268,37 @@ socket.on("selectCartela", async ({ roomId, cartelaIndex }) => {
     if (!room.calledNumbers.includes(number)) room.calledNumbers.push(number);
 
     io.to(roomId).emit("numberCalled", number);
-    io.to(roomId).emit("currentCalledNumbers", room.calledNumbers.slice(-5).reverse());
-    io.to(roomId).emit("updateSelectedCartelas", { selectedIndexes: room.selectedIndexes });
+    io.to(roomId).emit(
+      "currentCalledNumbers",
+      room.calledNumbers.slice(-5).reverse()
+    );
+    io.to(roomId).emit("updateSelectedCartelas", {
+      selectedIndexes: room.selectedIndexes,
+    });
 
     checkWinners(roomId, number);
   });
 
   // --- DISCONNECT ---
   socket.on("disconnect", () => {
-    for (const roomId in rooms) {
-      const clientId = socketIdToClientId.get(socket.id);
-    if (clientId) {
-        socketIdToClientId.delete(socket.id);
-        clientIdToSocketId.delete(clientId);
-    }
-      //const clientId = rooms[roomId]?.socketClient?.[socket.id];
-      if (rooms[roomId]?.players?.[socket.id]) {
-        delete rooms[roomId].players[socket.id];
-        delete rooms[roomId].socketClient[socket.id];
+    // ✅ Get the clientId for the disconnecting socket
+    const clientId = socketIdToClientId.get(socket.id);
+    if (!clientId) return; // Ignore if client ID is not found
 
-        io.to(roomId).emit("updateSelectedCartelas", { selectedIndexes: rooms[roomId].selectedIndexes });
-        // 👉 broadcast live player count on leave
-        io.to(roomId).emit("playerCount", { totalPlayers: Object.keys(rooms[roomId].players).length });
+    // ✅ Clean up the global maps
+    socketIdToClientId.delete(socket.id);
+    clientIdToSocketId.delete(clientId);
+
+    // ✅ Clean up from rooms based on clientId
+    for (const roomId in rooms) {
+      if (rooms[roomId]?.players?.[clientId]) {
+        delete rooms[roomId].players[clientId];
+        io.to(roomId).emit("updateSelectedCartelas", {
+          selectedIndexes: rooms[roomId].selectedIndexes,
+        });
+        io.to(roomId).emit("playerCount", {
+          totalPlayers: Object.keys(rooms[roomId].players).length,
+        });
       }
     }
   });
@@ -300,17 +308,16 @@ socket.on("selectCartela", async ({ roomId, cartelaIndex }) => {
 function startNumberGenerator(roomId) {
   const room = rooms[roomId];
   if (!room) return;
-
-  const playersWithCartela = Object.values(room.playerCartelas).filter(arr => arr.length > 0).length;
+  const playersWithCartela = Object.values(room.playerCartelas).filter(
+    (arr) => arr.length > 0
+  ).length;
   if (playersWithCartela < 1) return;
-
   if (!Array.isArray(room.calledNumbers)) room.calledNumbers = [];
   const numbers = Array.from({ length: 75 }, (_, i) => i + 1);
   for (let i = numbers.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
   }
-
   let index = 0;
   room.numberInterval = setInterval(() => {
     if (!rooms[roomId]) return;
@@ -319,86 +326,90 @@ function startNumberGenerator(roomId) {
       room.numberInterval = null;
       return;
     }
-
     const nextNumber = numbers[index++];
-    if (!room.calledNumbers.includes(nextNumber)) room.calledNumbers.push(nextNumber);
-
+    if (!room.calledNumbers.includes(nextNumber))
+      room.calledNumbers.push(nextNumber);
     io.to(roomId).emit("numberCalled", nextNumber);
     io.to(roomId).emit("currentCalledNumbers", room.calledNumbers.slice(-5).reverse());
-
     checkWinners(roomId, nextNumber);
   }, 4000);
 }
 
 function startCountdown(roomId, seconds) {
   if (!rooms[roomId]) return;
-
   let timeLeft = seconds;
-
-  // Prevent multiple timers
   if (rooms[roomId].timer) return;
-
   rooms[roomId].timer = timeLeft;
-
-  // Emit countdown every second
   rooms[roomId].numberInterval = setInterval(async () => {
     timeLeft -= 1;
     rooms[roomId].timer = timeLeft;
-
-    // Emit to all clients in the room for live timer display
     io.to(roomId).emit("startCountdown", timeLeft);
-
-    // When countdown ends
     if (timeLeft <= 0) {
       clearInterval(rooms[roomId].numberInterval);
       rooms[roomId].timer = null;
-
       const room = rooms[roomId];
-
-      // 1️⃣ Send selected cartelas only to users who picked one
-      for (const socketId in room.socketClient) {
-        const clientId = room.socketClient[socketId];
-        const myCartelas = room.playerCartelas[clientId] || [];
-        if (myCartelas.length > 0) {
-          io.to(socketId).emit("myCartelas", myCartelas);
+      
+      // ✅ Corrected loop to send myCartelas
+      for (const clientId in room.playerCartelas) {
+        const socketId = clientIdToSocketId.get(clientId);
+        if (socketId) {
+            const myCartelas = room.playerCartelas[clientId] || [];
+            if (myCartelas.length > 0) {
+                io.to(socketId).emit("myCartelas", myCartelas);
+            }
         }
       }
 
-      // 2️⃣ Set room active status and emit to everyone
       room.activeGame = true;
       io.to(roomId).emit("activeGameStatus", { activeGame: true });
 
-      // 3️⃣ Calculate total award and emit to everyone
-      const totalCartelas = Object.values(room.playerCartelas).reduce((sum, arr) => sum + arr.length, 0);
+      const totalCartelas = Object.values(room.playerCartelas).reduce(
+        (sum, arr) => sum + arr.length,
+        0
+      );
       room.totalAward = totalCartelas * Number(roomId) * 0.8;
       io.to(roomId).emit("gameStarted", {
         totalAward: room.totalAward,
-        totalPlayers: Object.keys(room.players).length
+        totalPlayers: Object.keys(room.players).length,
       });
 
-      // 4️⃣ Start number generator for everyone
       startNumberGenerator(roomId);
     }
   }, 1000);
 }
 
-
 // --- WIN LOGIC ---
 function findWinningPattern(cartelaData, calledNumbers) {
   if (!cartelaData) return null;
   for (let i = 0; i < 5; i++) {
-    if (cartelaData[i].every(num => calledNumbers.includes(num) || num === "*")) return cartelaData[i];
-    const col = cartelaData.map(row => row[i]);
-    if (col.every(num => calledNumbers.includes(num) || num === "*")) return col;
+    if (cartelaData[i].every((num) => calledNumbers.includes(num) || num === "*"))
+      return cartelaData[i];
+    const col = cartelaData.map((row) => row[i]);
+    if (col.every((num) => calledNumbers.includes(num) || num === "*"))
+      return col;
   }
-  const diag1 = [0,1,2,3,4].map(i => cartelaData[i][i]);
-  const diag2 = [0,1,2,3,4].map(i => cartelaData[i][4-i]);
-  if (diag1.every(num => calledNumbers.includes(num) || num === "*")) return diag1;
-  if (diag2.every(num => calledNumbers.includes(num) || num === "*")) return diag2;
-  const corners = [cartelaData[0][0], cartelaData[0][4], cartelaData[4][0], cartelaData[4][4]];
-  if (corners.every(num => calledNumbers.includes(num) || num === "*")) return corners;
-  const innerCorners = [cartelaData[1][1], cartelaData[1][3], cartelaData[3][1], cartelaData[3][3]];
-  if (innerCorners.every(num => calledNumbers.includes(num) || num === "*")) return innerCorners;
+  const diag1 = [0, 1, 2, 3, 4].map((i) => cartelaData[i][i]);
+  const diag2 = [0, 1, 2, 3, 4].map((i) => cartelaData[i][4 - i]);
+  if (diag1.every((num) => calledNumbers.includes(num) || num === "*"))
+    return diag1;
+  if (diag2.every((num) => calledNumbers.includes(num) || num === "*"))
+    return diag2;
+  const corners = [
+    cartelaData[0][0],
+    cartelaData[0][4],
+    cartelaData[4][0],
+    cartelaData[4][4],
+  ];
+  if (corners.every((num) => calledNumbers.includes(num) || num === "*"))
+    return corners;
+  const innerCorners = [
+    cartelaData[1][1],
+    cartelaData[1][3],
+    cartelaData[3][1],
+    cartelaData[3][3],
+  ];
+  if (innerCorners.every((num) => calledNumbers.includes(num) || num === "*"))
+    return innerCorners;
   return null;
 }
 
@@ -406,7 +417,12 @@ async function saveGameHistory(username, roomId, stake, outcome) {
   try {
     const user = await BingoBord.findOne({ username });
     if (!user) return;
-    user.gameHistory.push({ roomId: Number(roomId), stake: Number(stake), outcome, timestamp: new Date() });
+    user.gameHistory.push({
+      roomId: Number(roomId),
+      stake: Number(stake),
+      outcome,
+      timestamp: new Date(),
+    });
     await user.save();
   } catch (err) {
     console.error("Failed to save game history:", err);
@@ -416,30 +432,23 @@ async function saveGameHistory(username, roomId, stake, outcome) {
 async function checkWinners(roomId, calledNumber) {
   const room = rooms[roomId];
   if (!room) return;
-
   const winners = [];
-
-  // Only consider clients who selected at least 1 cartela
   for (const clientId in room.playerCartelas) {
     const cartelas = room.playerCartelas[clientId];
     if (!cartelas || cartelas.length === 0) continue;
 
-    // Find username for this client
-    const username = Object.entries(room.players).find(
-      ([sid, _]) => room.socketClient[sid] === clientId
-    )?.[1];
+    // ✅ CORRECT: Get username directly from the players object using clientId
+    const username = room.players[clientId];
     if (!username) continue;
-
+    
     for (const cartelaIndex of cartelas) {
       if (!cartela[cartelaIndex]) continue;
-
       const key = clientId + "-" + cartelaIndex;
-
-      // Skip if already won
       if (room.alreadyWon.includes(key)) continue;
-
-      const pattern = findWinningPattern(cartela[cartelaIndex].cart, room.calledNumbers);
-
+      const pattern = findWinningPattern(
+        cartela[cartelaIndex].cart,
+        room.calledNumbers
+      );
       if (pattern) {
         winners.push({ clientId, cartelaIndex, pattern, winnerName: username });
         room.alreadyWon.push(key);
@@ -448,12 +457,10 @@ async function checkWinners(roomId, calledNumber) {
   }
 
   if (winners.length > 0) {
-    // Stop number generator
     if (room.numberInterval) {
       clearInterval(room.numberInterval);
       room.numberInterval = null;
     }
-
     const awardPerWinner = Math.floor(room.totalAward / winners.length);
 
     for (const winner of winners) {
@@ -465,26 +472,21 @@ async function checkWinners(roomId, calledNumber) {
         await saveGameHistory(winner.winnerName, roomId, awardPerWinner, "win");
       }
     }
-
-    // Save loss for players who selected cartelas but didn't win
+    
     for (const clientId in room.playerCartelas) {
       const cartelas = room.playerCartelas[clientId];
       if (!cartelas || cartelas.length === 0) continue;
-
-      const username = Object.entries(room.players).find(
-        ([sid, _]) => room.socketClient[sid] === clientId
-      )?.[1];
+      
+      const username = room.players[clientId];
       if (!username) continue;
-
-      if (!winners.some(w => w.winnerName === username)) {
+      
+      if (!winners.some((w) => w.winnerName === username)) {
         await saveGameHistory(username, roomId, Number(roomId), "loss");
       }
     }
 
-    // Emit winners to frontend
     io.to(roomId).emit("winningPattern", winners);
 
-    // Reset room after 4 seconds
     setTimeout(() => {
       if (rooms[roomId]) {
         const room = rooms[roomId];
@@ -494,16 +496,12 @@ async function checkWinners(roomId, calledNumber) {
         room.calledNumbers = [];
         room.alreadyWon = [];
         room.totalAward = 0;
-
         io.to(roomId).emit("roomAvailable");
         io.to(roomId).emit("resetRoom");
       }
     }, 4000);
   }
 }
-
-
-
 
  
  app.get('/', (req, res) => {
