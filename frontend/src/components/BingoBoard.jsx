@@ -294,12 +294,7 @@ useEffect(() => {
     };
   }, []);
 
-  useEffect(() => {
-    const handleReset = () =>
-      navigate("/CartelaSelction", { state: { username, roomId } });
-    socket.on("resetRoom", handleReset);
-    return () => socket.off("resetRoom", handleReset);
-  }, [navigate, username, roomId]);
+
 
   return (
     <div className="bingo-board-wrapper">

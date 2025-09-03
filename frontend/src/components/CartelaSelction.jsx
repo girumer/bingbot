@@ -2,27 +2,74 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import "./CartelaSelction.css";
 import cartela from "./cartela.json";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams,useOutletContext } from "react-router-dom";
 import socket from "../socket";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 function CartelaSelction() {
-  const navigate = useNavigate();
+ const navigate = useNavigate();
+
+// Try to read from Outlet context if you still use it elsewhere
+let ctx = {};
+  // If you removed Outlet, this will just throw and we ignore it
+ctx = useOutletContext() || {};
+
+
+// 1) URL params
+const search = new URLSearchParams(window.location.search);
+const qp = {
+  username: search.get("username"),
+  telegramId: search.get("telegramId"),
+  roomId: search.get("roomId"),
+  stake: search.get("stake"),
+};
+
+// 2) Context (if present)
+const cx = {
+  username: ctx.usernameFromUrl,
+  telegramId: ctx.telegramIdFromUrl,
+  roomId: ctx.roomIdFromUrl,
+  stake: ctx.stakeFromUrl,
+};
+
+// 3) Telegram WebApp (if available)
+const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+const tg = {
+  username: tgUser?.username || undefined,
+  telegramId: tgUser?.id ? String(tgUser.id) : undefined,
+};
+
+// 4) LocalStorage fallback
+const ls = {
+  username: localStorage.getItem("username") || undefined,
+  telegramId: localStorage.getItem("telegramId") || undefined,
+  roomId: localStorage.getItem("roomId") || undefined,
+  stake: localStorage.getItem("stake") || undefined,
+};
+
+// Final resolved params
+const usernameParam = qp.username || cx.username || tg.username || ls.username || "";
+const telegramIdParam = qp.telegramId || cx.telegramId || tg.telegramId || ls.telegramId || "";
+const roomId = qp.roomId || cx.roomId || ls.roomId || "";
+const stake = Number(qp.stake || cx.stake || ls.stake || 0);
+
+// Persist once resolved so future navigations don’t break
+useEffect(() => {
+  if (usernameParam) localStorage.setItem("username", usernameParam);
+  if (telegramIdParam) localStorage.setItem("telegramId", telegramIdParam);
+  if (roomId) localStorage.setItem("roomId", roomId);
+  if (!Number.isNaN(stake)) localStorage.setItem("stake", String(stake));
+}, [usernameParam, telegramIdParam, roomId, stake]);
+
   const [searchParams] = useSearchParams();
   
   // Get parameters from URL
-  const usernameFromUrl = searchParams.get("username");
-  const telegramIdFromUrl = searchParams.get("telegramId");
-  const roomIdFromUrl = searchParams.get("roomId");
-  const stakeFromUrl = Number(searchParams.get("stake")) || 0;
+
   
   // Use these parameters for your component's logic
-  const username = usernameFromUrl;
-  const telegramId = telegramIdFromUrl;
-  const roomId = roomIdFromUrl; 
-  const stake = stakeFromUrl; 
+  
   
   // --- States ---
   const [selectedCartelas, setSelectedCartelas] = useState([]);
@@ -45,11 +92,16 @@ function CartelaSelction() {
 
   // Fetch wallet data function
   const fetchWalletData = async () => {
+        if (!telegramIdParam) {
+  console.warn("No telegramIdParam available to fetch wallet.");
+  return 0;
+}
     try {
-      console.log("Fetching wallet data for Telegram ID:", telegramId);
+      console.log("Fetching wallet data for Telegram ID:", telegramIdParam);
       const response = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
-        { telegramId }
+        { telegramId: telegramIdParam}
+    
       );
       
       let walletValue;
@@ -75,11 +127,11 @@ function CartelaSelction() {
   // --- MAIN INITIALIZATION EFFECT ---
   useEffect(() => {
     // Check if we have all required parameters
-    if (!roomId || !username || !telegramId) {
-      console.log("Waiting for all required URL parameters...");
-      setIsLoading(false);
-      return;
-    }
+    if (!roomId || !usernameParam || !telegramIdParam) {
+  console.log("Waiting for all required URL parameters...");
+  setIsLoading(false);
+  return;
+}
 
     const initializeGame = async () => {
       try {
@@ -87,12 +139,13 @@ function CartelaSelction() {
         await fetchWalletData();
 
         // Join the game room
-        socket.emit("joinRoom", {
-          roomId,
-          username,
-          telegramId,
-          clientId,
-        });
+       socket.emit("joinRoom", {
+  roomId,
+  username: usernameParam,
+  telegramId: telegramIdParam,
+  clientId,
+});
+
       } catch (err) {
         console.error("Failed to initialize. Error:", err.response ? err.response.data : err.message);
         toast.error("Failed to initialize game. Please try again.");
@@ -116,7 +169,7 @@ function CartelaSelction() {
     return () => {
       socket.off("currentGameState", handleGameState);
     };
-  }, [roomId, username, telegramId, clientId, stake]);
+  }, [roomId, usernameParam, telegramIdParam, clientId, stake]);
 
   // Listen for wallet updates from server
   useEffect(() => {
@@ -153,22 +206,33 @@ function CartelaSelction() {
       localStorage.setItem("myCartelas", JSON.stringify(cartelasFromServer));
       
       // Navigate with all parameters in state AND in URL
-      const queryString = new URLSearchParams({
-        username,
-        telegramId,
-        roomId,
-        stake
-      }).toString();
+     const queryString = new URLSearchParams({
+  username: usernameParam,
+  telegramId: telegramIdParam,
+  roomId,
+  stake
+}).toString();
+
+navigate(`/BingoBoard?${queryString}`, {
+  state: { 
+    username: usernameParam, 
+    roomId, 
+    stake, 
+    myCartelas: cartelasFromServer,
+    telegramId: telegramIdParam
+  },
+});
+
       
       navigate(`/BingoBoard?${queryString}`, {
-        state: { 
-          username, 
-          roomId, 
-          stake, 
-          myCartelas: cartelasFromServer,
-          telegramId
-        },
-      });
+  state: { 
+    username: usernameParam, 
+    roomId, 
+    stake, 
+    myCartelas: cartelasFromServer,
+    telegramId: telegramIdParam
+  },
+});
     };
     
     const onUpdateSelectedCartelas = ({ selectedIndexes }) => {
@@ -209,7 +273,7 @@ function CartelaSelction() {
       socket.off("cartelaRejected", onCartelaRejected);
       socket.off("roomAvailable", onRoomAvailable);
     };
-  }, [navigate, roomId, username, stake, telegramId]);
+  }, [navigate, roomId, usernameParam, stake, telegramIdParam]);
 
   // --- Button Handlers ---
   const handleButtonClick = (index) => {
