@@ -21,7 +21,6 @@ console.log("Telegram bot is running...");
 
 // ----------------------
 // Main Menu
-// ----------------------
 const mainMenu = {
   reply_markup: {
     inline_keyboard: [
@@ -33,7 +32,42 @@ const mainMenu = {
     ]
   }
 };
+// ----------------------
+const commands = [
+  { command: "balance", description: "💰 Check your balance" },
+  { command: "play", description: "🎮 Play Bingo" },
+  { command: "deposit", description: "📥 Deposit funds" },
+  { command: "history", description: "📜 Transaction history" },
+  { command: "help", description: "ℹ️ Help info" }
+];
+bot.setMyCommands(commands)
+  .then(() => console.log("Bot menu commands set successfully"))
+  .catch(console.error);
+bot.onText(/\/(.+)/, (msg, match) => {
+  const chatId = msg.chat.id;
+  const cmd = match[1];
 
+  switch (cmd) {
+    case "balance":
+      bot.sendMessage(chatId, "Your balance is 1000 ETB 💵");
+      break;
+    case "play":
+      bot.sendMessage(chatId, "Starting Bingo game...");
+      break;
+    case "deposit":
+      bot.sendMessage(chatId, "Enter deposit amount:");
+      break;
+    case "history":
+      bot.sendMessage(chatId, "Your transaction history is:");
+      break;
+    case "help":
+      bot.sendMessage(chatId, "This bot helps you play Bingo and manage deposits.");
+      break;
+    default:
+      bot.sendMessage(chatId, "Unknown command. Use the menu buttons.");
+      break;
+  }
+});
 // ----------------------
 // Temporary user states
 // ----------------------
