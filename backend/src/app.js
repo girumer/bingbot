@@ -127,7 +127,8 @@ const router = express.Router();
 
  // Your cartela data
 
-
+const socketIdToClientId = new Map();
+const clientIdToSocketId = new Map();
 const rooms = {}; // rooms = { roomId: { players, socketClient, selectedIndexes, playerCartelas, timer, calledNumbers, numberInterval, alreadyWon, totalAward } }
 
 io.on("connection", (socket) => {
@@ -153,11 +154,12 @@ socket.on("joinRoom", ({ roomId, username, telegramId, clientId }) => {
     };
     console.log(`Room created: ${rId}`);
   }
-
+socketIdToClientId.set(socket.id, clientId);
+    clientIdToSocketId.set(clientId, socket.id);
   // ✅ Store player info
-  rooms[rId].players[socket.id] = username || `Guest-${socket.id}`;
-  rooms[rId].telegramMap[socket.id] = telegramId || null;
-  rooms[rId].socketClient[socket.id] = clientId;
+  rooms[rId].players[clientId] = username || `Guest-${socket.id}`;
+  rooms[rId].telegramMap[clientId] = telegramId || null;
+  rooms[rId].socketClient[clientId] = clientId;
 
   // ✅ Ensure player has a cartela slot
   if (!rooms[rId].playerCartelas[clientId]) {
@@ -276,7 +278,12 @@ socket.on("selectCartela", async ({ roomId, cartelaIndex }) => {
   // --- DISCONNECT ---
   socket.on("disconnect", () => {
     for (const roomId in rooms) {
-      const clientId = rooms[roomId]?.socketClient?.[socket.id];
+      const clientId = socketIdToClientId.get(socket.id);
+    if (clientId) {
+        socketIdToClientId.delete(socket.id);
+        clientIdToSocketId.delete(clientId);
+    }
+      //const clientId = rooms[roomId]?.socketClient?.[socket.id];
       if (rooms[roomId]?.players?.[socket.id]) {
         delete rooms[roomId].players[socket.id];
         delete rooms[roomId].socketClient[socket.id];
