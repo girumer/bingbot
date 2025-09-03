@@ -12,9 +12,8 @@ function CartelaSelction() {
  const navigate = useNavigate();
 
 // Try to read from Outlet context if you still use it elsewhere
-let ctx = {};
-  // If you removed Outlet, this will just throw and we ignore it
-ctx = useOutletContext() || {};
+const ctx = useOutletContext() || {}; 
+  
 
 
 // 1) URL params
@@ -274,6 +273,40 @@ navigate(`/BingoBoard?${queryString}`, {
       socket.off("roomAvailable", onRoomAvailable);
     };
   }, [navigate, roomId, usernameParam, stake, telegramIdParam]);
+useEffect(() => {
+  if (!roomId || !clientId) return;
+
+  // Ask server if this player is already in an active game
+  socket.emit("checkPlayerStatus", { roomId, clientId });
+
+  const handlePlayerStatus = ({ inGame, selectedCartelas }) => {
+    if (inGame) {
+      // Player is already in a game → navigate directly to BingoBoard
+      const queryString = new URLSearchParams({
+        username: usernameParam,
+        telegramId: telegramIdParam,
+        roomId,
+        stake
+      }).toString();
+
+      navigate(`/BingoBoard?${queryString}`, {
+        state: {
+          username: usernameParam,
+          roomId,
+          stake,
+          myCartelas: selectedCartelas,
+          telegramId: telegramIdParam
+        }
+      });
+    }
+  };
+
+  socket.on("playerStatus", handlePlayerStatus);
+
+  return () => {
+    socket.off("playerStatus", handlePlayerStatus);
+  };
+}, [roomId, clientId, usernameParam, telegramIdParam, stake, navigate]);
 
   // --- Button Handlers ---
   const handleButtonClick = (index) => {

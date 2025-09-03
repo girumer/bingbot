@@ -278,7 +278,17 @@ io.on("connection", (socket) => {
 
     checkWinners(roomId, number);
   });
-
+socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
+  const player = rooms[roomId]?.players[clientId];
+  if (player && player.inGame) {
+    socket.emit("playerStatus", {
+      inGame: true,
+      selectedCartelas: player.selectedCartelas || []
+    });
+  } else {
+    socket.emit("playerStatus", { inGame: false });
+  }
+});
   // --- DISCONNECT ---
   socket.on("disconnect", () => {
     // ✅ Get the clientId for the disconnecting socket
