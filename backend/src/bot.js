@@ -20,6 +20,7 @@ mongoose.connect(process.env.DATABASE_URL, {
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 console.log("Telegram bot is running...");
 
+
 // ----------------------
 // Main Menu
 // ----------------------
@@ -64,6 +65,56 @@ bot.onText(/\/start/, async (msg) => {
     bot.sendMessage(chatId, "Welcome! Please enter your name:");
   } else {
     bot.sendMessage(chatId, `Welcome back, ${user.username}!`, mainMenu);
+  }
+});
+// ----------------------
+// Handle Commands (like /balance, /play, etc.)
+// ----------------------
+bot.onText(/\/(balance|play|deposit|history|help)/, async (msg, match) => {
+  const chatId = msg.chat.id;
+  const cmd = match[1]; // the command without '/'
+
+  // Fetch the user
+  const user = await BingoBord.findOne({ telegramId: chatId });
+  if (!user) {
+    bot.sendMessage(chatId, "You are not registered. Use /start to register.");
+    return;
+  }
+
+  // Call the same logic as your callback_query switch
+  switch (cmd) {
+    case "balance":
+      bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} coins`);
+      break;
+    case "history":
+      if (!user.gameHistory || user.gameHistory.length === 0) {
+        bot.sendMessage(chatId, "You have no game history yet.");
+        return;
+      }
+      let historyText = "📜 Your game history:\n";
+      user.gameHistory.forEach((g, i) => {
+        historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
+      });
+      bot.sendMessage(chatId, historyText);
+      break;
+    case "play":
+      bot.sendMessage(chatId, "Select a room to play:", {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "Room 10 (Stake 10)", callback_data: "room_10" }],
+            [{ text: "Room 20 (Stake 20)", callback_data: "room_20" }],
+            [{ text: "Room 30 (Stake 30)", callback_data: "room_30" }]
+          ]
+        }
+      });
+      break;
+    case "help":
+      bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history.");
+      break;
+    case "deposit":
+      bot.sendMessage(chatId, "💵 How much money do you want to deposit?");
+      userStates[chatId] = { step: "depositAmount" };
+      break;
   }
 });
 
