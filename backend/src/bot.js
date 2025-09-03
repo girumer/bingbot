@@ -295,7 +295,7 @@ Follow instructions to complete deposit.
         outcome: "pending",
         timestamp: new Date()
       });
-      user.Wallet -= stake;
+     // user.Wallet -= stake;
       await user.save();
 
       const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;

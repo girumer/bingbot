@@ -185,15 +185,16 @@ const usernameFromState = location.state?.username;
   };
   // ✅ Corrected code in BingoBoard.js
 useEffect(() => {
-    const handleReset = () =>
-      navigate("/CartelaSelction", { 
-        state: { 
-          username, 
-          roomId,
-          stake,       // ✅ Pass the stake value
-          telegramId   // ✅ Pass the telegramId
-        } 
-      });
+    const handleReset = () => {
+  const qs = new URLSearchParams({
+    username,
+    telegramId,
+    roomId: String(roomId),
+    stake: String(stake || 0),
+  }).toString();
+  navigate(`/CartelaSelction?${qs}`);
+};
+
     socket.on("resetRoom", handleReset);
     return () => socket.off("resetRoom", handleReset);
 }, [navigate, username, roomId, stake, telegramId]);
