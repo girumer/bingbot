@@ -3,6 +3,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const mongoose = require('mongoose');
 const BingoBord = require('../Models/BingoBord');
 const axios = require('axios');
+
 // ----------------------
 // Connect to MongoDB
 // ----------------------
@@ -21,33 +22,176 @@ console.log("Telegram bot is running...");
 
 // ----------------------
 // Main Menu
-
-
 // ----------------------
+const mainMenu = {
+  reply_markup: {
+    inline_keyboard: [
+      [{ text: "💰 Balance", callback_data: "balance" }],
+      [{ text: "🎮 Play Bingo", callback_data: "play" }],
+      [{ text: "📥 Deposit", callback_data: "deposit" }],
+      [{ text: "📜 History", callback_data: "history" }],
+      [{ text: "ℹ️ Help", callback_data: "help" }]
+    ]
+  }
+};
+
 const commands = [
-  { command: "balance",callback_data: "balance" , description: "💰 Check your balance" },
-  { command: "play", callback_data: "play",description: "🎮 Play Bingo" },
-  { command: "deposit", callback_data: "deposit",description: "📥 Deposit funds" },
-  { command: "history", callback_data: "deposit",description: "📜 Transaction history" },
-  { command: "help", callback_data: "deposit",description: "ℹ️ Help info" }
+  { command: "balance", description: "💰 Check your balance" },
+  { command: "play", description: "🎮 Play Bingo" },
+  { command: "deposit", description: "📥 Deposit funds" },
+  { command: "history", description: "📜 Transaction history" },
+  { command: "help", description: "ℹ️ Help info" }
 ];
 bot.setMyCommands(commands)
   .then(() => console.log("Bot menu commands set successfully"))
   .catch(console.error);
 
-  let userStates = {};
-async function handleAction(chatId, action) {
-  const user = await BingoBord.findOne({ telegramId: chatId });
+// ----------------------
+// User States
+// ----------------------
+let userStates = {}; // { chatId: { step: "askName" | "askPhone" | "depositAmount" | "depositMessage", ... } }
 
-  // Registration check
-  if (!user && !["askName","askPhone","depositAmount","depositMessage"].includes(userStates[chatId]?.step)) {
+// ----------------------
+// /start command
+// ----------------------
+bot.onText(/\/start/, async (msg) => {
+  const chatId = msg.chat.id;
+
+  let user = await BingoBord.findOne({ telegramId: chatId });
+
+  if (!user) {
+    userStates[chatId] = { step: "askName" };
+    bot.sendMessage(chatId, "Welcome! Please enter your name:");
+  } else {
+    bot.sendMessage(chatId, `Welcome back, ${user.username}!`, mainMenu);
+  }
+});
+
+// ----------------------
+// Handle Text Messages
+// ----------------------
+bot.on("message", async (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text;
+
+  if (!userStates[chatId]) return;
+
+  const step = userStates[chatId].step;
+
+  // Ask Name
+  if (step === "askName") {
+    userStates[chatId].name = text;
+    userStates[chatId].step = "askPhone";
+    bot.sendMessage(chatId, "Please share your phone number:", {
+      reply_markup: {
+        keyboard: [[{ text: "📱 Share Contact", request_contact: true }]],
+        resize_keyboard: true,
+        one_time_keyboard: true
+      }
+    });
+    return;
+  }
+
+  // Deposit Amount
+  if (step === "depositAmount") {
+    const amount = parseFloat(text);
+    if (isNaN(amount) || amount <= 0) {
+      bot.sendMessage(chatId, "⚠️ Please enter a valid amount.");
+      return;
+    }
+    userStates[chatId].amount = amount;
+
+    bot.sendMessage(chatId, "💵 Click below to see deposit instructions:", {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "Manual Deposit", callback_data: "manualDeposit" }]
+        ]
+      }
+    });
+    userStates[chatId].step = "depositMessage";
+    return;
+  }
+
+  // Deposit Message
+  if (step === "depositMessage") {
+    try {
+      const user = await BingoBord.findOne({ telegramId: chatId });
+      if (!user) {
+        bot.sendMessage(chatId, "User not found. Please /start first.");
+        return;
+      }
+
+      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/deposit`, {
+        message: text,
+        phoneNumber: user.phoneNumber
+      });
+
+      bot.sendMessage(chatId, res.data.message || "Deposit claimed successfully! 🎉");
+    } catch (err) {
+      bot.sendMessage(chatId, err.response?.data?.error || "Failed to claim deposit.");
+    }
+    delete userStates[chatId];
+    return;
+  }
+});
+
+// ----------------------
+// Handle Contact
+// ----------------------
+bot.on("contact", async (msg) => {
+  const chatId = msg.chat.id;
+  const contact = msg.contact;
+
+  if (userStates[chatId] && userStates[chatId].step === "askPhone") {
+    let existingUser = await BingoBord.findOne({ telegramId: chatId });
+    if (existingUser) {
+      bot.sendMessage(chatId, "⚠️ This phone number is already registered.");
+      delete userStates[chatId];
+      return;
+    }
+
+    const newUser = new BingoBord({
+      telegramId: chatId,
+      username: userStates[chatId].name,
+      phoneNumber: contact.phone_number,
+      Wallet: 100,
+      gameHistory: []
+    });
+
+    await newUser.save();
+    delete userStates[chatId];
+    bot.sendMessage(chatId, "✅ Registration complete! 🎉", mainMenu);
+  }
+});
+
+// ----------------------
+// Handle Menu Buttons
+// ----------------------
+bot.on('callback_query', async (callbackQuery) => {
+  const chatId = callbackQuery.message.chat.id;
+  const data = callbackQuery.data;
+
+  const user = await BingoBord.findOne({ telegramId: chatId });
+  if (!user) {
     bot.sendMessage(chatId, "You are not registered. Use /start to register.");
     return;
   }
 
-  switch (action) {
+  switch (data) {
     case "balance":
-      bot.sendMessage(chatId, `💰 Your balance: ${user.Wallet} coins`);
+      bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} coins`);
+      break;
+
+    case "history":
+      if (!user.gameHistory || user.gameHistory.length === 0) {
+        bot.sendMessage(chatId, "You have no game history yet.");
+        return;
+      }
+      let historyText = "📜 Your game history:\n";
+      user.gameHistory.forEach((g, i) => {
+        historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
+      });
+      bot.sendMessage(chatId, historyText);
       break;
 
     case "play":
@@ -62,66 +206,48 @@ async function handleAction(chatId, action) {
       });
       break;
 
+    case "help":
+      bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history.");
+      break;
+
     case "deposit":
       bot.sendMessage(chatId, "💵 How much money do you want to deposit?");
       userStates[chatId] = { step: "depositAmount" };
       break;
 
-    case "history":
-      if (!user.gameHistory || user.gameHistory.length === 0) {
-        bot.sendMessage(chatId, "You have no game history yet.");
-        return;
-      }
-      let historyText = "📜 Your game history:\n";
-      user.gameHistory.forEach((g, i) => {
-        historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, Date: ${g.timestamp.toLocaleString()}\n`;
-      });
-      bot.sendMessage(chatId, historyText);
+    case "manualDeposit":
+      const amount = userStates[chatId]?.amount || "N/A";
+      const instructions = `
+የቴሌብር አካውንት
+0932157512
+
+Deposit Amount: ${amount} ብር
+Follow instructions to complete deposit.
+`;
+      bot.sendMessage(chatId, instructions);
+      userStates[chatId].step = "depositMessage";
       break;
 
-    case "help":
-      bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history.");
-      break;
-
-    // Inline buttons like rooms or manual deposit
-   
-case "manualDeposit":
-  const amount = userStates[chatId]?.amount || "N/A";
-  const instructions = `የቴሌብር አካውንት
-0968857386
-1. ከላይ ባለው የቴሌብር አካውንት 50ብር ያስገቡ
-
-2. የምትልኩት የገንዘብ መጠን እና እዚ ላይ እንዲሞላልዎ የምታስገቡት የብር መጠን ተመሳሳይ መሆኑን እርግጠኛ ይሁኑ
-
-3. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከቴሌብር ይደርሳችኋል
-
-4. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት 
-ማሳሰቢያ፡ ዲፖዚት ባረጋቹ ቁጥር ቦቱ የሚያገናኛቹ ኤጀንቶች ስለሚለያዩ ከላይ ወደሚሰጣቹ የቴሌብር አካውንት ብቻ ብር መላካችሁን እርግጠኛ ይሁኑ። ዲፖዚት ስታረጉ ቦቱ ከሚያገናኛቹ ኤጀንት ዉጪ ወደ ሌላ ኤጀንት ብር ከላካቹ ቦቱ 2% ቆርጦ ይልክላችኋል። `;
-  bot.sendMessage(chatId, instructions);
-
-  if (!userStates[chatId]) userStates[chatId] = {}; // ✅ ensure object exists
-  userStates[chatId].step = "depositMessage";
-  break;
     case "room_10":
     case "room_20":
     case "room_30":
-      let stake = parseInt(action.split("_")[1]);
+      const stake = parseInt(data.split("_")[1]);
       if (user.Wallet < stake) {
         bot.sendMessage(chatId, "⚠️ Not enough coins. Earn more to play.");
         return;
       }
 
-      user.Wallet -= stake;
       user.gameHistory.push({
         roomId: stake,
-        stake,
+        stake: stake,
         outcome: "pending",
         timestamp: new Date()
       });
+      user.Wallet -= stake;
       await user.save();
 
       const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;
-      bot.sendMessage(chatId, `✅ You joined Room ${stake}! Click below to select your cartelas:`, {
+      bot.sendMessage(chatId, `✅ You joined Room ${stake}! ${stake} coins deducted. Click below to select your cartelas:`, {
         reply_markup: {
           inline_keyboard: [
             [{ text: `Open Cartela Selection`, web_app: { url: webAppUrl } }]
@@ -133,170 +259,4 @@ case "manualDeposit":
     default:
       bot.sendMessage(chatId, "Unknown action.");
   }
-}
-
-bot.onText(/\/(.+)/, (msg, match) => {
-  const chatId = msg.chat.id;
-  const cmd = match[1];
-  handleAction(chatId, cmd);
 });
-
-bot.on('callback_query', async (callbackQuery) => {
-  const chatId = callbackQuery.message.chat.id;
-  const data = callbackQuery.data;
-  await handleAction(chatId, data);
-});
-// ----------------------
-// Temporary user states
-// ----------------------
- // { chatId: { step: "askName" | "askPhone" } }
-
-// ----------------------
-// /start command
-// ----------------------
-bot.onText(/\/start/, async (msg) => {
-  const chatId = msg.chat.id;
-
-  // check if user already exists by telegramId
-  let user = await BingoBord.findOne({ telegramId: chatId });
-
-  if (!user) {
-    userStates[chatId] = { step: "askName" };
-    bot.sendMessage(chatId, "Welcome! Please enter your name:");
-  } else {
-    bot.sendMessage(chatId, `Welcome back, ${user.username}!`, mainMenu);
-  }
-});
-// ----------------------
-// Handle normal text (registration flow)
-// ----------------------
-bot.on("message", async (msg) => {
-  const chatId = msg.chat.id;
-  const text = msg.text;
-
-  if (!userStates[chatId]) return; // only handle if user is in registration/deposit flow
-
-  const step = userStates[chatId].step;
-
-  // -------------------------------
-  // Step 1: Ask for Name (Registration)
-  // -------------------------------
-  if (step === "askName") {
-    userStates[chatId].name = text;
-    userStates[chatId].step = "askPhone";
-
-    bot.sendMessage(chatId, "Please share your phone number:", {
-      reply_markup: {
-        keyboard: [[{ text: "📱 Share Contact", request_contact: true }]],
-        resize_keyboard: true,
-        one_time_keyboard: true
-      }
-    });
-    return;
-  }
-
-  // -------------------------------
-  // Step 2: Ask for Deposit Amount
-  // -------------------------------
-  if (step === "depositAmount") {
-    const amount = parseFloat(text);
-    if (isNaN(amount) || amount <= 0) {
-      bot.sendMessage(chatId, "⚠️ Please enter a valid amount.");
-      return;
-    }
-
-    // Save the amount in userStates
-    userStates[chatId].amount = amount;
-
-    // Show manual deposit button
-    bot.sendMessage(chatId, "💵 Click below to see deposit instructions:", {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: "Manual Deposit", callback_data: "manualDeposit" }]
-        ]
-      }
-    });
-
-    // Move to next step: wait for transaction message
-    userStates[chatId].step = "depositMessage";
-    return;
-  }
-
-  // -------------------------------
-  // Step 3: User Sends Transaction Message
-  // -------------------------------
-  if (step === "depositMessage") {
-    try {
-      const user = await BingoBord.findOne({ telegramId: chatId });
-      if (!user) {
-        bot.sendMessage(chatId, "User not found. Please /start first.");
-        return;
-      }
-
-      // Call your deposit API
-      const res = await axios.post( `${process.env.REACT_APP_BACKEND_URL}/api/deposit`, {
-        message: text,
-        phoneNumber: user.phoneNumber
-      });
-
-      bot.sendMessage(chatId, res.data.message || "Deposit claimed successfully! 🎉");
-    } catch (err) {
-      console.error(err);
-      bot.sendMessage(chatId, err.response?.data?.error || "Failed to claim deposit.");
-    }
-
-    // Clear state after deposit is handled
-    delete userStates[chatId];
-    return;
-  }
-
-});
-
-// ----------------------
-// Handle contact
-// ----------------------
-bot.on("contact", async (msg) => {
-  const chatId = msg.chat.id;
-  const contact = msg.contact;
-
-  if (userStates[chatId] && userStates[chatId].step === "askPhone") {
-    // check if phone number already exists
-   let existingUser = await BingoBord.findOne({ telegramId: chatId });
-    if (existingUser) {
-      bot.sendMessage(chatId, "⚠️ This phone number is already registered.");
-      delete userStates[chatId];
-      return;
-    }
-
-    const newUser = new BingoBord({
-      telegramId: chatId,              // ✅ store telegramId
-      username: userStates[chatId].name,
-      phoneNumber: contact.phone_number,
-      Wallet: 100, // default coins
-      gameHistory: []
-    });
-
-    await newUser.save();
-    delete userStates[chatId];
-
-    bot.sendMessage(chatId, "✅ Registration complete! 🎉", mainMenu);
-  }
-});
-
-// ----------------------
-// Handle Menu Buttons
-// ----------------------
-
-bot.on('callback_query', async (callbackQuery) => {
-  const chatId = callbackQuery.message.chat.id;
-  const data = callbackQuery.data;
-
-  const user = await BingoBord.findOne({ telegramId: chatId });
-  if (!user) {
-    bot.sendMessage(chatId, "You are not registered. Use /start to register.");
-    return;
-  }
- handleAction(chatId, data);
-
-});
-
