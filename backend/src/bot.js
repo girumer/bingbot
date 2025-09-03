@@ -27,12 +27,12 @@ console.log("Telegram bot is running...");
 const mainMenu = {
   reply_markup: {
     inline_keyboard: [
-     
-            [{ text: "🎮 Play  10", callback_data: "room_10" }],
-            [{ text: "🎮 Play  20", callback_data: "room_20" }],
-            [{ text: "🎮 Play  30", callback_data: "room_30" }],
-            [{ text: "🎮 Play  40", callback_data: "room_40" }],
-            [{ text: "🎮 Play  50", callback_data: "room_50" }]
+      [{ text: "💰 Balance", callback_data: "balance" }],
+      [{ text: "🎮 Play Bingo", callback_data: "play" }],
+      [{ text: "📥 Deposit", callback_data: "deposit" }],
+      [{ text: "📜 History", callback_data: "history" }],
+      [{ text: "ℹ️ Help", callback_data: "help" }]
+      
     ]
   }
 };
@@ -98,39 +98,16 @@ bot.onText(/\/(balance|play|deposit|history|help)/, async (msg, match) => {
       });
       bot.sendMessage(chatId, historyText);
       break;
-   case "play":
-  const user = await BingoBord.findOne({ telegramId: chatId });
-  if (!user) {
-    bot.sendMessage(chatId, "You are not registered. Use /start to register.");
-    return;
-  }
-
-  bot.sendMessage(chatId, "Select a room to play:", {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: "🎮 Play 10",
-            web_app: { url: `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=10&stake=10` }
-          }
-        ],
-        [
-          {
-            text: "🎮 Play 20",
-            web_app: { url: `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=20&stake=20` }
-          }
-        ],
-        [
-          {
-            text: "🎮 Play 30",
-            web_app: { url: `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=30&stake=30` }
-          }
-        ]
-      ]
-    }
-  });
-  break;
-
+    case "play":
+      bot.sendMessage(chatId, "Select a room to play:", {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "Room 10 (Stake 10)", callback_data: "room_10" }],
+            [{ text: "Room 20 (Stake 20)", callback_data: "room_20" }],
+            [{ text: "Room 30 (Stake 30)", callback_data: "room_30" }]
+          ]
+        }
+      });
       break;
     case "help":
       bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history.");
@@ -270,39 +247,16 @@ bot.on('callback_query', async (callbackQuery) => {
       break;
 
     case "play":
-  const user = await BingoBord.findOne({ telegramId: chatId });
-  if (!user) {
-    bot.sendMessage(chatId, "You are not registered. Use /start to register.");
-    return;
-  }
-
-  bot.sendMessage(chatId, "Select a room to play:", {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: "🎮 Play 10",
-            web_app: { url: `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=10&stake=10` }
-          }
-        ],
-        [
-          {
-            text: "🎮 Play 20",
-            web_app: { url: `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=20&stake=20` }
-          }
-        ],
-        [
-          {
-            text: "🎮 Play 30",
-            web_app: { url: `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=30&stake=30` }
-          }
-        ]
-      ]
-    }
-  });
-  break;
-
-      
+      bot.sendMessage(chatId, "Select a room to play:", {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "Room 10 (Stake 10)", callback_data: "room_10" }],
+            [{ text: "Room 20 (Stake 20)", callback_data: "room_20" }],
+            [{ text: "Room 30 (Stake 30)", callback_data: "room_30" }]
+          ]
+        }
+      });
+      break;
 
     case "help":
       bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history.");
