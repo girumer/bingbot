@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../components/Navbar";
+
 import "./CartelaSelction.css";
 import cartela from "./cartela.json";
 import { useNavigate, useSearchParams,useOutletContext } from "react-router-dom";
@@ -53,16 +53,34 @@ const usernameParam = qp.username || cx.username || tg.username || ls.username |
 const telegramIdParam = qp.telegramId || cx.telegramId || tg.telegramId || ls.telegramId || "";
 const roomId = qp.roomId || cx.roomId || ls.roomId || "";
 const stake = Number(qp.stake || cx.stake || ls.stake || 0);
+useEffect(() => {
+  if (!roomId || !usernameParam || !telegramIdParam) return;
+
+  const initialize = async () => {
+    const walletValue = await fetchWalletData();
+
+    socket.emit("joinRoom", { roomId, username: usernameParam, telegramId: telegramIdParam, clientId });
+    socket.emit("checkPlayerStatus", { roomId, clientId });
+
+    const handlePlayerStatus = ({ inGame, selectedCartelas }) => {
+      if (inGame && selectedCartelas.length > 0) {
+        localStorage.setItem("myCartelas", JSON.stringify(selectedCartelas));
+        const queryString = new URLSearchParams({ username: usernameParam, telegramId: telegramIdParam, roomId, stake }).toString();
+        navigate(`/BingoBoard?${queryString}`, { state: { username: usernameParam, roomId, stake, myCartelas: selectedCartelas, telegramId: telegramIdParam } });
+      }
+    };
+    socket.on("playerStatus", handlePlayerStatus);
+
+    return () => socket.off("playerStatus", handlePlayerStatus);
+  };
+
+  initialize();
+}, [roomId, usernameParam, telegramIdParam, clientId, stake, navigate]);
+
 
 // Persist once resolved so future navigations don’t break
-useEffect(() => {
-  if (usernameParam) localStorage.setItem("username", usernameParam);
-  if (telegramIdParam) localStorage.setItem("telegramId", telegramIdParam);
-  if (roomId) localStorage.setItem("roomId", roomId);
-  if (!Number.isNaN(stake)) localStorage.setItem("stake", String(stake));
-}, [usernameParam, telegramIdParam, roomId, stake]);
 
-  const [searchParams] = useSearchParams();
+
   
   // Get parameters from URL
 
@@ -196,43 +214,39 @@ useEffect(() => {
     
     const onCountdown = (seconds) => setTimer(seconds);
     
-    const onCountdownEnd = (cartelasFromServer) => {
-      if (!cartelasFromServer || cartelasFromServer.length === 0) {
-        toast.error("You did not select any cartela. Please select at least one.");
-        return;
-      }
-      
-      localStorage.setItem("myCartelas", JSON.stringify(cartelasFromServer));
-      
-      // Navigate with all parameters in state AND in URL
-     const queryString = new URLSearchParams({
-  username: usernameParam,
-  telegramId: telegramIdParam,
-  roomId,
-  stake
-}).toString();
+  const onCountdownEnd = (cartelasFromServer) => {
+  if (!cartelasFromServer || cartelasFromServer.length === 0) {
+    toast.error("You did not select any cartela. Please select at least one.");
+    return;
+  }
 
-navigate(`/BingoBoard?${queryString}`, {
-  state: { 
-    username: usernameParam, 
-    roomId, 
-    stake, 
-    myCartelas: cartelasFromServer,
-    telegramId: telegramIdParam
-  },
-});
+  localStorage.setItem("myCartelas", JSON.stringify(cartelasFromServer));
 
-      
-      navigate(`/BingoBoard?${queryString}`, {
-  state: { 
-    username: usernameParam, 
-    roomId, 
-    stake, 
-    myCartelas: cartelasFromServer,
-    telegramId: telegramIdParam
-  },
-});
-    };
+  // --- Tell server this player is now in-game ---
+  socket.emit("markPlayerInGame", {
+    roomId,
+    clientId
+  });
+
+  // --- Navigate to BingoBoard with state ---
+  const queryString = new URLSearchParams({
+    username: usernameParam,
+    telegramId: telegramIdParam,
+    roomId,
+    stake
+  }).toString();
+
+  navigate(`/BingoBoard?${queryString}`, {
+    state: {
+      username: usernameParam,
+      roomId,
+      stake,
+      myCartelas: cartelasFromServer,
+      telegramId: telegramIdParam
+    }
+  });
+};
+
     
     const onUpdateSelectedCartelas = ({ selectedIndexes }) => {
       setFinalSelectedCartelas((prev) => Array.from(new Set([...prev, ...selectedIndexes])));
@@ -273,40 +287,7 @@ navigate(`/BingoBoard?${queryString}`, {
       socket.off("roomAvailable", onRoomAvailable);
     };
   }, [navigate, roomId, usernameParam, stake, telegramIdParam]);
-useEffect(() => {
-  if (!roomId || !clientId) return;
 
-  // Ask server if this player is already in an active game
-  socket.emit("checkPlayerStatus", { roomId, clientId });
-
-  const handlePlayerStatus = ({ inGame, selectedCartelas }) => {
-    if (inGame) {
-      // Player is already in a game → navigate directly to BingoBoard
-      const queryString = new URLSearchParams({
-        username: usernameParam,
-        telegramId: telegramIdParam,
-        roomId,
-        stake
-      }).toString();
-
-      navigate(`/BingoBoard?${queryString}`, {
-        state: {
-          username: usernameParam,
-          roomId,
-          stake,
-          myCartelas: selectedCartelas,
-          telegramId: telegramIdParam
-        }
-      });
-    }
-  };
-
-  socket.on("playerStatus", handlePlayerStatus);
-
-  return () => {
-    socket.off("playerStatus", handlePlayerStatus);
-  };
-}, [roomId, clientId, usernameParam, telegramIdParam, stake, navigate]);
 
   // --- Button Handlers ---
   const handleButtonClick = (index) => {

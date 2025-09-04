@@ -163,7 +163,12 @@ io.on("connection", (socket) => {
     }
 
     // ✅ Use clientId as the key for all player info
-    rooms[rId].players[clientId] = username || `Guest-${clientId}`;
+   rooms[rId].players[clientId] = username || `Guest-${clientId}`;
+  rooms[rId].players[clientId] = {
+  username: username || `Guest-${clientId}`,
+  inGame: false,                  // Track if player is in BingoBoard
+  selectedCartelas: rooms[rId].playerCartelas[clientId] || []
+};
 
     // ✅ Ensure player has a cartela slot
     if (!rooms[rId].playerCartelas[clientId]) {
@@ -191,7 +196,11 @@ io.on("connection", (socket) => {
 
     console.log(`New connection: ${socket.id}, username=${username}, telegramId=${telegramId}, clientId=${clientId}`);
   });
-
+socket.on("markPlayerInGame", ({ roomId, clientId }) => {
+  if (!rooms[roomId] || !rooms[roomId].players[clientId]) return;
+  rooms[roomId].players[clientId].inGame = true;
+  rooms[roomId].inGamePlayers[clientId] = rooms[roomId].players[clientId].cartelas;
+});
   // --- SELECT CARTELA ---
   socket.on("selectCartela", async ({ roomId, cartelaIndex }) => {
     const rId = String(roomId);
@@ -260,6 +269,17 @@ io.on("connection", (socket) => {
       socket.emit("cartelaRejected", { message: "Server error" });
     }
   });
+ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
+    const player = rooms[roomId]?.players[clientId];
+    if (player && player.inGame) {
+      socket.emit("playerStatus", {
+        inGame: true,
+        selectedCartelas: player.selectedCartelas || []
+      });
+    } else {
+      socket.emit("playerStatus", { inGame: false });
+    }
+  });
 
   // --- CALL NUMBER ---
   socket.on("callNumber", ({ roomId, number }) => {
@@ -278,17 +298,9 @@ io.on("connection", (socket) => {
 
     checkWinners(roomId, number);
   });
-socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
-  const player = rooms[roomId]?.players[clientId];
-  if (player && player.inGame) {
-    socket.emit("playerStatus", {
-      inGame: true,
-      selectedCartelas: player.selectedCartelas || []
-    });
-  } else {
-    socket.emit("playerStatus", { inGame: false });
-  }
-});
+
+
+
   // --- DISCONNECT ---
   socket.on("disconnect", () => {
     // ✅ Get the clientId for the disconnecting socket
