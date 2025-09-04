@@ -53,50 +53,6 @@ const usernameParam = qp.username || cx.username || tg.username || ls.username |
 const telegramIdParam = qp.telegramId || cx.telegramId || tg.telegramId || ls.telegramId || "";
 const roomId = qp.roomId || cx.roomId || ls.roomId || "";
 const stake = Number(qp.stake || cx.stake || ls.stake || 0);
-useEffect(() => {
-  if (!roomId || !usernameParam || !telegramIdParam) return;
-
-  const joinAndCheck = async () => {
-    // Join the room
-    socket.emit("joinRoom", {
-      roomId,
-      username: usernameParam,
-      telegramId: telegramIdParam,
-      clientId,
-    });
-
-    // Ask server if this player is already in-game
-    socket.emit("checkPlayerStatus", { roomId, clientId });
-
-    const handlePlayerStatus = ({ inGame, selectedCartelas }) => {
-      if (inGame && selectedCartelas.length > 0) {
-        localStorage.setItem("myCartelas", JSON.stringify(selectedCartelas));
-        const queryString = new URLSearchParams({
-          username: usernameParam,
-          telegramId: telegramIdParam,
-          roomId,
-          stake
-        }).toString();
-
-        navigate(`/BingoBoard?${queryString}`, {
-          state: {
-            username: usernameParam,
-            roomId,
-            stake,
-            myCartelas: selectedCartelas,
-            telegramId: telegramIdParam
-          }
-        });
-      }
-    };
-
-    socket.on("playerStatus", handlePlayerStatus);
-
-    return () => socket.off("playerStatus", handlePlayerStatus);
-  };
-
-  joinAndCheck();
-}, [roomId, usernameParam, telegramIdParam, clientId, stake, navigate]);
 
 // Persist once resolved so future navigations don’t break
 useEffect(() => {
