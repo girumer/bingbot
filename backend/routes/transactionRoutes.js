@@ -37,18 +37,22 @@ router.post("/withdraw", async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (user.Wallet < amount) {
-      return res.status(400).json({ message: "Insufficient balance" });
+      return res.status(400).json({ message: " your account had Insufficient balance" });
     }
 
     user.Wallet -= amount;
-    user.transactions.push({
-      type: "withdraw",
-      method,
+ 
+
+    // Save to Transaction collection
+    const newTx = new Transaction({
+      transactionNumber: `WD${Date.now()}`,
       phoneNumber,
+      type: "withdraw",
       amount,
-      status: "success",
+      rawMessage: `Withdraw via ${method}`
     });
-    await user.save();
+    await newTx.save();
+
 
     res.json({ message: "Withdrawal successful", wallet: user.Wallet });
   } catch (err) {
