@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-
+import Navbar from "../components/Navbar";
 import "./CartelaSelction.css";
 import cartela from "./cartela.json";
 import { useNavigate, useSearchParams,useOutletContext } from "react-router-dom";
@@ -56,31 +56,57 @@ const stake = Number(qp.stake || cx.stake || ls.stake || 0);
 useEffect(() => {
   if (!roomId || !usernameParam || !telegramIdParam) return;
 
-  const initialize = async () => {
-    const walletValue = await fetchWalletData();
+  const joinAndCheck = async () => {
+    // Join the room
+    socket.emit("joinRoom", {
+      roomId,
+      username: usernameParam,
+      telegramId: telegramIdParam,
+      clientId,
+    });
 
-    socket.emit("joinRoom", { roomId, username: usernameParam, telegramId: telegramIdParam, clientId });
+    // Ask server if this player is already in-game
     socket.emit("checkPlayerStatus", { roomId, clientId });
 
     const handlePlayerStatus = ({ inGame, selectedCartelas }) => {
       if (inGame && selectedCartelas.length > 0) {
         localStorage.setItem("myCartelas", JSON.stringify(selectedCartelas));
-        const queryString = new URLSearchParams({ username: usernameParam, telegramId: telegramIdParam, roomId, stake }).toString();
-        navigate(`/BingoBoard?${queryString}`, { state: { username: usernameParam, roomId, stake, myCartelas: selectedCartelas, telegramId: telegramIdParam } });
+        const queryString = new URLSearchParams({
+          username: usernameParam,
+          telegramId: telegramIdParam,
+          roomId,
+          stake
+        }).toString();
+
+        navigate(`/BingoBoard?${queryString}`, {
+          state: {
+            username: usernameParam,
+            roomId,
+            stake,
+            myCartelas: selectedCartelas,
+            telegramId: telegramIdParam
+          }
+        });
       }
     };
+
     socket.on("playerStatus", handlePlayerStatus);
 
     return () => socket.off("playerStatus", handlePlayerStatus);
   };
 
-  initialize();
+  joinAndCheck();
 }, [roomId, usernameParam, telegramIdParam, clientId, stake, navigate]);
 
-
 // Persist once resolved so future navigations don’t break
+useEffect(() => {
+  if (usernameParam) localStorage.setItem("username", usernameParam);
+  if (telegramIdParam) localStorage.setItem("telegramId", telegramIdParam);
+  if (roomId) localStorage.setItem("roomId", roomId);
+  if (!Number.isNaN(stake)) localStorage.setItem("stake", String(stake));
+}, [usernameParam, telegramIdParam, roomId, stake]);
 
-
+  const [searchParams] = useSearchParams();
   
   // Get parameters from URL
 
