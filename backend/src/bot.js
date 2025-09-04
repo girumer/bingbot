@@ -335,17 +335,43 @@ bot.on('callback_query', async (callbackQuery) => {
       break;
 
     case "manualDeposit":
-      const amount = userStates[chatId]?.amount || "N/A";
-      const instructions = `
-የቴሌብር አካውንት
-0932157512
+      bot.sendMessage(chatId, "Choose your deposit method:", {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: "📲 Telebirr", callback_data: "deposit_telebirr" },
+          { text: "🏦 CBE Birr", callback_data: "deposit_cbebirr" }
+        ]
+      ]
+    }
+  });
+  break;
+    case "deposit_telebirr":
+case "deposit_cbebirr":
+  const depositMethod  = data.split("_")[1]; // telebirr / cbebirr
+  const amountDep = userStates[chatId]?.amount || "N/A";
 
-Deposit Amount: ${amount} ብር
-Follow instructions to complete deposit.
-`;
-      bot.sendMessage(chatId, instructions);
-      userStates[chatId].step = "depositMessage";
-      break;
+  let instructionsMsg = "";
+  if (depositMethod === "telebirr") {
+    instructionsMsg = `
+📲 Telebirr Deposit
+Account: 0932157512
+Amount: ${amountDep} ብር
+
+Please send the money and then reply with the transaction message.`;
+  } else if (depositMethod === "cbebirr") {
+    instructionsMsg = `
+🏦 CBE wallet Deposit
+Account: 0932157512
+Amount: ${amountDep} ብር
+
+Please send the money and then reply with the transaction message.`;
+  }
+
+  bot.sendMessage(chatId, instructionsMsg);
+  userStates[chatId].step = "depositMessage"; // continue as usual
+  break;
+
   case "withdraw":
     bot.sendMessage(chatId, "Choose your withdrawal method:", {
       reply_markup: {
