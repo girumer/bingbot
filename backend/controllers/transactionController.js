@@ -80,6 +80,7 @@ exports.parseTransaction = async (req, res) => {
   }
 };
 
+
 exports.depositAmount = async (req, res) => {
   try {
     const { message, phoneNumber } = req.body;
@@ -103,23 +104,12 @@ exports.depositAmount = async (req, res) => {
     // Step 2: Deposit amounts
     let totalDeposited = 0;
     for (const tx of transactions) {
-      // Check if transaction already exists
       const txInDb = await Transaction.findOne({ transactionNumber: tx.transactionNumber });
-      if (txInDb) continue; // skip duplicates
+      if (!txInDb) continue;
 
-      // Create new transaction
-      const newTx = new Transaction({
-        transactionNumber: tx.transactionNumber,
-        phoneNumber,
-        type: "deposit",
-        amount: tx.amount,
-        rawMessage: message
-      });
-      await newTx.save();
-
-      // Add to user wallet
-      user.Wallet += tx.amount;
-      totalDeposited += tx.amount;
+      user.Wallet += txInDb.amount;
+      totalDeposited += txInDb.amount;
+      await Transaction.deleteOne({ _id: txInDb._id });
     }
 
     await user.save();
@@ -135,7 +125,6 @@ exports.depositAmount = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
-
 
 
 

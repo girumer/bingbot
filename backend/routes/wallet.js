@@ -14,7 +14,7 @@ router.post("/deductDeposit", verifyToken, async (req, res) => {
     const user = await BingoBord.findOne({ username: req.username });
 
     if (!user) return res.status(404).json({ message: "User not found" });
-    if (user.Wallet < stake) return res.status(400).json({ message: "Insufficient balance" });
+    if (user.Wallet < stake) return res.status(400).json({ message: "Insufficient balance with this place" });
 
     user.Wallet -= stake;
     await user.save();
