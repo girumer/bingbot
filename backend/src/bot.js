@@ -2,6 +2,7 @@ require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const mongoose = require('mongoose');
 const BingoBord = require('../Models/BingoBord');
+const Transaction = require('../Models/Transaction');
 const axios = require('axios');
 
 // ----------------------
@@ -439,6 +440,29 @@ Please send the money and then reply with the transaction message.`;
         }
       });
       break;
+case "transactions":
+  try {
+    // Fetch last 10 transactions for the user's phone number
+    const transactions = await Transaction.find({ phoneNumber: user.phoneNumber })
+      .sort({ createdAt: -1 }) // newest first
+      .limit(10);
+
+    if (!transactions || transactions.length === 0) {
+      bot.sendMessage(chatId, "You have no transaction history yet.");
+      return;
+    }
+
+    let historyText = "📜 Your last 10 transactions:\n";
+    transactions.forEach((t, i) => {
+      historyText += `${i + 1}. Type: ${t.type.toUpperCase()}, Amount: ${t.amount} ብር, Date: ${t.createdAt.toLocaleString()}\n`;
+    });
+
+    bot.sendMessage(chatId, historyText);
+  } catch (err) {
+    console.error(err);
+    bot.sendMessage(chatId, "❌ Failed to fetch transaction history.");
+  }
+  break;
 
     default:
       bot.sendMessage(chatId, "Unknown action.");

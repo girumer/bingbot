@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema({
   transactionNumber: { type: String, required: true, unique: true },
+  phoneNumber: { type: String, required: true },
   type: { type: String, enum: ["telebirr", "cbe"], required: true },
   amount: { type: Number, required: true },
   rawMessage: { type: String }, // optional: store the full message
