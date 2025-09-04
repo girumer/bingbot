@@ -105,10 +105,15 @@ bot.onText(/\/(balance|play|deposit|history|help)/, async (msg, match) => {
       bot.sendMessage(chatId, "Select a room to play:", {
         reply_markup: {
           inline_keyboard: [
-            [{ text: "Room 10 (Stake 10)", callback_data: "room_10" }],
-            [{ text: "Room 20 (Stake 20)", callback_data: "room_20" }],
-            [{ text: "Room 30 (Stake 30)", callback_data: "room_30" }]
+            [
+            [{ text: "Room 5 (Stake 10)", callback_data: "room_5" },
+            { text: "Room 10 (Stake 20)", callback_data: "room_10" },
+            { text: "Room 20 (Stake 30)", callback_data: "room_20" }],
+              [{ text: "Room 30 (Stake 10)", callback_data: "room_30" },
+            { text: "Room 50 (Stake 20)", callback_data: "room_50" },
+            { text: "Room 100 (Stake 30)", callback_data: "room_100" }]
           ]
+        ]
         }
       });
   break;
@@ -289,10 +294,15 @@ bot.on('callback_query', async (callbackQuery) => {
       bot.sendMessage(chatId, "Select a room to play:", {
         reply_markup: {
           inline_keyboard: [
-            [{ text: "Room 10 (Stake 10)", callback_data: "room_10" }],
-            [{ text: "Room 20 (Stake 20)", callback_data: "room_20" }],
-            [{ text: "Room 30 (Stake 30)", callback_data: "room_30" }]
+            [
+            [{ text: "Room 5 (Stake 10)", callback_data: "room_5" },
+            { text: "Room 10 (Stake 20)", callback_data: "room_10" },
+            { text: "Room 20 (Stake 30)", callback_data: "room_20" }],
+              [{ text: "Room 30 (Stake 10)", callback_data: "room_30" },
+            { text: "Room 50 (Stake 20)", callback_data: "room_50" },
+            { text: "Room 100 (Stake 30)", callback_data: "room_100" }]
           ]
+        ]
         }
       });
       break;
@@ -322,9 +332,11 @@ Follow instructions to complete deposit.
     bot.sendMessage(chatId, "Choose your withdrawal method:", {
       reply_markup: {
         inline_keyboard: [
+          [
           [{ text: "📲 Telebirr", callback_data: "withdraw_telebirr" }],
           [{ text: "🏦 CBE Birr", callback_data: "withdraw_cbebirr" }]
         ]
+      ]
       }
     });
     break;
