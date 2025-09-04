@@ -196,11 +196,7 @@ io.on("connection", (socket) => {
 
     console.log(`New connection: ${socket.id}, username=${username}, telegramId=${telegramId}, clientId=${clientId}`);
   });
-socket.on("markPlayerInGame", ({ roomId, clientId }) => {
-  if (!rooms[roomId] || !rooms[roomId].players[clientId]) return;
-  rooms[roomId].players[clientId].inGame = true;
-  rooms[roomId].inGamePlayers[clientId] = rooms[roomId].players[clientId].cartelas;
-});
+
   // --- SELECT CARTELA ---
   socket.on("selectCartela", async ({ roomId, cartelaIndex }) => {
     const rId = String(roomId);
@@ -269,17 +265,7 @@ socket.on("markPlayerInGame", ({ roomId, clientId }) => {
       socket.emit("cartelaRejected", { message: "Server error" });
     }
   });
- socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
-    const player = rooms[roomId]?.players[clientId];
-    if (player && player.inGame) {
-      socket.emit("playerStatus", {
-        inGame: true,
-        selectedCartelas: player.selectedCartelas || []
-      });
-    } else {
-      socket.emit("playerStatus", { inGame: false });
-    }
-  });
+
 
   // --- CALL NUMBER ---
   socket.on("callNumber", ({ roomId, number }) => {
