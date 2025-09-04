@@ -164,11 +164,7 @@ io.on("connection", (socket) => {
 
     // ✅ Use clientId as the key for all player info
    rooms[rId].players[clientId] = username || `Guest-${clientId}`;
-  rooms[rId].players[clientId] = {
-  username: username || `Guest-${clientId}`,
-  inGame: false,                  // Track if player is in BingoBoard
-  selectedCartelas: rooms[rId].playerCartelas[clientId] || []
-};
+ 
 
     // ✅ Ensure player has a cartela slot
     if (!rooms[rId].playerCartelas[clientId]) {
