@@ -30,6 +30,7 @@ const mainMenu = {
       [{ text: "💰 Balance", callback_data: "balance" }],
       [{ text: "🎮 Play Bingo", callback_data: "play" }],
       [{ text: "📥 Deposit", callback_data: "deposit" }],
+      [{ text: "📤 Withdraw", callback_data: "withdraw" }],
       [{ text: "📜 History", callback_data: "history" }],
       [{ text: "ℹ️ Help", callback_data: "help" }]
       
@@ -108,10 +109,34 @@ bot.onText(/\/(balance|play|deposit|history|help)/, async (msg, match) => {
           ]
         }
       });
+      case "withdraw": {
+      // Show withdraw method options
+      bot.sendMessage(chatId, "Choose your withdrawal method:", {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "📲 Telebirr", callback_data: "withdraw_telebirr" }],
+            [{ text: "🏦 CBE Birr", callback_data: "withdraw_cbebirr" }]
+          ]
+        }
+      });
       break;
+    }
+
+    case "withdraw_telebirr":
+    case "withdraw_cbebirr": {
+      const method = data.split("_")[1]; // "telebirr" or "cbebirr"
+      userStates[chatId] = { step: "withdrawAmount", method };
+      bot.sendMessage(chatId, `Enter the amount you want to withdraw via ${method.toUpperCase()}:`);
+      break;
+    }
+  
+      
+    
     case "help":
       bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history.");
+
       break;
+      
     case "deposit":
       bot.sendMessage(chatId, "💵 How much money do you want to deposit?");
       userStates[chatId] = { step: "depositAmount" };
@@ -163,7 +188,38 @@ bot.on("message", async (msg) => {
     userStates[chatId].step = "depositMessage";
     return;
   }
+if (step === "withdrawAmount") {
+    const amount = parseFloat(text);
+    if (isNaN(amount) || amount <= 0) {
+      bot.sendMessage(chatId, "⚠️ Please enter a valid withdrawal amount.");
+      return;
+    }
 
+    const method = userStates[chatId].method;
+
+    try {
+      const user = await BingoBord.findOne({ telegramId: chatId });
+      if (!user) {
+        bot.sendMessage(chatId, "User not found. Please /start first.");
+        delete userStates[chatId];
+        return;
+      }
+
+      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/transactions/withdraw`, {
+        username: user.username,
+        phoneNumber: user.phoneNumber,
+        amount,
+        method
+      });
+
+      bot.sendMessage(chatId, res.data.message || "✅ Withdrawal successful!");
+    } catch (err) {
+      bot.sendMessage(chatId, err.response?.data?.message || "❌ Withdrawal failed.");
+    }
+
+    delete userStates[chatId]; // clear state
+    return;
+  }
   // Deposit Message
   if (step === "depositMessage") {
     try {
