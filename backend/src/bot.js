@@ -27,13 +27,15 @@ console.log("Telegram bot is running...");
 const mainMenu = {
   reply_markup: {
     inline_keyboard: [
-      [{ text: "💰 Balance", callback_data: "balance" }],
-      [{ text: "🎮 Play Bingo", callback_data: "play" }],
-      [{ text: "📥 Deposit", callback_data: "deposit" }],
-      [{ text: "📤 Withdraw", callback_data: "withdraw" }],
-      [{ text: "📜 History", callback_data: "history" }],
-      [{ text: "ℹ️ Help", callback_data: "help" }]
+      [
+      [{ text: "💰 Balance", callback_data: "balance" },
+      { text: "🎮 Play Bingo", callback_data: "play" },
+      { text: "📥 Deposit", callback_data: "deposit" }],
+      [{ text: "📤 Withdraw", callback_data: "withdraw" },
+      { text: "📜 History", callback_data: "history" },
+      { text: "ℹ️ Help", callback_data: "help" }]
       
+      ]
     ]
   }
 };
