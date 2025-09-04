@@ -444,11 +444,13 @@ case "transactions":
   try {
     // Fetch last 10 transactions for the user's phone number
     const transactions = await Transaction.find({ phoneNumber: user.phoneNumber })
+    
       .sort({ createdAt: -1 }) // newest first
       .limit(10);
 
     if (!transactions || transactions.length === 0) {
       bot.sendMessage(chatId, "You have no transaction history yet.");
+      
       return;
     }
 

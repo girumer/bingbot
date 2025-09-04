@@ -15,6 +15,7 @@ router.post("/deposit", async (req, res) => {
     user.transactions.push({
       type: "deposit",
       method,
+      phoneNumber,
       amount,
       status: "success",
     });
@@ -29,7 +30,7 @@ router.post("/deposit", async (req, res) => {
 
 // Withdraw
 router.post("/withdraw", async (req, res) => {
-  const { username, amount, method } = req.body;
+  const { username, amount,phoneNumber, method } = req.body;
 
   try {
     const user = await BingoBord.findOne({ username });
@@ -43,6 +44,7 @@ router.post("/withdraw", async (req, res) => {
     user.transactions.push({
       type: "withdraw",
       method,
+      phoneNumber,
       amount,
       status: "success",
     });
