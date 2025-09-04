@@ -33,11 +33,11 @@ const mainMenu = {
        
       ],
       [ { text: "📥 Deposit", callback_data: "deposit" },
-        { text: "ℹ️ Help", callback_data: "help" },
+      { text: "💳 Transactions", callback_data: "transactions" },
       ],
       [
         { text: "📤 Withdraw", callback_data: "withdraw" },
-        { text: "📜 History", callback_data: "history" },
+        { text: "🎮 Game History", callback_data: "gameHistory" },
         
       ]
     ]
@@ -49,7 +49,7 @@ const commands = [
   { command: "balance", callback_data: "balance",description: "💰 Check your balance" },
   { command: "play", callback_data: "play" ,description: "🎮 Play Bingo" },
   { command: "deposit", callback_data: "deposit",description: "📥 Deposit funds" },
-  { command: "history", callback_data: "history",description: "📜 Transaction history" },
+  { command: "history", callback_data: "history",description: "📜 game  history" },
   { command: "help",callback_data: "help", description: "ℹ️ Help info" }
 ];
 bot.setMyCommands(commands)
@@ -331,9 +331,23 @@ bot.on('callback_query', async (callbackQuery) => {
       });
       break;
 
-    case "help":
-      bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history.");
+    case "gameHistory":
+      if (!user.gameHistory || user.gameHistory.length === 0) {
+        bot.sendMessage(chatId, "🎮 You have no game history yet.");
+        return;
+      }
+
+      let gameText = "🎮 Last 10 Games:\n";
+      user.gameHistory
+        .slice(-10) // last 10 only
+        .reverse() // newest first
+        .forEach((g, i) => {
+          gameText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
+        });
+
+      bot.sendMessage(chatId, gameText);
       break;
+      
 
     case "deposit":
       bot.sendMessage(chatId, "💵 How much money do you want to deposit?");
