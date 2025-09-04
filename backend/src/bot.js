@@ -109,26 +109,7 @@ bot.onText(/\/(balance|play|deposit|history|help)/, async (msg, match) => {
           ]
         }
       });
-      case "withdraw": {
-      // Show withdraw method options
-      bot.sendMessage(chatId, "Choose your withdrawal method:", {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: "📲 Telebirr", callback_data: "withdraw_telebirr" }],
-            [{ text: "🏦 CBE Birr", callback_data: "withdraw_cbebirr" }]
-          ]
-        }
-      });
-      break;
-    }
-
-    case "withdraw_telebirr":
-    case "withdraw_cbebirr": {
-      const method = data.split("_")[1]; // "telebirr" or "cbebirr"
-      userStates[chatId] = { step: "withdrawAmount", method };
-      bot.sendMessage(chatId, `Enter the amount you want to withdraw via ${method.toUpperCase()}:`);
-      break;
-    }
+  break;
   
       
     
@@ -335,6 +316,22 @@ Follow instructions to complete deposit.
       bot.sendMessage(chatId, instructions);
       userStates[chatId].step = "depositMessage";
       break;
+  case "withdraw":
+    bot.sendMessage(chatId, "Choose your withdrawal method:", {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "📲 Telebirr", callback_data: "withdraw_telebirr" }],
+          [{ text: "🏦 CBE Birr", callback_data: "withdraw_cbebirr" }]
+        ]
+      }
+    });
+    break;
+     case "withdraw_telebirr":
+  case "withdraw_cbebirr":
+    const method = data.split("_")[1]; // telebirr / cbebirr
+    userStates[chatId] = { step: "withdrawAmount", method };
+    bot.sendMessage(chatId, `Enter the amount you want to withdraw via ${method.toUpperCase()}:`);
+    break;
 
     case "room_10":
     case "room_20":
