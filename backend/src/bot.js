@@ -28,17 +28,19 @@ const mainMenu = {
   reply_markup: {
     inline_keyboard: [
       [
-      [{ text: "💰 Balance", callback_data: "balance" },
-      { text: "🎮 Play Bingo", callback_data: "play" },
-      { text: "📥 Deposit", callback_data: "deposit" }],
-      [{ text: "📤 Withdraw", callback_data: "withdraw" },
-      { text: "📜 History", callback_data: "history" },
-      { text: "ℹ️ Help", callback_data: "help" }]
-      
+        { text: "💰 Balance", callback_data: "balance" },
+        { text: "🎮 Play Bingo", callback_data: "play" },
+        { text: "📥 Deposit", callback_data: "deposit" }
+      ],
+      [
+        { text: "📤 Withdraw", callback_data: "withdraw" },
+        { text: "📜 History", callback_data: "history" },
+        { text: "ℹ️ Help", callback_data: "help" }
       ]
     ]
   }
 };
+
 
 const commands = [
   { command: "balance", callback_data: "balance",description: "💰 Check your balance" },
@@ -104,16 +106,19 @@ bot.onText(/\/(balance|play|deposit|history|help)/, async (msg, match) => {
     case "play":
       bot.sendMessage(chatId, "Select a room to play:", {
         reply_markup: {
-          inline_keyboard: [
-            [
-            [{ text: "Room 5 (Stake 10)", callback_data: "room_5" },
-            { text: "Room 10 (Stake 20)", callback_data: "room_10" },
-            { text: "Room 20 (Stake 30)", callback_data: "room_20" }],
-              [{ text: "Room 30 (Stake 10)", callback_data: "room_30" },
-            { text: "Room 50 (Stake 20)", callback_data: "room_50" },
-            { text: "Room 100 (Stake 30)", callback_data: "room_100" }]
-          ]
-        ]
+        inline_keyboard: [
+  [
+    { text: "Room 5 (Stake 5)", callback_data: "room_5" },
+    { text: "Room 10 (Stake 10)", callback_data: "room_10" },
+    { text: "Room 20 (Stake 20)", callback_data: "room_20" }
+  ],
+  [
+    { text: "Room 30 (Stake 30)", callback_data: "room_30" },
+    { text: "Room 50 (Stake 50)", callback_data: "room_50" },
+    { text: "Room 100 (Stake 100)", callback_data: "room_100" }
+  ]
+]
+
         }
       });
   break;
@@ -293,16 +298,19 @@ bot.on('callback_query', async (callbackQuery) => {
     case "play":
       bot.sendMessage(chatId, "Select a room to play:", {
         reply_markup: {
-          inline_keyboard: [
-            [
-            [{ text: "Room 5 (Stake 10)", callback_data: "room_5" },
-            { text: "Room 10 (Stake 20)", callback_data: "room_10" },
-            { text: "Room 20 (Stake 30)", callback_data: "room_20" }],
-              [{ text: "Room 30 (Stake 10)", callback_data: "room_30" },
-            { text: "Room 50 (Stake 20)", callback_data: "room_50" },
-            { text: "Room 100 (Stake 30)", callback_data: "room_100" }]
-          ]
-        ]
+      inline_keyboard: [
+  [
+    { text: "Room 5 (Stake 5)", callback_data: "room_5" },
+    { text: "Room 10 (Stake 10)", callback_data: "room_10" },
+    { text: "Room 20 (Stake 20)", callback_data: "room_20" }
+  ],
+  [
+    { text: "Room 30 (Stake 30)", callback_data: "room_30" },
+    { text: "Room 50 (Stake 50)", callback_data: "room_50" },
+    { text: "Room 100 (Stake 100)", callback_data: "room_100" }
+  ]
+]
+
         }
       });
       break;
@@ -331,12 +339,13 @@ Follow instructions to complete deposit.
   case "withdraw":
     bot.sendMessage(chatId, "Choose your withdrawal method:", {
       reply_markup: {
-        inline_keyboard: [
-          [
-          [{ text: "📲 Telebirr", callback_data: "withdraw_telebirr" }],
-          [{ text: "🏦 CBE Birr", callback_data: "withdraw_cbebirr" }]
-        ]
-      ]
+       inline_keyboard: [
+  [
+    { text: "📲 Telebirr", callback_data: "withdraw_telebirr" },
+    { text: "🏦 CBE Birr", callback_data: "withdraw_cbebirr" }
+  ]
+]
+
       }
     });
     break;
