@@ -694,7 +694,7 @@ app.get("/admin/transactions-list", async (req, res) => {
   try {
     const transactions = await Transaction.find()
       .sort({ createdAt: -1 })
-      .limit(50); // latest 50
+      .limit(200); // latest 50
     res.json(transactions);
   } catch (err) {
     console.error(err);
