@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const BingoBord = require("../Models/BingoBord");
-
+const Transaction = require('../Models/Transaction');
 // Deposit
 router.post("/deposit", async (req, res) => {
   const { username, amount, method } = req.body;
@@ -29,21 +29,22 @@ router.post("/deposit", async (req, res) => {
 });
 
 // Withdraw
+
 router.post("/withdraw", async (req, res) => {
-  const { username, amount,phoneNumber, method } = req.body;
+  const { username, amount, phoneNumber, method } = req.body;
 
   try {
     const user = await BingoBord.findOne({ username });
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (user.Wallet < amount) {
-      return res.status(400).json({ message: " your account had Insufficient balance" });
+      return res.status(400).json({ message: "Your account is in insufficient balance" });
     }
 
+    // Deduct from user wallet
     user.Wallet -= amount;
- 
 
-    // Save to Transaction collection
+    // 1️⃣ Save in global Transaction collection
     const newTx = new Transaction({
       transactionNumber: `WD${Date.now()}`,
       phoneNumber,
@@ -53,6 +54,15 @@ router.post("/withdraw", async (req, res) => {
     });
     await newTx.save();
 
+    // 2️⃣ Save in user's transactions array
+    user.transactions.push({
+      type: "withdraw",
+      method,
+      amount,
+      status: "success",
+      timestamp: new Date()
+    });
+    await user.save();
 
     res.json({ message: "Withdrawal successful", wallet: user.Wallet });
   } catch (err) {
