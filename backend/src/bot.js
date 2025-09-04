@@ -95,17 +95,23 @@ bot.onText(/\/(balance|play|deposit|history|help)/, async (msg, match) => {
     case "balance":
       bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} coins`);
       break;
-    case "history":
-      if (!user.gameHistory || user.gameHistory.length === 0) {
-        bot.sendMessage(chatId, "You have no game history yet.");
-        return;
-      }
-      let historyText = "📜 Your game history:\n";
-      user.gameHistory.forEach((g, i) => {
-        historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
-      });
-      bot.sendMessage(chatId, historyText);
-      break;
+  case "history":
+  if (!user.gameHistory || user.gameHistory.length === 0) {
+    bot.sendMessage(chatId, "You have no game history yet.");
+    return;
+  }
+
+  // Get last 10 items only
+  const lastGames = user.gameHistory.slice(-10);
+
+  let historyText = "📜 Your last 10 game history:\n";
+  lastGames.forEach((g, i) => {
+    historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
+  });
+
+  bot.sendMessage(chatId, historyText);
+  break;
+    
     case "play":
       bot.sendMessage(chatId, "Select a room to play:", {
         reply_markup: {
