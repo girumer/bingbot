@@ -30,6 +30,7 @@ router.post("/deposit", async (req, res) => {
 
 // Withdraw
 
+// Withdraw route
 router.post("/withdraw", async (req, res) => {
   const { username, amount, phoneNumber, method } = req.body;
 
@@ -38,30 +39,30 @@ router.post("/withdraw", async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (user.Wallet < amount) {
-      return res.status(400).json({ message: "Your account is in insufficient balance" });
+      return res.status(400).json({ message: "Insufficient balance" });
     }
 
-    // Deduct from user wallet
+    // 1️⃣ Update wallet
     user.Wallet -= amount;
 
-    // 1️⃣ Save in global Transaction collection
+    // 2️⃣ Save in user's transaction history
+    user.transactions.push({
+      type: "withdraw",       // ✅ matches BingoBord schema
+      method,                 // ✅ "telebirr" or "cbebirr"
+      amount,
+      status: "success"
+    });
+
+    // 3️⃣ Save in global Transaction collection
     const newTx = new Transaction({
       transactionNumber: `WD${Date.now()}`,
       phoneNumber,
-      type: method,
+      type: method === "telebirr" ? "telebirr" : "cbe", // ✅ matches Transaction schema
       amount,
       rawMessage: `Withdraw via ${method}`
     });
     await newTx.save();
 
-    // 2️⃣ Save in user's transactions array
-    user.transactions.push({
-      type: method,
-      method,
-      amount,
-      status: "success",
-      timestamp: new Date()
-    });
     await user.save();
 
     res.json({ message: "Withdrawal successful", wallet: user.Wallet });
@@ -70,6 +71,7 @@ router.post("/withdraw", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 // Get transaction history
 router.get("/history/:username", async (req, res) => {
