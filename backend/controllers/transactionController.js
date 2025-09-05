@@ -79,60 +79,59 @@ exports.parseTransaction = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+// This function needs to be rewritten to handle the new flow
 exports.depositAmount = async (req, res) => {
-  try {
-    const { message, phoneNumber } = req.body;
-    if (!message) return res.status(400).json({ error: "Message is required" });
+    try {
+        // Assume the user sends the transaction number, not the full message
+        const { transactionNumber, phoneNumber } = req.body; 
 
-    const user = await BingoBord.findOne({ phoneNumber });
-    if (!user) return res.status(404).json({ error: "User not found" });
+        if (!transactionNumber) {
+            return res.status(400).json({ error: "Transaction number is required." });
+        }
+        if (!phoneNumber) {
+            return res.status(400).json({ error: "Phone number is required." });
+        }
 
-    // Step 1: Parse transaction details from pasted message
-    let transactions = [];
-    if (message.toLowerCase().includes("telebirr")) {
-      transactions = parseTelebirrMessage(message);
-    } else if (message.toLowerCase().includes("cbe") || message.toLowerCase().includes("commercial bank")) {
-      transactions = parseCBEMessages(message);
+        // Find the user who is trying to deposit
+        const user = await BingoBord.findOne({ phoneNumber });
+        if (!user) {
+            return res.status(404).json({ error: "User not found." });
+        }
+
+        // Step 1: Find the transaction in the pending list.
+        const pendingTx = await Transaction.findOne({ transactionNumber: transactionNumber });
+
+        // Step 2: Check if the transaction exists and hasn't been used.
+        if (!pendingTx) {
+            return res.status(400).json({ error: "Invalid or already-claimed transaction number." });
+        }
+
+        // Step 3: Link the transaction to the user's history and credit their wallet.
+        user.Wallet += pendingTx.amount;
+        user.transactions.push({
+            type: "deposit",
+            method: pendingTx.type === "telebirr" ? "telebirr" : "cbebirr",
+            amount: pendingTx.amount,
+            status: "success",
+            timestamp: new Date(),
+        });
+
+        // Step 4: Remove the transaction from the pending list to prevent double-spending.
+        await Transaction.deleteOne({ _id: pendingTx._id });
+
+        // Step 5: Save the user's updated wallet and transaction history.
+        await user.save();
+
+        res.json({
+            success: true,
+            message: `Deposit of ${pendingTx.amount} ETB confirmed successfully! Your new wallet balance is ${user.Wallet}.`,
+            wallet: user.Wallet,
+        });
+
+    } catch (err) {
+        console.error("Deposit confirmation error:", err);
+        res.status(500).json({ error: "Server error" });
     }
-
-    if (transactions.length === 0) {
-      return res.status(400).json({ error: "Could not extract transaction details" });
-    }
-
-    let totalDeposited = 0;
-
-    for (const tx of transactions) {
-      // Step 2: Check if this transaction exists in pending list
-      const txInDb = await Transaction.findOne({ transactionNumber: tx.transactionNumber });
-
-      if (!txInDb) {
-        return res.status(400).json({ error: "Invalid transaction. Not found in pending list." });
-      }
-
-      // ✅ Valid → deposit to wallet
-      user.Wallet += txInDb.amount;
-      totalDeposited += txInDb.amount;
-
-      // Remove from pending list
-      await Transaction.deleteOne({ _id: txInDb._id });
-    }
-
-    await user.save();
-
-    if (totalDeposited === 0) {
-      return res.status(400).json({ error: "No deposit made." });
-    }
-
-    res.json({
-      success: true,
-      message: `Deposited ${totalDeposited} ETB to ${user.username}`,
-      wallet: user.Wallet,
-    });
-
-  } catch (err) {
-    console.error("Deposit error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
 };
 
 
