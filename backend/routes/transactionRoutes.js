@@ -48,7 +48,7 @@ router.post("/withdraw", async (req, res) => {
     const newTx = new Transaction({
       transactionNumber: `WD${Date.now()}`,
       phoneNumber,
-      type: "withdraw",
+      type: method,
       amount,
       rawMessage: `Withdraw via ${method}`
     });
@@ -56,7 +56,7 @@ router.post("/withdraw", async (req, res) => {
 
     // 2️⃣ Save in user's transactions array
     user.transactions.push({
-      type: "withdraw",
+      type: method,
       method,
       amount,
       status: "success",
