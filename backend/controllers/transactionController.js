@@ -79,7 +79,7 @@ exports.parseTransaction = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
-exports.depositAmount = async (req, res) => {
+ exports.depositAmount = async (req, res) => {
   try {
     const { message, phoneNumber } = req.body;
     if (!message) return res.status(400).json({ error: "Message is required" });
@@ -122,7 +122,8 @@ exports.depositAmount = async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
-}; 
+};
+ 
 
 
 // Get all pending transactions
