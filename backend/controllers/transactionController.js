@@ -79,11 +79,9 @@ exports.parseTransaction = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
-
-
-exports.depositAmount = async (req, res) => {
+ exports.depositAmount = async (req, res) => {
   try {
-    const { message, phoneNumber } = req.body;
+    const { message, phoneNumber, method } = req.body;
     if (!message) return res.status(400).json({ error: "Message is required" });
 
     const user = await BingoBord.findOne({ phoneNumber });
@@ -107,23 +105,8 @@ exports.depositAmount = async (req, res) => {
     // Step 2: Deposit amounts
     let totalDeposited = 0;
     for (const tx of transactions) {
-      let txInDb = await Transaction.findOne({ transactionNumber: tx.transactionNumber });
-
-      // ✅ If transaction doesn’t exist in DB → create it first
-      if (!txInDb) {
-        txInDb = new Transaction({
-          transactionNumber: tx.transactionNumber,
-          phoneNumber,             // link to user’s phone number
-          type: tx.type,
-          amount: tx.amount,
-          rawMessage: message,
-          processed: false
-        });
-        await txInDb.save();
-      }
-
-      // ✅ Skip if already processed
-      if (txInDb.processed) continue;
+      const txInDb = await Transaction.findOne({ transactionNumber: tx.transactionNumber });
+      if (!txInDb) continue;
 
       // ✅ Update wallet
       user.Wallet += txInDb.amount;
@@ -131,13 +114,14 @@ exports.depositAmount = async (req, res) => {
 
       // ✅ Save to user transaction history
       user.transactions.push({
-        type: "deposit",
-        method: txInDb.type,   // "telebirr" | "cbe"
+        type: "deposit",              // matches BingoBord schema
+        method: txInDb.type,          // "telebirr" | "cbe"
         amount: txInDb.amount,
         status: "success",
       });
 
-      // ✅ Mark as processed
+      // ❌ Instead of deleting, you could mark it as processed
+      // await Transaction.deleteOne({ _id: txInDb._id });
       txInDb.processed = true;
       await txInDb.save();
     }
