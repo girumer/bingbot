@@ -100,7 +100,7 @@ exports.depositAmount = async (req, res) => {
 
         // Step 1: Find the transaction in the pending list.
         const pendingTx = await Transaction.findOne({ transactionNumber: transactionNumber });
-
+       console.log("pending transaction is ",pendingTx);
         // Step 2: Check if the transaction exists and hasn't been used.
         if (!pendingTx) {
             return res.status(400).json({ error: "Invalid or already-claimed transaction number." });
