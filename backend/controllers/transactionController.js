@@ -79,9 +79,9 @@ exports.parseTransaction = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
- exports.depositAmount = async (req, res) => {
+exports.depositAmount = async (req, res) => {
   try {
-    const { message, phoneNumber, method } = req.body;
+    const { message, phoneNumber } = req.body;
     if (!message) return res.status(400).json({ error: "Message is required" });
 
     const user = await BingoBord.findOne({ phoneNumber });
@@ -90,12 +90,9 @@ exports.parseTransaction = async (req, res) => {
     // Step 1: Parse transactions from message
     let transactions = [];
     if (message.toLowerCase().includes("telebirr")) {
-      transactions = parseTelebirrMessage(message);
-    } else if (
-      message.toLowerCase().includes("cbe") ||
-      message.toLowerCase().includes("commercial bank")
-    ) {
-      transactions = parseCBEMessages(message);
+      transactions = parseTelebirrMessage(message); // your parser
+    } else if (message.toLowerCase().includes("cbe") || message.toLowerCase().includes("commercial bank")) {
+      transactions = parseCBEMessages(message); // your parser
     }
 
     if (transactions.length === 0) {
@@ -108,22 +105,9 @@ exports.parseTransaction = async (req, res) => {
       const txInDb = await Transaction.findOne({ transactionNumber: tx.transactionNumber });
       if (!txInDb) continue;
 
-      // ✅ Update wallet
       user.Wallet += txInDb.amount;
       totalDeposited += txInDb.amount;
-
-      // ✅ Save to user transaction history
-      user.transactions.push({
-        type: "deposit",              // matches BingoBord schema
-        method: txInDb.type,          // "telebirr" | "cbe"
-        amount: txInDb.amount,
-        status: "success",
-      });
-
-      // ❌ Instead of deleting, you could mark it as processed
-      // await Transaction.deleteOne({ _id: txInDb._id });
-      txInDb.processed = true;
-      await txInDb.save();
+      await Transaction.deleteOne({ _id: txInDb._id });
     }
 
     await user.save();
@@ -132,18 +116,13 @@ exports.parseTransaction = async (req, res) => {
       return res.status(404).json({ error: "No new transactions to deposit" });
     }
 
-    res.json({
-      success: true,
-      message: `Deposited total of ${totalDeposited} ETB to ${user.username}`,
-      wallet: user.Wallet,
-    });
+    res.json({ success: true, message: `Deposited total of ${totalDeposited} ETB to ${user.username}` });
 
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
-};
-
+}; 
 
 
 // Get all pending transactions
