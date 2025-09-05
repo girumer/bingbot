@@ -82,14 +82,36 @@ exports.parseTransaction = async (req, res) => {
 // This function needs to be rewritten to handle the new flow
 exports.depositAmount = async (req, res) => {
     try {
-        // Assume the user sends the transaction number, not the full message
-        const { transactionNumber, phoneNumber } = req.body; 
+        // The user now sends the full message and their phone number
+        let { message, phoneNumber } = req.body; 
+        
+        // Sanitize the input
+        message = message ? message.trim() : null;
+        phoneNumber = phoneNumber ? phoneNumber.trim() : null;
 
-        if (!transactionNumber) {
-            return res.status(400).json({ error: "Transaction number is required." });
+        if (!message) {
+            return res.status(400).json({ error: "Message is required." });
         }
         if (!phoneNumber) {
             return res.status(400).json({ error: "Phone number is required." });
+        }
+        
+        // --- Step 1: Extract the transaction number from the user's message ---
+        let transactionNumber;
+        if (message.toLowerCase().includes("telebirr")) {
+            const transMatch = message.match(/transaction number is\s*(\w+)/i);
+            if (transMatch) transactionNumber = transMatch[1].trim();
+        }
+        if (message.toLowerCase().includes("cbe") || message.toLowerCase().includes("commercial bank")) {
+            const transMatch = message.match(/Txn[:\s]+(\w+)/i);
+            if (transMatch) transactionNumber = transMatch[1].trim();
+        }
+        
+        console.log(`Parsed transaction number from user message: "${transactionNumber}"`);
+
+        if (!transactionNumber) {
+            console.log("Failed to parse transaction number from the provided message.");
+            return res.status(400).json({ error: "Failed to extract transaction number from message." });
         }
 
         // Find the user who is trying to deposit
@@ -98,29 +120,44 @@ exports.depositAmount = async (req, res) => {
             return res.status(404).json({ error: "User not found." });
         }
 
-        // Step 1: Find the transaction in the pending list.
-        const pendingTx = await Transaction.findOne({ transactionNumber: transactionNumber });
-       console.log("pending transaction is ",pendingTx);
-        // Step 2: Check if the transaction exists and hasn't been used.
+        // Step 2: Find and delete the pending transaction in a single, atomic operation.
+        // This prevents race conditions and double-spending.
+        const pendingTx = await Transaction.findOneAndDelete({ transactionNumber: transactionNumber });
+        
+        console.log("pending transaction is ", pendingTx);
+
+        // Step 3: Check if the transaction exists and hasn't been used.
         if (!pendingTx) {
+            console.log(`Transaction number "${transactionNumber}" not found in pending list. It's either invalid or already claimed.`);
             return res.status(400).json({ error: "Invalid or already-claimed transaction number." });
         }
+        
+        // CRITICAL SECURITY CHECK: Verify the phone number from the request matches the number from the transaction.
+        // This prevents one user from claiming another's deposit.
+        if (pendingTx.phoneNumber !== phoneNumber) {
+             console.log(`SECURITY ALERT: Phone number mismatch. User's phone (${phoneNumber}) does not match transaction phone (${pendingTx.phoneNumber}).`);
+             
+             // Important: Since the current user could not claim it, re-insert the transaction
+             // back into the pending list so the rightful owner can claim it.
+             const reInsertTx = new Transaction(pendingTx);
+             await reInsertTx.save();
+             
+             return res.status(403).json({ error: "Unauthorized: Transaction does not belong to this user." });
+        }
 
-        // Step 3: Link the transaction to the user's history and credit their wallet.
+        // Step 4: Link the transaction to the user's history and credit their wallet.
         user.Wallet += pendingTx.amount;
         user.transactions.push({
             type: "deposit",
-            method: pendingTx.type === "telebirr" ? "telebirr" : "cbebirr",
+            method: pendingTx.type,
             amount: pendingTx.amount,
             status: "success",
             timestamp: new Date(),
         });
 
-        // Step 4: Remove the transaction from the pending list to prevent double-spending.
-        await Transaction.deleteOne({ _id: pendingTx._id });
-
         // Step 5: Save the user's updated wallet and transaction history.
         await user.save();
+        console.log(`User wallet updated. New balance: ${user.Wallet}`);
 
         res.json({
             success: true,
