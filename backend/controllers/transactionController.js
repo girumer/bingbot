@@ -79,23 +79,19 @@ exports.parseTransaction = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
-// This function needs to be rewritten to handle the new flow
 exports.depositAmount = async (req, res) => {
   try {
-    // The user now sends the full message, their phone number, AND the amount they entered.
     let { message, phoneNumber, amount } = req.body;
 
     // Sanitize the input
     message = message ? message.trim() : null;
     phoneNumber = phoneNumber ? phoneNumber.trim() : null;
-    amount = parseFloat(amount); // Ensure the amount is a number
+    amount = parseFloat(amount); 
 
     if (!message) {
       return res.status(400).json({ error: "Message is required." });
     }
-    if (!phoneNumber) {
-      return res.status(400).json({ error: "Phone number is required." });
-    }
+    
     if (isNaN(amount) || amount <= 0) {
       return res.status(400).json({ error: "Valid amount is required." });
     }
@@ -111,11 +107,32 @@ exports.depositAmount = async (req, res) => {
       if (transMatch) transactionNumber = transMatch[1].trim();
     }
 
-    console.log(`Parsed transaction number from user message: "${transactionNumber}"`);
-
     if (!transactionNumber) {
-      console.log("Failed to parse transaction number from the provided message.");
       return res.status(400).json({ error: "Failed to extract transaction number from message." });
+    }
+
+    // Step 2: Find the pending transaction without deleting it yet.
+    const pendingTx = await Transaction.findOne({ transactionNumber: transactionNumber });
+
+    if (!pendingTx) {
+      return res.status(400).json({ error: "Invalid or already-claimed transaction number." });
+    }
+    
+    // CRITICAL SECURITY CHECK: Verify the phone number from the request matches the number from the transaction.
+    
+
+    // NEW CONSISTENCY CHECK: Ensure the amount from the bot matches the amount in the transaction record.
+    if (pendingTx.amount !== amount) {
+      // The transaction is not deleted, so no need to re-insert.
+      return res.status(400).json({ error: "Amount mismatch. Please check your deposit amount." });
+    }
+
+    // All checks passed. Now, atomically delete the pending transaction to prevent it from being claimed again.
+    const deletedTx = await Transaction.findOneAndDelete({ transactionNumber: transactionNumber });
+
+    if (!deletedTx) {
+      // This is a rare case, but it handles a race condition where another process claimed it just before this one.
+      return res.status(400).json({ error: "Transaction already claimed." });
     }
 
     // Find the user who is trying to deposit
@@ -124,30 +141,7 @@ exports.depositAmount = async (req, res) => {
       return res.status(404).json({ error: "User not found." });
     }
 
-    // Step 2: Find and delete the pending transaction in a single, atomic operation.
-    const pendingTx = await Transaction.findOneAndDelete({ transactionNumber: transactionNumber });
-
-    console.log("pending transaction is ", pendingTx);
-
-    // Step 3: Check if the transaction exists and hasn't been used.
-    if (!pendingTx) {
-      console.log(`Transaction number "${transactionNumber}" not found in pending list. It's either invalid or already claimed.`);
-      return res.status(400).json({ error: "Invalid or already-claimed transaction number." });
-    }
-
-    // CRITICAL SECURITY CHECK: Verify the phone number from the request matches the number from the transaction.
-    
-
-    // NEW CONSISTENCY CHECK: Ensure the amount from the bot matches the amount in the transaction record.
-    if (pendingTx.amount !== amount) {
-      console.log(`CONSISTENCY FAILED: Amount from bot (${amount}) does not match transaction amount (${pendingTx.amount}).`);
-      // Re-insert the transaction since the user tried to claim it with a mismatched amount.
-      const reInsertTx = new Transaction(pendingTx);
-      await reInsertTx.save();
-      return res.status(400).json({ error: "Amount mismatch. Please check your deposit amount." });
-    }
-
-    // Step 4: Link the transaction to the user's history and credit their wallet.
+    // Step 3: Link the transaction to the user's history and credit their wallet.
     user.Wallet += pendingTx.amount;
     user.transactions.push({
       type: "deposit",
@@ -157,7 +151,7 @@ exports.depositAmount = async (req, res) => {
       timestamp: new Date(),
     });
 
-    // Step 5: Save the user's updated wallet and transaction history.
+    // Step 4: Save the user's updated wallet and transaction history.
     await user.save();
     console.log(`User wallet updated. New balance: ${user.Wallet}`);
 
