@@ -91,7 +91,9 @@ exports.depositAmount = async (req, res) => {
     if (!message) {
       return res.status(400).json({ error: "Message is required." });
     }
-    
+    if (!phoneNumber) {
+      return res.status(400).json({ error: "Phone number is required." });
+    }
     if (isNaN(amount) || amount <= 0) {
       return res.status(400).json({ error: "Valid amount is required." });
     }
@@ -119,7 +121,7 @@ exports.depositAmount = async (req, res) => {
     }
     
     // CRITICAL SECURITY CHECK: Verify the phone number from the request matches the number from the transaction.
-    
+  
 
     // NEW CONSISTENCY CHECK: Ensure the amount from the bot matches the amount in the transaction record.
     if (pendingTx.amount !== amount) {
@@ -129,7 +131,7 @@ exports.depositAmount = async (req, res) => {
 
     // All checks passed. Now, atomically delete the pending transaction to prevent it from being claimed again.
     const deletedTx = await Transaction.findOneAndDelete({ transactionNumber: transactionNumber });
-
+  console.log("delte trans is ",deletedTx);
     if (!deletedTx) {
       // This is a rare case, but it handles a race condition where another process claimed it just before this one.
       return res.status(400).json({ error: "Transaction already claimed." });
@@ -163,7 +165,7 @@ exports.depositAmount = async (req, res) => {
 
   } catch (err) {
     console.error("Deposit confirmation error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "may ur deposit amount is not correct" });
   }
 };
 
