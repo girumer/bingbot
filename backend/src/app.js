@@ -703,7 +703,7 @@ app.get("/admin/transactions-list", async (req, res) => {
 });
 app.get("/admin/pending-withdrawals",  async (req, res) => {
   try {
-    const pendingWithdrawals = await Transaction.find({ method: "withdrawal", status: "pending" }).sort({ createdAt: -1 });
+    const pendingWithdrawals = await Transaction.find({ type: "withdrawal" }).sort({ createdAt: -1 });
     res.json(pendingWithdrawals);
   } catch (err) {
     console.error(err);
