@@ -48,7 +48,7 @@ router.post("/withdraw", async (req, res) => {
     user.Wallet -= amount;
 
     // 2️⃣ Save in user's transaction history
-    // Corrected to use a consistent schema
+    // This is the likely source of the validation error.
     user.transactions.push({
       type: "withdrawal",
       method,
@@ -57,24 +57,33 @@ router.post("/withdraw", async (req, res) => {
     });
 
     // 3️⃣ Save in global Transaction collection
-    // The `type` is the method of transaction (deposit/withdrawal)
-    // The `method` is the specific payment method (telebirr/cbe)
-    const newTx = new Transaction({
-      transactionNumber: `WD${Date.now()}`,
-      phoneNumber,
-      type: "withdrawal", 
-      method,
-      amount,
-      rawMessage: `Withdraw via ${method}`,
-    });
-    await newTx.save();
+    try {
+      const newTx = new Transaction({
+        transactionNumber: `WD${Date.now()}`,
+        phoneNumber,
+        type: "withdrawal",
+        method,
+        amount,
+        rawMessage: `Withdraw via ${method}`,
+      });
+      await newTx.save();
+    } catch (txErr) {
+      console.error("Error saving to global Transaction collection:", txErr);
+      return res.status(500).json({ message: "Error saving global transaction. Please check the 'Transaction' model." });
+    }
 
-    await user.save();
+    // This is the critical save operation that might be failing.
+    try {
+      await user.save();
+    } catch (userErr) {
+      console.error("Error saving user document:", userErr);
+      return res.status(500).json({ message: "Error saving user document. Please check the 'transactions' array in the 'BingoBord' model." });
+    }
 
     res.json({ message: "Withdrawal successful", wallet: user.Wallet });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error occured" });
+    console.error("General server error:", err);
+    res.status(500).json({ message: "Server error occurred" });
   }
 });
 
