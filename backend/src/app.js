@@ -701,7 +701,7 @@ app.get("/admin/transactions-list", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch transactions" });
   }
 });
-router.get("/admin/pending-withdrawals", auth, async (req, res) => {
+app.get("/admin/pending-withdrawals",  async (req, res) => {
   try {
     const pendingWithdrawals = await Transaction.find({ method: "withdrawal", status: "pending" }).sort({ createdAt: -1 });
     res.json(pendingWithdrawals);
@@ -710,7 +710,7 @@ router.get("/admin/pending-withdrawals", auth, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-router.post("/admin/confirm-withdrawal", auth, async (req, res) => {
+app.post("/admin/confirm-withdrawal", async (req, res) => {
   const { transactionId } = req.body;
   try {
     const transaction = await Transaction.findById(transactionId);
@@ -746,7 +746,7 @@ router.post("/admin/confirm-withdrawal", auth, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-router.post("/admin/reject-withdrawal", auth, async (req, res) => {
+router.post("/admin/reject-withdrawal",  async (req, res) => {
   const { transactionId } = req.body;
   try {
     const transaction = await Transaction.findById(transactionId);
