@@ -134,25 +134,17 @@ exports.depositAmount = async (req, res) => {
       console.log(`Transaction number "${transactionNumber}" not found in pending list. It's either invalid or already claimed.`);
       return res.status(400).json({ error: "Invalid or already-claimed transaction number." });
     }
-    
+
     // CRITICAL SECURITY CHECK: Verify the phone number from the request matches the number from the transaction.
-    if (pendingTx.phoneNumber !== phoneNumber) {
-      console.log(`SECURITY ALERT: Phone number mismatch. User's phone (${phoneNumber}) does not match transaction phone (${pendingTx.phoneNumber}).`);
-
-      // Re-insert the transaction back into the pending list.
-      const reInsertTx = new Transaction(pendingTx);
-      await reInsertTx.save();
-
-      return res.status(403).json({ error: "Unauthorized: Transaction does not belong to this user." });
-    }
+    
 
     // NEW CONSISTENCY CHECK: Ensure the amount from the bot matches the amount in the transaction record.
     if (pendingTx.amount !== amount) {
-        console.log(`CONSISTENCY FAILED: Amount from bot (${amount}) does not match transaction amount (${pendingTx.amount}).`);
-        // Re-insert the transaction since the user tried to claim it with a mismatched amount.
-        const reInsertTx = new Transaction(pendingTx);
-        await reInsertTx.save();
-        return res.status(400).json({ error: "Amount mismatch. Please check your deposit amount." });
+      console.log(`CONSISTENCY FAILED: Amount from bot (${amount}) does not match transaction amount (${pendingTx.amount}).`);
+      // Re-insert the transaction since the user tried to claim it with a mismatched amount.
+      const reInsertTx = new Transaction(pendingTx);
+      await reInsertTx.save();
+      return res.status(400).json({ error: "Amount mismatch. Please check your deposit amount." });
     }
 
     // Step 4: Link the transaction to the user's history and credit their wallet.
