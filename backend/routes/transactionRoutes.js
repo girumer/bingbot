@@ -47,16 +47,7 @@ router.post("/withdraw", async (req, res) => {
     // 1️⃣ Update wallet
     user.Wallet -= amount;
 
-    // 2️⃣ Save in user's transaction history
-    // This is the likely source of the validation error.
-    user.transactions.push({
-      type: "withdrawal",
-      method,
-      amount,
-      rawMessage: `Withdrawal request via ${method}`,
-    });
-
-    // 3️⃣ Save in global Transaction collection
+    // 2️⃣ Save in global Transaction collection
     try {
       const newTx = new Transaction({
         transactionNumber: `WD${Date.now()}`,
@@ -72,12 +63,12 @@ router.post("/withdraw", async (req, res) => {
       return res.status(500).json({ message: "Error saving global transaction. Please check the 'Transaction' model." });
     }
 
-    // This is the critical save operation that might be failing.
     try {
+      // We are no longer saving a transaction to the user document.
       await user.save();
     } catch (userErr) {
       console.error("Error saving user document:", userErr);
-      return res.status(500).json({ message: "Error saving user document. Please check the 'transactions' array in the 'BingoBord' model." });
+      return res.status(500).json({ message: "Error saving user document. Please check the 'BingoBord' model." });
     }
 
     res.json({ message: "Withdrawal successful", wallet: user.Wallet });
