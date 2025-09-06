@@ -234,10 +234,11 @@ if (step === "withdrawAmount") {
         bot.sendMessage(chatId, "User not found. Please /start first.");
         return;
       }
-
+     const depositAmount = userStates[chatId].amount;
       const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/deposit`, {
         message: text,
-        phoneNumber: user.phoneNumber
+        phoneNumber: user.phoneNumber,
+         amount: depositAmount
       });
 
       bot.sendMessage(chatId, res.data.message || "Deposit claimed successfully! 🎉");
