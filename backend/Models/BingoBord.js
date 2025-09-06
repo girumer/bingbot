@@ -10,6 +10,7 @@ mongoose.connect(process.env.DATABASE_URL, {
 
 // Transaction sub-schema
 
+
 // Main BingoBord schema
 const BingoBordSchema = new mongoose.Schema({
   telegramId: {

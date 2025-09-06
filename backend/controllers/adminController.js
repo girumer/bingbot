@@ -1,4 +1,5 @@
 const BingoBord = require('../Models/BingoBord');
+const  Transaction=require('../Models/Transaction');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { secretkey } = require('../config/jwtconfig');
@@ -59,19 +60,26 @@ exports.getAllUsers = async (req, res) => {
 // Get total deposits and withdrawals
 exports.getTransactions = async (req, res) => {
   try {
-    const users = await BingoBord.find({ role: 'client' });
-    let totalDeposit = 0;
-    let totalWithdraw = 0;
+    const totalDeposit = await Transaction.aggregate([
+      { $match: { type: 'deposit', status: 'completed' } },
+      { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
+    ]);
 
-    users.forEach(user => {
-      user.transactions.forEach(tx => {
-        if (tx.type === 'deposit' && tx.status === 'success') totalDeposit += tx.amount;
-        if (tx.type === 'withdraw' && tx.status === 'success') totalWithdraw += tx.amount;
-      });
+    const totalWithdrawal = await Transaction.aggregate([
+      { $match: { type: 'withdrawal', status: 'completed' } },
+      { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
+    ]);
+    
+    // Extract the total amounts, defaulting to 0 if no transactions are found
+    const totalDepositAmount = totalDeposit.length > 0 ? totalDeposit[0].totalAmount : 0;
+    const totalWithdrawalAmount = totalWithdrawal.length > 0 ? totalWithdrawal[0].totalAmount : 0;
+
+    res.json({ 
+      totalDeposit: totalDepositAmount, 
+      totalWithdraw: totalWithdrawalAmount 
     });
-
-    res.json({ totalDeposit, totalWithdraw });
   } catch (err) {
+    console.error("Server error:", err);
     res.status(500).json({ message: 'Server error' });
   }
 };
