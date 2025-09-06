@@ -36,7 +36,9 @@ router.post("/withdraw", async (req, res) => {
 
   try {
     const user = await BingoBord.findOne({ username });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     if (user.Wallet < amount) {
       return res.status(400).json({ message: "Insufficient balance" });
@@ -46,21 +48,25 @@ router.post("/withdraw", async (req, res) => {
     user.Wallet -= amount;
 
     // 2️⃣ Save in user's transaction history
+    // Corrected to use a consistent schema
     user.transactions.push({
-      type: method,       // ✅ matches BingoBord schema
-      method:"withdrawal",                 // ✅ "telebirr" or "cbebirr"
+      type: "withdrawal", 
+      method, 
       amount,
       status: "pending",
       rawMessage: `Withdrawal request via ${method}`,
     });
 
     // 3️⃣ Save in global Transaction collection
+    // Corrected to use a consistent schema
     const newTx = new Transaction({
       transactionNumber: `WD${Date.now()}`,
       phoneNumber,
-      type: method === "telebirr" ? "telebirr" : "cbe", // ✅ matches Transaction schema
+      type: "withdrawal", 
+      method,
       amount,
-      rawMessage: `Withdraw via ${method}`
+      status: "pending",
+      rawMessage: `Withdraw via ${method}`,
     });
     await newTx.save();
 
