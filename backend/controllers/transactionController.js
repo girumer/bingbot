@@ -146,8 +146,8 @@ exports.depositAmount = async (req, res) => {
     // Step 3: Link the transaction to the user's history and credit their wallet.
     user.Wallet += pendingTx.amount;
     user.transactions.push({
-      type: "deposit",
-      method: pendingTx.type,
+      type: pendingTx.type,
+      method: "deposit",
       amount: pendingTx.amount,
       status: "success",
       timestamp: new Date(),

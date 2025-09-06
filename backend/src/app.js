@@ -701,6 +701,73 @@ app.get("/admin/transactions-list", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch transactions" });
   }
 });
+router.get("/admin/pending-withdrawals", auth, async (req, res) => {
+  try {
+    const pendingWithdrawals = await Transaction.find({ method: "withdrawal", status: "pending" }).sort({ createdAt: -1 });
+    res.json(pendingWithdrawals);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+router.post("/admin/confirm-withdrawal", auth, async (req, res) => {
+  const { transactionId } = req.body;
+  try {
+    const transaction = await Transaction.findById(transactionId);
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found." });
+    }
+    if (transaction.status !== "pending") {
+      return res.status(400).json({ message: "Transaction is not pending." });
+    }
+
+    const user = await BingoBord.findOne({ phoneNumber: transaction.phoneNumber });
+    if (!user) {
+      return res.status(404).json({ message: "User not found for this transaction." });
+    }
+
+    // Check again for sufficient funds just in case
+    if (user.Wallet < transaction.amount) {
+      return res.status(400).json({ message: "Insufficient balance to complete withdrawal." });
+    }
+
+    // Update user's wallet
+    user.Wallet -= transaction.amount;
+    await user.save();
+
+    // Update the transaction status to 'success'
+    transaction.status = "success";
+    transaction.rawMessage = `Withdrawal confirmed by admin at ${new Date().toLocaleString()}`;
+    await transaction.save();
+
+    res.json({ message: "Withdrawal confirmed successfully." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+router.post("/admin/reject-withdrawal", auth, async (req, res) => {
+  const { transactionId } = req.body;
+  try {
+    const transaction = await Transaction.findById(transactionId);
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found." });
+    }
+    if (transaction.status !== "pending") {
+      return res.status(400).json({ message: "Transaction is not pending." });
+    }
+
+    // Update the transaction status to 'rejected'
+    transaction.status = "rejected";
+    transaction.rawMessage = `Withdrawal rejected by admin at ${new Date().toLocaleString()}`;
+    await transaction.save();
+
+    res.json({ message: "Withdrawal rejected successfully." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 const getUsernameFromToken = (req, res, next) => {
   const accessToken = req.headers.authorization && req.headers.authorization.split(' ')[1];

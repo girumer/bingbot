@@ -12,7 +12,7 @@ export default function AdminDashboard() {
   const token = localStorage.getItem("admintoken");
   const [transactions, setTransactions] = useState([]);
   const [transactionlist,settransactionlist]=useState([]);
-
+ const [pendingWithdrawals, setPendingWithdrawals] = useState([]); 
 const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [errMsg, setErrMsg] = useState("");
@@ -58,6 +58,37 @@ const navigate = useNavigate();
     setTransactions([]); // Set empty array on error
   }
 };
+ const fetchPendingWithdrawals = async () => {
+    try {
+      const { data } = await axios.get(`${BACKEND_URL}/admin/pending-withdrawals`, { 
+        headers: authHeader 
+      });
+      setPendingWithdrawals(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error fetching pending withdrawals", err);
+      setPendingWithdrawals([]);
+    }
+  };
+   const updateWithdrawalStatus = async (id, status) => {
+    try {
+      await axios.post(
+        `${BACKEND_URL}/admin/update-withdrawal-status`,
+        { id, status },
+        { headers: authHeader }
+      );
+      
+      // Refresh the pending withdrawals list
+      await fetchPendingWithdrawals();
+      // Also refresh the summary and transaction list
+      await Promise.all([fetchSummary(), fetchtransaction()]);
+      
+      alert(`Withdrawal ${status === 'confirmed' ? 'confirmed' : 'rejected'} successfully`);
+    } catch (err) {
+      console.error("Error updating withdrawal status", err);
+      alert(err.response?.data?.message || "Failed to update withdrawal status");
+    }
+  };
+
 const fetchtransaction=async () => {
   try {
     const { data } = await axios.get(`${BACKEND_URL}/admin/transactions-list`, { headers: authHeader });
@@ -94,7 +125,7 @@ const fetchUsers = async (p = 1) => {
 
   const loadAll = async (p = 1) => {
     setLoading(true); setErrMsg("");
-    await Promise.all([fetchSummary(), fetchUsers(p),fetchtransaction()]);
+    await Promise.all([fetchSummary(), fetchUsers(p),fetchtransaction(),fetchPendingWithdrawals()]);
     setLoading(false);
   };
 
@@ -224,6 +255,51 @@ const handleLogout = () => {
           ))}
         </div>
       </section>
+       <section>
+        <h2>Pending Withdrawals</h2>
+        <table className="users-table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Phone Number</th>
+              <th>Method</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pendingWithdrawals.length ? pendingWithdrawals.map((withdrawal) => (
+              <tr key={withdrawal._id}>
+                <td>{withdrawal.username}</td>
+                <td>{withdrawal.phoneNumber}</td>
+                <td>{withdrawal.method}</td>
+                <td>{withdrawal.amount}</td>
+                <td>{new Date(withdrawal.createdAt).toLocaleString()}</td>
+                <td>
+                  <button 
+                    className="confirm-btn" 
+                    onClick={() => updateWithdrawalStatus(withdrawal._id, 'confirmed')}
+                  >
+                    Confirm
+                  </button>
+                  <button 
+                    className="reject-btn" 
+                    onClick={() => updateWithdrawalStatus(withdrawal._id, 'rejected')}
+                  >
+                    Reject
+                  </button>
+                </td>
+              </tr>
+            )) : (
+              <tr><td colSpan="6" style={{ textAlign: "center" }}>No pending withdrawals</td></tr>
+            )}
+          </tbody>
+        </table>
+      </section>
+
+      {/* Registration */}
+      
       <section>
   <h2>Recent Transactions</h2>
   <table className="users-table">

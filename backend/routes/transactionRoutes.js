@@ -47,10 +47,11 @@ router.post("/withdraw", async (req, res) => {
 
     // 2️⃣ Save in user's transaction history
     user.transactions.push({
-      type: "withdraw",       // ✅ matches BingoBord schema
-      method,                 // ✅ "telebirr" or "cbebirr"
+      type: method,       // ✅ matches BingoBord schema
+      method:"withdrawal",                 // ✅ "telebirr" or "cbebirr"
       amount,
-      status: "success"
+      status: "pending",
+      rawMessage: `Withdrawal request via ${method}`,
     });
 
     // 3️⃣ Save in global Transaction collection
