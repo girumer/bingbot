@@ -48,24 +48,20 @@ router.post("/withdraw", async (req, res) => {
     user.Wallet -= amount;
 
     // 2️⃣ Save in user's transaction history
-    // Corrected to use a consistent schema
     user.transactions.push({
-      type: "withdrawal", 
-      method, 
+      type: "withdrawal",
+      method,
       amount,
-      status: "pending",
       rawMessage: `Withdrawal request via ${method}`,
     });
 
     // 3️⃣ Save in global Transaction collection
-    // Corrected to use a consistent schema
     const newTx = new Transaction({
       transactionNumber: `WD${Date.now()}`,
       phoneNumber,
-      type: "withdrawal", 
-      method,
+      type: method, // Pass the method as the type to match the model
+      method: "withdrawal", // Set the transaction method to withdrawal
       amount,
-      status: "pending",
       rawMessage: `Withdraw via ${method}`,
     });
     await newTx.save();
@@ -75,7 +71,7 @@ router.post("/withdraw", async (req, res) => {
     res.json({ message: "Withdrawal successful", wallet: user.Wallet });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error occured " });
   }
 });
 
@@ -89,7 +85,7 @@ router.get("/history/:username", async (req, res) => {
     res.json(user.transactions);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error " });
   }
 });
 // Get all users' transactions (for admin dashboard)
