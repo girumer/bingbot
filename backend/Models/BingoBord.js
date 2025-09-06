@@ -9,14 +9,7 @@ mongoose.connect(process.env.DATABASE_URL, {
 .catch((e) => console.log(e));
 
 // Transaction sub-schema
-const transactionSchema = new mongoose.Schema({
-  // The 'type' enum has been changed from "withdraw" to "withdrawal" to match the router code.
-  type: { type: String, enum: ["deposit", "withdrawal"], required: true },
-  method: { type: String, enum: ["telebirr", "cbebirr"], required: true },
-  amount: { type: Number, required: true },
-  status: { type: String, enum: ["pending", "success", "failed"], default: "pending" },
-  timestamp: { type: Date, default: Date.now },
-});
+
 // Main BingoBord schema
 const BingoBordSchema = new mongoose.Schema({
   telegramId: {
@@ -59,7 +52,7 @@ const BingoBordSchema = new mongoose.Schema({
       timestamp: { type: Date, default: Date.now }
     }
   ],
-  transactions: [transactionSchema]
+
 });
 
 // Hash password before saving (only for admins)
