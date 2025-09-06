@@ -48,6 +48,7 @@ router.post("/withdraw", async (req, res) => {
     user.Wallet -= amount;
 
     // 2️⃣ Save in user's transaction history
+    // Corrected to use a consistent schema
     user.transactions.push({
       type: "withdrawal",
       method,
@@ -56,11 +57,13 @@ router.post("/withdraw", async (req, res) => {
     });
 
     // 3️⃣ Save in global Transaction collection
+    // The `type` is the method of transaction (deposit/withdrawal)
+    // The `method` is the specific payment method (telebirr/cbe)
     const newTx = new Transaction({
       transactionNumber: `WD${Date.now()}`,
       phoneNumber,
-      type: method, // Pass the method as the type to match the model
-      method: "withdrawal", // Set the transaction method to withdrawal
+      type: "withdrawal", 
+      method,
       amount,
       rawMessage: `Withdraw via ${method}`,
     });
@@ -71,7 +74,7 @@ router.post("/withdraw", async (req, res) => {
     res.json({ message: "Withdrawal successful", wallet: user.Wallet });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error occured " });
+    res.status(500).json({ message: "Server error occured" });
   }
 });
 
