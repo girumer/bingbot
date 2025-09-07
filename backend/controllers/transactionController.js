@@ -93,12 +93,11 @@ exports.parseTransaction = async (req, res) => {
 
 exports.depositAmount = async (req, res) => {
   try {
-    let { message, phoneNumber, amount } = req.body;
+    let { message, phoneNumber } = req.body;
 
     // Sanitize the input
     message = message ? message.trim() : null;
     phoneNumber = phoneNumber ? phoneNumber.trim() : null;
-    amount = parseFloat(amount); 
 
     if (!message) {
       return res.status(400).json({ error: "Message is required." });
@@ -106,78 +105,87 @@ exports.depositAmount = async (req, res) => {
     if (!phoneNumber) {
       return res.status(400).json({ error: "Phone number is required." });
     }
-    if (isNaN(amount) || amount <= 0) {
-      return res.status(400).json({ error: "Valid amount is required." });
-    }
 
-    // --- Step 1: Extract the transaction number from the user's message ---
+    // --- Step 1: Extract the transaction number and amount from the message ---
     let transactionNumber;
+    let amountFromMessage;
+
     if (message.toLowerCase().includes("telebirr")) {
       const transMatch = message.match(/transaction number is\s*(\w+)/i);
       if (transMatch) transactionNumber = transMatch[1].trim();
+
+      const amountMatch = message.match(/ETB\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+      if (amountMatch) {
+        amountFromMessage = parseFloat(amountMatch[1].replace(/,/g, ''));
+      }
     }
     if (message.toLowerCase().includes("cbe") || message.toLowerCase().includes("commercial bank")) {
       const transMatch = message.match(/Txn[:\s]+(\w+)/i);
       if (transMatch) transactionNumber = transMatch[1].trim();
+      
+      const amountMatch = message.match(/ETB\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+      if (amountMatch) {
+        amountFromMessage = parseFloat(amountMatch[1].replace(/,/g, ''));
+      }
     }
 
     if (!transactionNumber) {
       return res.status(400).json({ error: "Failed to extract transaction number from message." });
     }
-
-    // Step 2: Find the pending transaction without deleting it yet.
-    const pendingTx = await Transaction.findOne({ transactionNumber: transactionNumber });
-
-    if (!pendingTx) {
-      return res.status(400).json({ error: "Invalid or already-claimed transaction number." });
-    }
-    
-    // CRITICAL SECURITY CHECK: Verify the phone number from the request matches the number from the transaction.
-  
-
-    // NEW CONSISTENCY CHECK: Ensure the amount from the bot matches the amount in the transaction record.
-    if (pendingTx.amount !== amount) {
-      // The transaction is not deleted, so no need to re-insert.
-      return res.status(400).json({ error: "Amount mismatch. Please check your deposit amount." });
+    if (isNaN(amountFromMessage) || amountFromMessage <= 0) {
+      return res.status(400).json({ error: "Failed to extract a valid amount from the message." });
     }
 
-    // All checks passed. Now, atomically delete the pending transaction to prevent it from being claimed again.
-    const deletedTx = await Transaction.findOneAndDelete({ transactionNumber: transactionNumber });
-  console.log("delte trans is ",deletedTx);
-    if (!deletedTx) {
-      // This is a rare case, but it handles a race condition where another process claimed it just before this one.
-      return res.status(400).json({ error: "Transaction already claimed." });
-    }
-
-    // Find the user who is trying to deposit
+    // --- Step 2: Find the user first. We cannot proceed without a valid user. ---
     const user = await BingoBord.findOne({ phoneNumber });
     if (!user) {
       return res.status(404).json({ error: "User not found." });
     }
 
-    // Step 3: Link the transaction to the user's history and credit their wallet.
-    user.Wallet += pendingTx.amount;
-    user.transactions.push({
-      type: pendingTx.type,
-      method: "deposit",
-      amount: pendingTx.amount,
-      status: "success",
-      timestamp: new Date(),
-    });
+    // --- Step 3: Find the pending transaction for this specific user and update its status. ---
+    // We use findOneAndUpdate to atomically find the transaction and change its status to "completed"
+    // This prevents race conditions where a transaction is claimed twice.
+    const updatedTransaction = await Transaction.findOneAndUpdate(
+      { 
+        transactionNumber: transactionNumber,
+        phoneNumber: user.phoneNumber, // **CRITICAL** This ensures the transaction belongs to this user
+        status: "pending" // **CRITICAL** Only update if it's pending
+      },
+      { 
+        $set: { 
+          status: "completed",
+          amount: amountFromMessage, // Update the amount to the one from the SMS just in case
+        } 
+      },
+      { new: true } // Return the updated document
+    );
 
-    // Step 4: Save the user's updated wallet and transaction history.
+    if (!updatedTransaction) {
+      return res.status(400).json({ error: "Invalid, already-claimed, or mismatched transaction." });
+    }
+
+    // --- Step 4: Validate the amounts match before crediting the user. ---
+    if (updatedTransaction.amount.toFixed(2) !== amountFromMessage.toFixed(2)) {
+      // If the amounts don't match, revert the transaction status to "pending"
+      updatedTransaction.status = "pending";
+      await updatedTransaction.save();
+      return res.status(400).json({ error: "Amount mismatch. The transaction has been marked as pending again." });
+    }
+
+    // --- Step 5: Update the user's wallet. ---
+    user.Wallet += updatedTransaction.amount;
     await user.save();
     console.log(`User wallet updated. New balance: ${user.Wallet}`);
 
     res.json({
       success: true,
-      message: `Deposit of ${pendingTx.amount} ETB confirmed successfully! Your new wallet balance is ${user.Wallet}.`,
+      message: `Deposit of ${updatedTransaction.amount} ETB confirmed successfully! Your new wallet balance is ${user.Wallet}.`,
       wallet: user.Wallet,
     });
 
   } catch (err) {
     console.error("Deposit confirmation error:", err);
-    res.status(500).json({ error: "may ur deposit amount is not correct" });
+    res.status(500).json({ error: "An internal server error occurred. Please try again later." });
   }
 };
 
