@@ -44,6 +44,7 @@ exports.parseTransaction = async (req, res) => {
 
     let transactions = [];
 
+    // Check which type of message it is and call the appropriate parser
     if (message.toLowerCase().includes("telebirr")) {
       transactions = parseTelebirrMessage(message);
     } else if (message.toLowerCase().includes("cbe") || message.toLowerCase().includes("commercial bank")) {
@@ -56,9 +57,19 @@ exports.parseTransaction = async (req, res) => {
       return res.status(400).json({ error: "No transaction found in message" });
     }
 
+    // --- FIX: Add the required 'method' field to each transaction ---
+    const transactionsToSave = transactions.map(tx => {
+      // Create a new object with all the existing properties from `tx`
+      // and add the `method` field which is required by your model.
+      return {
+        ...tx,
+        method: "depositpend"
+      };
+    });
+
     // Save each transaction to DB
     const savedTransactions = [];
-    for (const tx of transactions) {
+    for (const tx of transactionsToSave) {
       try {
         const newTx = new Transaction(tx);
         await newTx.save();
@@ -79,6 +90,7 @@ exports.parseTransaction = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
 exports.depositAmount = async (req, res) => {
   try {
     let { message, phoneNumber, amount } = req.body;

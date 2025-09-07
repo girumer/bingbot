@@ -635,61 +635,7 @@ app.post("/deleteuser",async(req,res)=>{
 
 
 // API: Receive SMS message (TeleBirr or CBE) and store transaction
-app.post("/api/parse-transaction", async (req, res) => {
-  try {
-    const { message } = req.body;
-    if (!message) return res.status(400).json({ error: "Message is required" });
 
-    let type, amount, transactionNumber;
-
-    // --- Detect Telebirr ---
-    if (message.includes("telebirr")) {
-      type = "telebirr";
-      const amountMatch = message.match(/ETB\s*([\d,]+\.\d{2})/);
-      const transMatch = message.match(/transaction number is (\w+)/i);
-
-      if (amountMatch) amount = parseFloat(amountMatch[1].replace(/,/g, ""));
-      if (transMatch) transactionNumber = transMatch[1];
-    }
-
-    // --- Detect CBE ---
-    if (message.includes("CBE") || message.includes("Commercial Bank")) {
-      type = "cbe";
-      const amountMatch = message.match(/ETB\s*([\d,]+\.\d{2})/);
-      const transMatch = message.match(/Txn[:\s]+(\w+)/i);
-
-      if (amountMatch) amount = parseFloat(amountMatch[1].replace(/,/g, ""));
-      if (transMatch) transactionNumber = transMatch[1];
-    }
-
-    if (!type || !amount || !transactionNumber) {
-      return res.status(400).json({ error: "Failed to parse transaction message" });
-    }
-
-    // Save to DB
-    const newTx = new Transaction({
-      transactionNumber,
-      type,
-      amount,
-      rawMessage: message,
-    });
-
-    await newTx.save();
-
-    res.json({
-      success: true,
-      transaction: {
-        transactionNumber,
-        type,
-        amount,
-      }
-    });
-
-  } catch (err) {
-    console.error("Error saving transaction:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
 app.get("/admin/transactions-list", async (req, res) => {
   try {
     const transactions = await Transaction.find()
