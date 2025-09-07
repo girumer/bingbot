@@ -210,12 +210,12 @@ if (step === "withdrawAmount") {
         delete userStates[chatId];
         return;
       }
-
+const txType = userStates[chatId].method; 
       const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/transactions/withdraw`, {
         username: user.username,
         phoneNumber: user.phoneNumber,
         amount,
-        type
+        type:txType
       });
 
       bot.sendMessage(chatId, res.data.message || "✅ Withdrawal successful!");

@@ -44,6 +44,9 @@ router.post("/withdraw", async (req, res) => {
       // We are no longer saving a transaction to the user document.
       await user.save();
     } catch (userErr) {
+      if (!type) {
+  return res.status(400).json({ message: "Withdrawal type is required (telebirr or cbebirr)" });
+}
       console.error("Error saving user document:", userErr);
       return res.status(500).json({ message: "Error saving user document. Please check the 'BingoBord' model." });
     }
