@@ -106,9 +106,17 @@ exports.depositAmount = async (req, res) => {
       return res.status(400).json({ error: "Phone number is required." });
     }
 
-    // --- Step 1: Extract the transaction number and amount from the message ---
+    // --- Step 1: Find the user first. We cannot proceed without a valid user. ---
+    const user = await BingoBord.findOne({ phoneNumber });
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // --- Step 2: Extract the transaction number, amount, and method from the message ---
     let transactionNumber;
     let amountFromMessage;
+    let method;
+    let type;
 
     if (message.toLowerCase().includes("telebirr")) {
       const transMatch = message.match(/transaction number is\s*(\w+)/i);
@@ -118,68 +126,56 @@ exports.depositAmount = async (req, res) => {
       if (amountMatch) {
         amountFromMessage = parseFloat(amountMatch[1].replace(/,/g, ''));
       }
-    }
-    if (message.toLowerCase().includes("cbe") || message.toLowerCase().includes("commercial bank")) {
+      method = "deposit";
+      type = "telebirr";
+    } else if (message.toLowerCase().includes("cbe") || message.toLowerCase().includes("commercial bank")) {
       const transMatch = message.match(/Txn[:\s]+(\w+)/i);
       if (transMatch) transactionNumber = transMatch[1].trim();
-      
+
       const amountMatch = message.match(/ETB\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
       if (amountMatch) {
         amountFromMessage = parseFloat(amountMatch[1].replace(/,/g, ''));
       }
+      method = "deposit";
+      type = "cbebirr";
     }
 
     if (!transactionNumber) {
-      return res.status(400).json({ error: "Failed to extract transaction number from message." });
+      return res.status(400).json({ error: "Failed to extract a valid transaction number from the message." });
     }
     if (isNaN(amountFromMessage) || amountFromMessage <= 0) {
       return res.status(400).json({ error: "Failed to extract a valid amount from the message." });
     }
 
-    // --- Step 2: Find the user first. We cannot proceed without a valid user. ---
-    const user = await BingoBord.findOne({ phoneNumber });
-    if (!user) {
-      return res.status(404).json({ error: "User not found." });
+    // --- Step 3: Create and save the new transaction document ---
+    const newTransaction = new Transaction({
+      transactionNumber: transactionNumber,
+      phoneNumber: user.phoneNumber,
+      method: method,
+      amount: amountFromMessage,
+      type: type,
+      rawMessage: message,
+      status: "completed", // Since it's confirmed, the status is 'completed'
+    });
+
+    try {
+      await newTransaction.save();
+    } catch (saveError) {
+      if (saveError.code === 11000) {
+        // Handle duplicate key error for transactionNumber
+        return res.status(400).json({ error: "This transaction number has already been claimed." });
+      }
+      throw saveError; // Re-throw other errors
     }
 
-    // --- Step 3: Find the pending transaction for this specific user and update its status. ---
-    // We use findOneAndUpdate to atomically find the transaction and change its status to "completed"
-    // This prevents race conditions where a transaction is claimed twice.
-    const updatedTransaction = await Transaction.findOneAndUpdate(
-      { 
-        transactionNumber: transactionNumber,
-        phoneNumber: user.phoneNumber, // **CRITICAL** This ensures the transaction belongs to this user
-        status: "pending" // **CRITICAL** Only update if it's pending
-      },
-      { 
-        $set: { 
-          status: "completed",
-          amount: amountFromMessage, // Update the amount to the one from the SMS just in case
-        } 
-      },
-      { new: true } // Return the updated document
-    );
-
-    if (!updatedTransaction) {
-      return res.status(400).json({ error: "Invalid, already-claimed, or mismatched transaction." });
-    }
-
-    // --- Step 4: Validate the amounts match before crediting the user. ---
-    if (updatedTransaction.amount.toFixed(2) !== amountFromMessage.toFixed(2)) {
-      // If the amounts don't match, revert the transaction status to "pending"
-      updatedTransaction.status = "pending";
-      await updatedTransaction.save();
-      return res.status(400).json({ error: "Amount mismatch. The transaction has been marked as pending again." });
-    }
-
-    // --- Step 5: Update the user's wallet. ---
-    user.Wallet += updatedTransaction.amount;
+    // --- Step 4: Update the user's wallet ---
+    user.Wallet += amountFromMessage;
     await user.save();
     console.log(`User wallet updated. New balance: ${user.Wallet}`);
 
     res.json({
       success: true,
-      message: `Deposit of ${updatedTransaction.amount} ETB confirmed successfully! Your new wallet balance is ${user.Wallet}.`,
+      message: `Deposit of ${amountFromMessage} ETB confirmed successfully! Your new wallet balance is ${user.Wallet}.`,
       wallet: user.Wallet,
     });
 

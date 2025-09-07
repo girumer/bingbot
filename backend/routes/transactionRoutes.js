@@ -3,36 +3,13 @@ const router = express.Router();
 const BingoBord = require("../Models/BingoBord");
 const Transaction = require('../Models/Transaction');
 // Deposit
-router.post("/deposit", async (req, res) => {
-  const { username, amount, method } = req.body;
 
-  try {
-    const user = await BingoBord.findOne({ username });
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    // Update wallet & add transaction
-    user.Wallet += amount;
-    user.transactions.push({
-      type: "deposit",
-      method,
-      phoneNumber,
-      amount,
-      status: "success",
-    });
-    await user.save();
-
-    res.json({ message: "Deposit successful", wallet: user.Wallet });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
 
 // Withdraw
 
 // Withdraw route
 router.post("/withdraw", async (req, res) => {
-  const { username, amount, phoneNumber, type } = req.body;
+  const { username, amount, phoneNumber, type,method } = req.body;
 
   try {
     const user = await BingoBord.findOne({ username });
