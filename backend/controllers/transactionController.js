@@ -129,8 +129,8 @@ exports.depositAmount = async (req, res) => {
     // This looks for a transaction with the specific number and a 'pending' status.
     // If it finds it, it will update the status to 'completed'.
     const updatedTx = await Transaction.findOneAndUpdate(
-      { transactionNumber: transactionNumber, status: "pending" },
-      { $set: { status: "completed" } },
+      { transactionNumber: transactionNumber},
+     
       { new: true } // Return the updated document
     );
 
@@ -142,24 +142,11 @@ exports.depositAmount = async (req, res) => {
     }
 
     // Find the user who is trying to deposit
-    const user = await BingoBord.findOne({ phoneNumber });
-    if (!user) {
-      return res.status(404).json({ error: "User not found." });
-    }
-
-    // CRITICAL SECURITY CHECK: Ensure the phone number and amount match what's in the transaction record
-    if (updatedTx.phoneNumber !== user.phoneNumber) {
-      // Since we just updated the status to 'completed', we need to revert it.
-      await Transaction.findOneAndUpdate(
-        { transactionNumber: transactionNumber },
-        { $set: { status: "pending" } }
-      );
-      return res.status(400).json({ error: "Phone number mismatch. Please ensure you are logged in with the correct phone number." });
-    }
+   
     if (updatedTx.amount !== amount) {
       await Transaction.findOneAndUpdate(
         { transactionNumber: transactionNumber },
-        { $set: { status: "pending" } }
+        
       );
       return res.status(400).json({ error: "Amount mismatch. Please check your deposit amount." });
     }
@@ -172,7 +159,7 @@ exports.depositAmount = async (req, res) => {
     console.log(`User wallet updated. New balance: ${user.Wallet}`);
 
     res.json({
-      success: true,
+    
       message: `Deposit of ${updatedTx.amount} ETB confirmed successfully! Your new wallet balance is ${user.Wallet}.`,
       wallet: user.Wallet,
     });
