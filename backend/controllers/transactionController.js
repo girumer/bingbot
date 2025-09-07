@@ -166,7 +166,7 @@ exports.depositAmount = async (req, res) => {
 
   } catch (err) {
     console.error("Deposit confirmation error:", err);
-    res.status(500).json({ error: "An internal server error occurred. Please try again later." });
+    res.status(500).json({ error: "cheak the amount u deposit." });
   }
 };
 

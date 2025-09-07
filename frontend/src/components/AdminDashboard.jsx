@@ -260,9 +260,10 @@ const handleLogout = () => {
         <table className="users-table">
           <thead>
             <tr>
-              <th>Username</th>
+              <th>withdrwal id</th>
               <th>Phone Number</th>
               <th>Method</th>
+              <th>via</th>
               <th>Amount</th>
               <th>Date</th>
               <th>Actions</th>
@@ -271,7 +272,7 @@ const handleLogout = () => {
           <tbody>
             {pendingWithdrawals.length ? pendingWithdrawals.map((withdrawal) => (
               <tr key={withdrawal._id}>
-                <td>{withdrawal.username}</td>
+               <td>{withdrawal.withdrawalId}</td>
                 <td>{withdrawal.phoneNumber}</td>
                 <td>{withdrawal.method}</td>
                 <td>{withdrawal.type}</td>
@@ -284,12 +285,7 @@ const handleLogout = () => {
                   >
                     Confirm
                   </button>
-                  <button 
-                    className="reject-btn" 
-                    onClick={() => updateWithdrawalStatus(withdrawal._id, 'rejected')}
-                  >
-                    Reject
-                  </button>
+                  
                 </td>
               </tr>
             )) : (

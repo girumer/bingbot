@@ -22,6 +22,15 @@ if (!type || !["telebirr", "cbebirr"].includes(type)) {
     if (user.Wallet < amount) {
       return res.status(400).json({ message: "Insufficient balance" });
     }
+const counter = await Counter.findOneAndUpdate(
+      { _id: "withdrawalId" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true } // Creates the counter if it doesn't exist
+    );
+    if (!counter) {
+      return res.status(500).json({ message: "Failed to generate a unique withdrawal ID." });
+    }
+    const withdrawalId = counter.seq;
 
     // 1️⃣ Update wallet
     user.Wallet -= amount;
@@ -30,6 +39,7 @@ if (!type || !["telebirr", "cbebirr"].includes(type)) {
     try {
       const newTx = new Transaction({
         transactionNumber: `WD${Date.now()}`,
+        withdrawalId, 
         phoneNumber,
         method: "withdrawal",
         type,
