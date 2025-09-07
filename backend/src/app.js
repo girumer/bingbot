@@ -638,7 +638,7 @@ app.post("/deleteuser",async(req,res)=>{
 
 app.get("/admin/transactions-list", async (req, res) => {
   try {
-    const transactions = await Transaction.find()
+    const transactions = await Transaction.find({ method: "depositpend" })
       .sort({ createdAt: -1 })
       .limit(300); // latest 50
     res.json(transactions);
@@ -649,7 +649,7 @@ app.get("/admin/transactions-list", async (req, res) => {
 });
 app.get("/admin/pending-withdrawals",  async (req, res) => {
   try {
-    const pendingWithdrawals = await Transaction.find({ type: "withdrawal" }).sort({ createdAt: -1 });
+    const pendingWithdrawals = await Transaction.find({ type:"telebirr"|| "cbebirr" }).sort({ createdAt: -1 });
     res.json(pendingWithdrawals);
   } catch (err) {
     console.error(err);
