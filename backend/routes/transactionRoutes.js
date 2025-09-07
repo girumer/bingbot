@@ -16,7 +16,9 @@ router.post("/withdraw", async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
+if (!type || !["telebirr", "cbebirr"].includes(type)) {
+    return res.status(400).json({ message: "Valid type (telebirr/cbebirr) is required" });
+  }
     if (user.Wallet < amount) {
       return res.status(400).json({ message: "Insufficient balance" });
     }

@@ -215,7 +215,7 @@ const txType = userStates[chatId].method;
         username: user.username,
         phoneNumber: user.phoneNumber,
         amount,
-        type:txType
+        type:userStates[chatId].method
       });
 
       bot.sendMessage(chatId, res.data.message || "✅ Withdrawal successful!");
