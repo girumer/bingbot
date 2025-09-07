@@ -274,6 +274,7 @@ const handleLogout = () => {
                 <td>{withdrawal.username}</td>
                 <td>{withdrawal.phoneNumber}</td>
                 <td>{withdrawal.method}</td>
+                <td>{withdrawal.type}</td>
                 <td>{withdrawal.amount}</td>
                 <td>{new Date(withdrawal.createdAt).toLocaleString()}</td>
                 <td>

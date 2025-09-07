@@ -93,11 +93,12 @@ exports.parseTransaction = async (req, res) => {
 
 exports.depositAmount = async (req, res) => {
   try {
-    let { message, phoneNumber } = req.body;
+    let { message, phoneNumber, amount } = req.body;
 
     // Sanitize the input
     message = message ? message.trim() : null;
     phoneNumber = phoneNumber ? phoneNumber.trim() : null;
+    amount = parseFloat(amount);
 
     if (!message) {
       return res.status(400).json({ error: "Message is required." });
@@ -105,77 +106,74 @@ exports.depositAmount = async (req, res) => {
     if (!phoneNumber) {
       return res.status(400).json({ error: "Phone number is required." });
     }
+    if (isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ error: "Valid amount is required." });
+    }
 
-    // --- Step 1: Find the user first. We cannot proceed without a valid user. ---
+    // --- Step 1: Extract the transaction number from the user's message ---
+    let transactionNumber;
+    if (message.toLowerCase().includes("telebirr")) {
+      const transMatch = message.match(/transaction number is\s*(\w+)/i);
+      if (transMatch) transactionNumber = transMatch[1].trim();
+    }
+    if (message.toLowerCase().includes("cbe") || message.toLowerCase().includes("commercial bank")) {
+      const transMatch = message.match(/Txn[:\s]+(\w+)/i);
+      if (transMatch) transactionNumber = transMatch[1].trim();
+    }
+
+    if (!transactionNumber) {
+      return res.status(400).json({ error: "Failed to extract transaction number from message." });
+    }
+
+    // Step 2: Find and update the pending transaction atomically.
+    // This looks for a transaction with the specific number and a 'pending' status.
+    // If it finds it, it will update the status to 'completed'.
+    const updatedTx = await Transaction.findOneAndUpdate(
+      { transactionNumber: transactionNumber, status: "pending" },
+      { $set: { status: "completed" } },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedTx) {
+      // This will now catch two cases:
+      // 1) The transaction number is not found at all.
+      // 2) The transaction was found, but its status was not 'pending' (meaning it was already processed).
+      return res.status(400).json({ error: "Invalid or already-claimed transaction number." });
+    }
+
+    // Find the user who is trying to deposit
     const user = await BingoBord.findOne({ phoneNumber });
     if (!user) {
       return res.status(404).json({ error: "User not found." });
     }
 
-    // --- Step 2: Extract the transaction number, amount, and method from the message ---
-    let transactionNumber;
-    let amountFromMessage;
-    let method;
-    let type;
-
-    if (message.toLowerCase().includes("telebirr")) {
-      const transMatch = message.match(/transaction number is\s*(\w+)/i);
-      if (transMatch) transactionNumber = transMatch[1].trim();
-
-      const amountMatch = message.match(/ETB\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
-      if (amountMatch) {
-        amountFromMessage = parseFloat(amountMatch[1].replace(/,/g, ''));
-      }
-      method = "deposit";
-      type = "telebirr";
-    } else if (message.toLowerCase().includes("cbe") || message.toLowerCase().includes("commercial bank")) {
-      const transMatch = message.match(/Txn[:\s]+(\w+)/i);
-      if (transMatch) transactionNumber = transMatch[1].trim();
-
-      const amountMatch = message.match(/ETB\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
-      if (amountMatch) {
-        amountFromMessage = parseFloat(amountMatch[1].replace(/,/g, ''));
-      }
-      method = "deposit";
-      type = "cbebirr";
+    // CRITICAL SECURITY CHECK: Ensure the phone number and amount match what's in the transaction record
+    if (updatedTx.phoneNumber !== user.phoneNumber) {
+      // Since we just updated the status to 'completed', we need to revert it.
+      await Transaction.findOneAndUpdate(
+        { transactionNumber: transactionNumber },
+        { $set: { status: "pending" } }
+      );
+      return res.status(400).json({ error: "Phone number mismatch. Please ensure you are logged in with the correct phone number." });
+    }
+    if (updatedTx.amount !== amount) {
+      await Transaction.findOneAndUpdate(
+        { transactionNumber: transactionNumber },
+        { $set: { status: "pending" } }
+      );
+      return res.status(400).json({ error: "Amount mismatch. Please check your deposit amount." });
     }
 
-    if (!transactionNumber) {
-      return res.status(400).json({ error: "Failed to extract a valid transaction number from the message." });
-    }
-    if (isNaN(amountFromMessage) || amountFromMessage <= 0) {
-      return res.status(400).json({ error: "Failed to extract a valid amount from the message." });
-    }
+    // Step 3: Credit the user's wallet.
+    user.Wallet += updatedTx.amount;
 
-    // --- Step 3: Create and save the new transaction document ---
-    const newTransaction = new Transaction({
-      transactionNumber: transactionNumber,
-      phoneNumber: user.phoneNumber,
-      method: method,
-      amount: amountFromMessage,
-      type: type,
-      rawMessage: message,
-      status: "completed", // Since it's confirmed, the status is 'completed'
-    });
-
-    try {
-      await newTransaction.save();
-    } catch (saveError) {
-      if (saveError.code === 11000) {
-        // Handle duplicate key error for transactionNumber
-        return res.status(400).json({ error: "This transaction number has already been claimed." });
-      }
-      throw saveError; // Re-throw other errors
-    }
-
-    // --- Step 4: Update the user's wallet ---
-    user.Wallet += amountFromMessage;
+    // Step 4: Save the user's updated wallet.
     await user.save();
     console.log(`User wallet updated. New balance: ${user.Wallet}`);
 
     res.json({
       success: true,
-      message: `Deposit of ${amountFromMessage} ETB confirmed successfully! Your new wallet balance is ${user.Wallet}.`,
+      message: `Deposit of ${updatedTx.amount} ETB confirmed successfully! Your new wallet balance is ${user.Wallet}.`,
       wallet: user.Wallet,
     });
 
@@ -184,8 +182,6 @@ exports.depositAmount = async (req, res) => {
     res.status(500).json({ error: "An internal server error occurred. Please try again later." });
   }
 };
-
-
 
 // Get all pending transactions
 exports.getPendingTransactions = async (req, res) => {
