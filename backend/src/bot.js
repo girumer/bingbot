@@ -200,7 +200,7 @@ if (step === "withdrawAmount") {
       bot.sendMessage(chatId, "⚠️ Please enter a valid withdrawal amount.");
       return;
     }
-
+      console.log("Withdrawal attempt - userState:", userStates[chatId]); 
     const type = userStates[chatId].method;
 
     try {
