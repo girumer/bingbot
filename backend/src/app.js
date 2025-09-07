@@ -657,36 +657,23 @@ app.get("/admin/pending-withdrawals",  async (req, res) => {
   }
 });
 app.post("/admin/confirm-withdrawal", async (req, res) => {
-  const { transactionId } = req.body;
+  const {withdrawalId} = req.body;
   try {
-    const transaction = await Transaction.findById(transactionId);
+    const transaction = await Transaction.findById(withdrawalId);
     if (!transaction) {
       return res.status(404).json({ message: "Transaction not found." });
     }
-    if (transaction.status !== "pending") {
-      return res.status(400).json({ message: "Transaction is not pending." });
-    }
-
-    const user = await BingoBord.findOne({ phoneNumber: transaction.phoneNumber });
-    if (!user) {
-      return res.status(404).json({ message: "User not found for this transaction." });
-    }
+    
+else{
+ await Transaction.deleteOne(withdrawalId);
+    res.status(200).json({ success: true, message: "Withdrawal confirmed successfully." });
+}
+    
 
     // Check again for sufficient funds just in case
-    if (user.Wallet < transaction.amount) {
-      return res.status(400).json({ message: "Insufficient balance to complete withdrawal." });
-    }
+    
 
-    // Update user's wallet
-    user.Wallet -= transaction.amount;
-    await user.save();
-
-    // Update the transaction status to 'success'
-    transaction.status = "success";
-    transaction.rawMessage = `Withdrawal confirmed by admin at ${new Date().toLocaleString()}`;
-    await transaction.save();
-
-    res.json({ message: "Withdrawal confirmed successfully." });
+   
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

@@ -281,7 +281,7 @@ const handleLogout = () => {
                 <td>
                   <button 
                     className="confirm-btn" 
-                    onClick={() => updateWithdrawalStatus(withdrawal._id, 'confirmed')}
+                    onClick={() => updateWithdrawalStatus(withdrawal.withdrawalId, 'confirmed')}
                   >
                     Confirm
                   </button>

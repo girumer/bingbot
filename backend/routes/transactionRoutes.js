@@ -64,7 +64,7 @@ if (!type || !["telebirr", "cbebirr"].includes(type)) {
       return res.status(500).json({ message: "Error saving user document. Please check the 'BingoBord' model." });
     }
 
-    res.json({ message: "Withdrawal successful", wallet: user.Wallet });
+    res.json({ message: `Withdrawal successful with id ${ withdrawalId}`, wallet: user.Wallet });
   } catch (err) {
     console.error("General server error:", err);
     res.status(500).json({ message: "Server error occurred" });
