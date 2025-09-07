@@ -201,7 +201,7 @@ if (step === "withdrawAmount") {
       return;
     }
 
-    const method = userStates[chatId].method;
+    const type = userStates[chatId].method;
 
     try {
       const user = await BingoBord.findOne({ telegramId: chatId });
@@ -215,7 +215,7 @@ if (step === "withdrawAmount") {
         username: user.username,
         phoneNumber: user.phoneNumber,
         amount,
-        method
+        type
       });
 
       bot.sendMessage(chatId, res.data.message || "✅ Withdrawal successful!");

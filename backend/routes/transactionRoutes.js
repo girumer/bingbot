@@ -9,7 +9,7 @@ const Transaction = require('../Models/Transaction');
 
 // Withdraw route
 router.post("/withdraw", async (req, res) => {
-  const { username, amount, phoneNumber, type,method } = req.body;
+  const { username, amount, phoneNumber,type } = req.body;
 
   try {
     const user = await BingoBord.findOne({ username });
@@ -32,7 +32,7 @@ router.post("/withdraw", async (req, res) => {
         method: "withdrawal",
         type,
         amount,
-        rawMessage: `Withdraw via ${method}`,
+        rawMessage: `Withdraw via ${type}`,
       });
       await newTx.save();
     } catch (txErr) {
