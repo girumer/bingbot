@@ -99,7 +99,7 @@ exports.depositAmount = async (req, res) => {
     message = message ? message.trim() : null;
     phoneNumber = phoneNumber ? phoneNumber.trim() : null;
     amount = parseFloat(amount);
-
+   const user = await BingoBord.findOne({ phoneNumber });
     if (!message) {
       return res.status(400).json({ error: "Message is required." });
     }
