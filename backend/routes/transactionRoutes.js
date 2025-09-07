@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const BingoBord = require("../Models/BingoBord");
 const Transaction = require('../Models/Transaction');
+const Counter=require('../Models/CounterSchema')
 // Deposit
 
 
@@ -22,10 +23,10 @@ if (!type || !["telebirr", "cbebirr"].includes(type)) {
     if (user.Wallet < amount) {
       return res.status(400).json({ message: "Insufficient balance" });
     }
-const counter = await Counter.findOneAndUpdate(
+  const counter = await Counter.findOneAndUpdate(
       { _id: "withdrawalId" },
       { $inc: { seq: 1 } },
-      { new: true, upsert: true } // Creates the counter if it doesn't exist
+      { new: true, upsert: true }
     );
     if (!counter) {
       return res.status(500).json({ message: "Failed to generate a unique withdrawal ID." });
