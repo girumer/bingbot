@@ -72,7 +72,7 @@ const navigate = useNavigate();
    const updateWithdrawalStatus = async (id, status) => {
     try {
       await axios.post(
-        `${BACKEND_URL}/admin/update-withdrawal-status`,
+        `${BACKEND_URL}/admin/confirm-withdrawal`,
         { id, status },
         { headers: authHeader }
       );
