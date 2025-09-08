@@ -136,7 +136,7 @@ const fetchUsers = async (p = 1) => {
 
   const loadAll = async (p = 1) => {
     setLoading(true); setErrMsg("");
-    await Promise.all([fetchSummary(), fetchUsers(p),fetchtransaction(),fetchPendingWithdrawals()]);
+    await Promise.all([fetchSummary(), fetchUsers(p),fetchtransaction(),fetchdeposit(),fetchPendingWithdrawals()]);
     setLoading(false);
   };
 
