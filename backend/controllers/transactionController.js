@@ -156,7 +156,7 @@ exports.depositAmount = async (req, res) => {
 
     // Step 4: Save the user's updated wallet.
     await user.save();
-     await Transaction.deleteMany({transactionNumber});
+     await Transaction.deleteOne({transactionNumber});
     console.log(`User wallet updated. New balance: ${user.Wallet}`);
    
     res.json({

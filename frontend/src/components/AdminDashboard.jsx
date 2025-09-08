@@ -82,7 +82,7 @@ const navigate = useNavigate();
       // Also refresh the summary and transaction list
       await Promise.all([fetchSummary(), fetchtransaction()]);
       
-      alert(`Withdrawal ${status === 'confirmed' ? 'confirmed' : 'rejected'} successfully`);
+   //   alert(`Withdrawal ${status === 'confirmed' ? 'confirmed' : 'rejected'} successfully`);
     } catch (err) {
       console.error("Error updating withdrawal status", err);
       alert(err.response?.data?.message || "Failed to update withdrawal status");
