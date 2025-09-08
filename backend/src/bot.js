@@ -239,7 +239,7 @@ const txType = userStates[chatId].method;
         message: text,
         phoneNumber: user.phoneNumber,
          amount: depositAmount,
-          type: depositMethod
+          type: userStates[chatId].depositMethod
 
       });
 
@@ -393,6 +393,7 @@ Please send the money and then reply with the transaction message.`;
   }
 
   bot.sendMessage(chatId, instructionsMsg);
+  userStates[chatId].depositMethod = depositMethod;
   userStates[chatId].step = "depositMessage"; // continue as usual
   break;
 
