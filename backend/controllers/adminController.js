@@ -60,29 +60,37 @@ exports.getAllUsers = async (req, res) => {
 // Get total deposits and withdrawals
 exports.getTransactions = async (req, res) => {
   try {
+    // Calculate total deposit amount
     const totalDeposit = await Transaction.aggregate([
-      { $match: { type: 'deposit', status: 'completed' } },
+      { $match: { method: 'deposit' } },
       { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
     ]);
 
+    // Calculate total withdrawal amount
     const totalWithdrawal = await Transaction.aggregate([
-      { $match: { type: 'withdrawal', status: 'completed' } },
+      { $match: { method: 'withdrawal' } },
       { $group: { _id: null, totalAmount: { $sum: "$amount" } } }
     ]);
     
+    // Fetch all transactions to display in a list
+    const transactions = await Transaction.find().sort({ createdAt: -1 }).limit(100);
+
     // Extract the total amounts, defaulting to 0 if no transactions are found
     const totalDepositAmount = totalDeposit.length > 0 ? totalDeposit[0].totalAmount : 0;
     const totalWithdrawalAmount = totalWithdrawal.length > 0 ? totalWithdrawal[0].totalAmount : 0;
 
+    // Send a single response object that contains all the data your frontend needs
     res.json({ 
       totalDeposit: totalDepositAmount, 
-      totalWithdraw: totalWithdrawalAmount 
+      totalWithdraw: totalWithdrawalAmount,
+      transactions: transactions // The list of transactions
     });
   } catch (err) {
     console.error("Server error:", err);
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 exports.registerUser = async (req, res) => {
   try {
     const { username, phoneNumber, password, role } = req.body;
