@@ -110,6 +110,7 @@ exports.depositAmount = async (req, res) => {
       return res.status(400).json({ error: "Valid amount is required." });
     }
     if (!type || !["telebirr", "cbebirr"].includes(type.toLowerCase())) {
+      console.log(type);
       return res.status(400).json({ error: "Invalid or missing transaction type." });
     }
     // --- Step 1: Extract the transaction number from the user's message ---
@@ -126,10 +127,7 @@ exports.depositAmount = async (req, res) => {
       return res.status(400).json({ error: "Failed to extract transaction number from message." });
     }
 
-    if (!transactionNumber) {
-      return res.status(400).json({ error: "Failed to extract transaction number from message." });
-    }
-
+    
     // Step 2: Find and update the pending transaction atomically.
     // This looks for a transaction with the specific number and a 'pending' status.
     // If it finds it, it will update the status to 'completed'.
