@@ -239,7 +239,7 @@ const txType = userStates[chatId].method;
         message: text,
         phoneNumber: user.phoneNumber,
          amount: depositAmount,
-          type: depositType
+          type: depositMethod
 
       });
 
