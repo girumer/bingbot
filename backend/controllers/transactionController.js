@@ -133,8 +133,11 @@ exports.depositAmount = async (req, res) => {
     // If it finds it, it will update the status to 'completed'.
     const updatedTx = await Transaction.findOneAndUpdate(
       { transactionNumber: transactionNumber},
-     
-      { new: true } // Return the updated document
+      { transactionNumber: transactionNumber, status: 'pending' },
+            { $set: { status: 'completed', method: 'deposit',type:type, rawMessage: `deposited via ${type}` } },
+            { new: true } // Return the updated document
+      
+      // Return the updated document
     );
 
     if (!updatedTx) {
@@ -157,15 +160,7 @@ exports.depositAmount = async (req, res) => {
     // Step 3: Credit the user's wallet.
     user.Wallet += updatedTx.amount;
  
-      const newTx = new Transaction({
-        transactionNumber: `WD${Date.now()}`,
-     
-        phoneNumber,
-        method: "deposit",
-        amount,
-        type: type,
-        rawMessage: `deposited via ${type}`,
-      });
+      
 
      
     
