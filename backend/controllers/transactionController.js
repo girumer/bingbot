@@ -131,7 +131,7 @@ exports.depositAmount = async (req, res) => {
     // Step 2: Find and update the pending transaction atomically.
     // This looks for a transaction with the specific number and a 'pending' status.
     // If it finds it, it will update the status to 'completed'.
-    const updatedTx = await Transaction.findOneAndUpdate(
+    const updatedTx = await Transaction.findOne(
       { transactionNumber: transactionNumber},
       
    
@@ -148,17 +148,11 @@ exports.depositAmount = async (req, res) => {
     // Find the user who is trying to deposit
    
     if (updatedTx.amount !== amount) {
-      await Transaction.findOneAndUpdate(
-        { transactionNumber: transactionNumber },
-        
-      );
+      
       return res.status(400).json({ error: "Amount mismatch. Please check your deposit amount." });
     }
      if (updatedTx.type !== type) {
-      await Transaction.findOneAndUpdate(
-        { transactionNumber: transactionNumber },
-        
-      );
+      
       return res.status(400).json({ error: "type  mismatch. Please check your deposit type." });
     }
  
