@@ -133,12 +133,10 @@ exports.depositAmount = async (req, res) => {
     // If it finds it, it will update the status to 'completed'.
     const updatedTx = await Transaction.findOneAndUpdate(
       { transactionNumber: transactionNumber},
-      { transactionNumber: transactionNumber, status: 'pending' },
-            { $set: { status: 'completed', method: 'deposit',type:type, rawMessage: `deposited via ${type}` } },
-            { new: true } // Return the updated document
       
-      // Return the updated document
+   
     );
+  
 
     if (!updatedTx) {
       // This will now catch two cases:
@@ -156,17 +154,31 @@ exports.depositAmount = async (req, res) => {
       );
       return res.status(400).json({ error: "Amount mismatch. Please check your deposit amount." });
     }
-
+     if (updatedTx.type !== type) {
+      await Transaction.findOneAndUpdate(
+        { transactionNumber: transactionNumber },
+        
+      );
+      return res.status(400).json({ error: "type  mismatch. Please check your deposit type." });
+    }
     // Step 3: Credit the user's wallet.
     user.Wallet += updatedTx.amount;
  
       
 
-     
+       const newTx = new Transaction({
+            transactionNumber: `WD${Date.now()}`,
+            phoneNumber,
+            method: "deposit",
+            type,
+            amount,
+            rawMessage: `deposit  via ${type}`,
+          });
     
 
     // Step 4: Save the user's updated wallet.
-    await user.save();
+  
+    await newTx.save();
      await Transaction.deleteOne({transactionNumber});
     console.log(`User wallet updated. New balance: ${user.Wallet}`);
    
