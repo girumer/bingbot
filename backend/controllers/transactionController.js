@@ -1,7 +1,7 @@
 const BingoBord = require('../Models/BingoBord');
 const Transaction = require("../Models/Transaction");
 
-
+const Counter=require('../Models/CounterSchema');
 
 // Utility function to parse Telebirr messages
 function parseTelebirrMessage(message) {
@@ -127,7 +127,7 @@ exports.depositAmount = async (req, res) => {
       return res.status(400).json({ error: "Failed to extract transaction number from message." });
     }
 
-    
+     
     // Step 2: Find and update the pending transaction atomically.
     // This looks for a transaction with the specific number and a 'pending' status.
     // If it finds it, it will update the status to 'completed'.
@@ -161,6 +161,16 @@ exports.depositAmount = async (req, res) => {
       );
       return res.status(400).json({ error: "type  mismatch. Please check your deposit type." });
     }
+ 
+ const counter = await Counter.findOneAndUpdate(
+          { _id: "withdrawalId" },
+          { $inc: { seq: 1 } },
+          { new: true, upsert: true }
+        );
+        if (!counter) {
+          return res.status(500).json({ message: "Failed to generate a unique withdrawal ID." });
+        }
+        const depositId = counter.seq;
     // Step 3: Credit the user's wallet.
     user.Wallet += updatedTx.amount;
  
@@ -168,6 +178,7 @@ exports.depositAmount = async (req, res) => {
 
        const newTx = new Transaction({
             transactionNumber: `WD${Date.now()}`,
+            depositId,
             phoneNumber,
             method: "deposit",
             type,
