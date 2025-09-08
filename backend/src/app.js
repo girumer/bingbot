@@ -659,13 +659,13 @@ app.get("/admin/pending-withdrawals",  async (req, res) => {
 app.post("/admin/confirm-withdrawal", async (req, res) => {
   const {withdrawalId} = req.body;
   try {
-    const transaction = await Transaction.findById(withdrawalId);
+    const transaction = await Transaction.findById({withdrawalId});
     if (!transaction) {
       return res.status(404).json({ message: "Transaction not found." });
     }
     
 else{
- await Transaction.deleteOne(withdrawalId);
+ await Transaction.deleteOne({withdrawalId});
     res.status(200).json({ success: true, message: "Withdrawal confirmed successfully." });
 }
     

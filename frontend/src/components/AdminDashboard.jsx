@@ -69,11 +69,11 @@ const navigate = useNavigate();
       setPendingWithdrawals([]);
     }
   };
-   const updateWithdrawalStatus = async (id, status) => {
+   const updateWithdrawalStatus = async (id) => {
     try {
       await axios.post(
         `${BACKEND_URL}/admin/confirm-withdrawal`,
-        { id, status },
+        { withdrawalId: id },
         { headers: authHeader }
       );
       
@@ -281,7 +281,7 @@ const handleLogout = () => {
                 <td>
                   <button 
                     className="confirm-btn" 
-                    onClick={() => updateWithdrawalStatus(withdrawal.withdrawalId, 'confirmed')}
+                    onClick={() => updateWithdrawalStatus(withdrawal.withdrawalId)}
                   >
                     Confirm
                   </button>
