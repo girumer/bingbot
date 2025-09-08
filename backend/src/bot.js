@@ -200,7 +200,7 @@ if (step === "withdrawAmount") {
       bot.sendMessage(chatId, "⚠️ Please enter a valid withdrawal amount.");
       return;
     }
-      console.log("Withdrawal attempt - userState:", userStates[chatId]); 
+
     const type = userStates[chatId].method;
 
     try {
@@ -215,7 +215,7 @@ const txType = userStates[chatId].method;
         username: user.username,
         phoneNumber: user.phoneNumber,
         amount,
-        type:userStates[chatId].method
+        type:txType
       });
 
       bot.sendMessage(chatId, res.data.message || "✅ Withdrawal successful!");
@@ -238,7 +238,9 @@ const txType = userStates[chatId].method;
       const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/deposit`, {
         message: text,
         phoneNumber: user.phoneNumber,
-         amount: depositAmount
+         amount: depositAmount,
+          type: depositType
+
       });
 
       bot.sendMessage(chatId, res.data.message || "Deposit claimed successfully! 🎉");

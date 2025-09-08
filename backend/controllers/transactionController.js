@@ -93,7 +93,7 @@ exports.parseTransaction = async (req, res) => {
 
 exports.depositAmount = async (req, res) => {
   try {
-    let { message, phoneNumber, amount } = req.body;
+    let {message, phoneNumber, amount, type } = req.body;
 
     // Sanitize the input
     message = message ? message.trim() : null;
@@ -109,16 +109,21 @@ exports.depositAmount = async (req, res) => {
     if (isNaN(amount) || amount <= 0) {
       return res.status(400).json({ error: "Valid amount is required." });
     }
-
+    if (!type || !["telebirr", "cbebirr"].includes(type.toLowerCase())) {
+      return res.status(400).json({ error: "Invalid or missing transaction type." });
+    }
     // --- Step 1: Extract the transaction number from the user's message ---
-    let transactionNumber;
-    if (message.toLowerCase().includes("telebirr")) {
+   let transactionNumber;
+    if (type.toLowerCase() === "telebirr") {
       const transMatch = message.match(/transaction number is\s*(\w+)/i);
       if (transMatch) transactionNumber = transMatch[1].trim();
-    }
-    if (message.toLowerCase().includes("cbe") || message.toLowerCase().includes("commercial bank")) {
+    } else if (type.toLowerCase() === "cbebirr") {
       const transMatch = message.match(/Txn[:\s]+(\w+)/i);
       if (transMatch) transactionNumber = transMatch[1].trim();
+    }
+    
+    if (!transactionNumber) {
+      return res.status(400).json({ error: "Failed to extract transaction number from message." });
     }
 
     if (!transactionNumber) {
@@ -160,9 +165,11 @@ exports.depositAmount = async (req, res) => {
         phoneNumber,
         method: "deposit",
         amount,
-        rawMessage: `deposited`,
+        type: type,
+        rawMessage: `deposited via ${type}`,
       });
-      await newTx.save();
+
+     
     
 
     // Step 4: Save the user's updated wallet.
