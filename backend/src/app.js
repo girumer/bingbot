@@ -656,6 +656,16 @@ app.get("/admin/pending-withdrawals",  async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+app.get("admin/deposit",  async (req, res) => {
+  try {
+    const pendingdeposit = await Transaction.find({ method: "deposit"}).sort({ createdAt: -1 });
+    res.json(pendingdeposit);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 app.post("/admin/confirm-withdrawal", async (req, res) => {
   const {withdrawalId} = req.body;
   try {
@@ -679,6 +689,7 @@ else{
     res.status(500).json({ message: "Server error" });
   }
 });
+
 router.post("/admin/reject-withdrawal",  async (req, res) => {
   const { transactionId } = req.body;
   try {

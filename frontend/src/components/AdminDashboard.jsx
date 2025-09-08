@@ -13,6 +13,7 @@ export default function AdminDashboard() {
   const [transactions, setTransactions] = useState([]);
   const [transactionlist,settransactionlist]=useState([]);
  const [pendingWithdrawals, setPendingWithdrawals] = useState([]); 
+ const [depositls,setdepositls]=useState([]);
 const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [errMsg, setErrMsg] = useState("");
@@ -88,7 +89,17 @@ const navigate = useNavigate();
       alert(err.response?.data?.message || "Failed to update withdrawal status");
     }
   };
-
+const fetchdeposit = async () => {
+    try {
+      const { data } = await axios.get(`${BACKEND_URL}/admin/deposit`, { 
+        headers: authHeader 
+      });
+      setdepositls(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error fetching pending withdrawals", err);
+      setdepositls([]);
+    }
+  };
 const fetchtransaction=async () => {
   try {
     const { data } = await axios.get(`${BACKEND_URL}/admin/transactions-list`, { headers: authHeader });
@@ -294,7 +305,45 @@ const handleLogout = () => {
           </tbody>
         </table>
       </section>
-
+ <section>
+        <h2>deposit list</h2>
+        <table className="users-table">
+          <thead>
+            <tr>
+              <th>deposit id</th>
+              <th>Phone Number</th>
+              <th>Method</th>
+              <th>via</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pendingWithdrawals.length ? pendingWithdrawals.map((withdrawal) => (
+              <tr key={withdrawal._id}>
+               <td>{withdrawal.withdrawalId}</td>
+                <td>{withdrawal.phoneNumber}</td>
+                <td>{withdrawal.method}</td>
+                <td>{withdrawal.type}</td>
+                <td>{withdrawal.amount}</td>
+                <td>{new Date(withdrawal.createdAt).toLocaleString()}</td>
+                <td>
+                  <button 
+                    className="confirm-btn" 
+                    onClick={() => updateWithdrawalStatus(withdrawal.withdrawalId)}
+                  >
+                    Confirm
+                  </button>
+                  
+                </td>
+              </tr>
+            )) : (
+              <tr><td colSpan="6" style={{ textAlign: "center" }}>No pending withdrawals</td></tr>
+            )}
+          </tbody>
+        </table>
+      </section>
       {/* Registration */}
       
       <section>
