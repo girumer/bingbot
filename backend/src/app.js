@@ -656,7 +656,7 @@ app.get("/admin/pending-withdrawals",  async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-app.get("admin/deposit",  async (req, res) => {
+app.get("/admin/deposit",  async (req, res) => {
   try {
     const pendingdeposit = await Transaction.find({ method: "deposit"}).sort({ createdAt: -1 });
     res.json(pendingdeposit);
