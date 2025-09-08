@@ -153,6 +153,17 @@ exports.depositAmount = async (req, res) => {
 
     // Step 3: Credit the user's wallet.
     user.Wallet += updatedTx.amount;
+ 
+      const newTx = new Transaction({
+        transactionNumber: `WD${Date.now()}`,
+     
+        phoneNumber,
+        method: "deposit",
+        amount,
+        rawMessage: `deposited`,
+      });
+      await newTx.save();
+    
 
     // Step 4: Save the user's updated wallet.
     await user.save();
