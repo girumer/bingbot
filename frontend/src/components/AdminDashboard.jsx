@@ -320,7 +320,7 @@ const handleLogout = () => {
             </tr>
           </thead>
           <tbody>
-            {pendingWithdrawals.length ? pendingWithdrawals.map((withdrawal) => (
+            {depositls.length ? depositls.map((withdrawal) => (
               <tr key={withdrawal._id}>
                <td>{withdrawal.withdrawalId}</td>
                 <td>{withdrawal.phoneNumber}</td>
