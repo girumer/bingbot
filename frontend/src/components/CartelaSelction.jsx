@@ -71,7 +71,7 @@ useEffect(() => {
   
   
   // --- States ---
-  const [selectedCartelas, setSelectedCartelas] = useState([]);
+  //const [selectedCartelas, setSelectedCartelas] = useState([]);
   const [finalSelectedCartelas, setFinalSelectedCartelas] = useState([]);
   const [timer, setTimer] = useState(null);
   const [wallet, setWallet] = useState(0);
@@ -305,39 +305,30 @@ useEffect(() => {
 }, [roomId, clientId, usernameParam, telegramIdParam, stake, navigate]);
 
   // --- Button Handlers ---
-  const handleButtonClick = (index) => {
-    if (activeGame) return toast.error("Game in progress – wait until it ends");
-    if (finalSelectedCartelas.includes(index)) return;
-    
-    // Check if user has enough balance
-    if (wallet < stake) {
-      toast.error("Insufficient balance to select cartela");
-      return;
-    }
-    
-    setSelectedCartelas((prev) => {
-      if (prev.includes(index)) return prev.filter((i) => i !== index);
-      if (prev.length >= 4) {
-        toast.error("You can only select up to 4 cartelas");
-        return prev;
-      }
-      return [...prev, index];
-    });
-  };
+const handleButtonClick = (index) => {
+  if (activeGame) return toast.error("Game in progress – wait until it ends");
+  if (finalSelectedCartelas.includes(index)) return;
   
-  const handleAddCartela = () => {
-    if (activeGame) return toast.error("Cannot add cartela – game in progress");
-    if (!selectedCartelas.length) return toast.error("Select at least one cartela first");
-    if (wallet < stake * selectedCartelas.length) {
-      toast.error("Insufficient balance for selected cartelas");
-      return;
-    }
-    
-    selectedCartelas.forEach((idx) => {
-      socket.emit("selectCartela", { roomId, cartelaIndex: idx, clientId });
-    });
-    setSelectedCartelas([]);
-  };
+  if (wallet < stake) {
+    toast.error("Insufficient balance");
+    return;
+  }
+
+  // limit max cartelas to 4
+  if (finalSelectedCartelas.length >= 4) {
+    toast.error("You can only select up to 4 cartelas");
+    return;
+  }
+
+  // send immediately to server
+  socket.emit("selectCartela", { roomId, cartelaIndex: index, clientId });
+};
+
+ 
+  
+const handleAddCartela = () => {
+  toast.info("Just click a cartela to send it. You don’t need this button anymore.");
+};
 
   // --- Render based on loading state ---
   if (isLoading) {
@@ -402,10 +393,10 @@ useEffect(() => {
         <div className="buttonconfirm">
           <button
             className="game_start"
-            disabled={!selectedCartelas.length || activeGame || wallet < stake * selectedCartelas.length}
+            disabled={activeGame || wallet < stake }
             onClick={handleAddCartela}
           >
-            Add Cartela(s) - Cost: {stake * selectedCartelas.length} ETB
+            Confirm
           </button>
         </div>
       </div>

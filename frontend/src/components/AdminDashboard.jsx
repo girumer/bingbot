@@ -109,7 +109,7 @@ const navigate = useNavigate();
    //   alert(`Withdrawal ${status === 'confirmed' ? 'confirmed' : 'rejected'} successfully`);
     } catch (err) {
       console.error("Error updating withdrawal status", err);
-      alert(err.response?.data?.message || "Failed to update withdrawal status");
+    
     }
   };
 const fetchdeposit = async () => {
