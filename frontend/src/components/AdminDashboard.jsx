@@ -15,6 +15,8 @@ export default function AdminDashboard() {
  const [pendingWithdrawals, setPendingWithdrawals] = useState([]); 
  const [depositls,setdepositls]=useState([]);
  const [methods,setmethods]=useState(0);
+ const [currentPage, setCurrentPage] = useState(1);
+const itemsPerPage = 5; 
 const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [errMsg, setErrMsg] = useState("");
@@ -134,6 +136,15 @@ const fetchUsers = async (p = 1) => {
   }
 };
 
+// Withdrawals pagination
+const indexOfLastWithdrawal = currentPage * itemsPerPage;
+const indexOfFirstWithdrawal = indexOfLastWithdrawal - itemsPerPage;
+const currentWithdrawals = pendingWithdrawals.slice(indexOfFirstWithdrawal, indexOfLastWithdrawal);
+
+// Deposits pagination
+const indexOfLastDeposit = currentPage * itemsPerPage;
+const indexOfFirstDeposit = indexOfLastDeposit - itemsPerPage;
+const currentDeposits = depositls.slice(indexOfFirstDeposit, indexOfLastDeposit);
 
   const loadAll = async (p = 1) => {
     setLoading(true); setErrMsg("");
@@ -293,7 +304,7 @@ const handleLogout = () => {
             </tr>
           </thead>
           <tbody>
-            {pendingWithdrawals.length ? pendingWithdrawals.map((withdrawal) => (
+            {currentWithdrawals.length ? currentWithdrawals.map((withdrawal)  => (
               <tr key={withdrawal._id}>
                <td>{withdrawal.withdrawalId}</td>
                 <td>{withdrawal.phoneNumber}</td>
@@ -332,7 +343,7 @@ const handleLogout = () => {
             </tr>
           </thead>
           <tbody>
-            {depositls.length ? depositls.map((withdrawal) => (
+            {currentDeposits.length ? currentDeposits.map((withdrawal) => (
               <tr key={withdrawal._id}>
                <td>{withdrawal.depositId}</td>
                 <td>{withdrawal.phoneNumber}</td>
