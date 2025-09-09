@@ -14,6 +14,7 @@ export default function AdminDashboard() {
   const [transactionlist,settransactionlist]=useState([]);
  const [pendingWithdrawals, setPendingWithdrawals] = useState([]); 
  const [depositls,setdepositls]=useState([]);
+ const [methods,setmethods]=useState(0);
 const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [errMsg, setErrMsg] = useState("");
@@ -266,7 +267,18 @@ const handleLogout = () => {
           ))}
         </div>
       </section>
-       <section>
+      <section>
+  <label htmlFor="method-select"><strong>Show:</strong> </label>
+  <select
+    id="method-select"
+    value={methods}
+    onChange={(e) => setmethods(Number(e.target.value))}
+  >
+    <option value={0}>Pending Withdrawals</option>
+    <option value={1}>Deposits</option>
+  </select>
+</section>
+    {methods===0 &&(  <section>
         <h2>Pending Withdrawals</h2>
         <table className="users-table">
           <thead>
@@ -304,8 +316,8 @@ const handleLogout = () => {
             )}
           </tbody>
         </table>
-      </section>
- <section>
+      </section>)}
+      {methods === 1 &&(<section>
         <h2>deposit list</h2>
         <table className="users-table">
           <thead>
@@ -322,7 +334,7 @@ const handleLogout = () => {
           <tbody>
             {depositls.length ? depositls.map((withdrawal) => (
               <tr key={withdrawal._id}>
-               <td>{withdrawal.withdrawalId}</td>
+               <td>{withdrawal.depositId}</td>
                 <td>{withdrawal.phoneNumber}</td>
                 <td>{withdrawal.method}</td>
                 <td>{withdrawal.type}</td>
@@ -343,7 +355,7 @@ const handleLogout = () => {
             )}
           </tbody>
         </table>
-      </section>
+      </section>)}
       {/* Registration */}
       
       <section>
