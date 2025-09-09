@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const transactionSchema = new mongoose.Schema({
   transactionNumber: { type: String, required: true, unique: true },
   withdrawalId: { type: Number, unique: true, sparse: true },
+  depositId: { type: Number, unique: true, sparse: true }, 
   phoneNumber: { type: String, required: true, default: "UNKNOWN" },
   method: { type: String, enum: ["deposit", "withdrawal","depositpend"], required: true },
   amount: { type: Number, required: true },

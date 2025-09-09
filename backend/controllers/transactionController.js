@@ -1,7 +1,7 @@
 const BingoBord = require('../Models/BingoBord');
 const Transaction = require("../Models/Transaction");
 
-const Counter=require('../Models/CounterSchema');
+const Counter=require('../Models/DepositSchema');
 
 // Utility function to parse Telebirr messages
 function parseTelebirrMessage(message) {
