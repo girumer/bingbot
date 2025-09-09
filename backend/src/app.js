@@ -689,7 +689,29 @@ else{
     res.status(500).json({ message: "Server error" });
   }
 });
+app.post("/admin/confirm-depo", async (req, res) => {
+  const {depositId} = req.body;
+  try {
+    const transaction = await Transaction.findOne({depositId});
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found." });
+    }
+    
+else{
+ await Transaction.deleteOne({depositId});
+    res.status(200).json({ success: true, message: "Withdrawal confirmed successfully." });
+}
+    
 
+    // Check again for sufficient funds just in case
+    
+
+   
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 router.post("/admin/reject-withdrawal",  async (req, res) => {
   const { transactionId } = req.body;
   try {
