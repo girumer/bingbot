@@ -15,8 +15,9 @@ export default function AdminDashboard() {
  const [pendingWithdrawals, setPendingWithdrawals] = useState([]); 
  const [depositls,setdepositls]=useState([]);
  const [methods,setmethods]=useState(0);
- const [currentPage, setCurrentPage] = useState(1);
-const itemsPerPage = 5; 
+const [withdrawalPage, setWithdrawalPage] = useState(1);
+const [depositPage, setDepositPage] = useState(1);
+const itemsPerPage = 5;
 const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [errMsg, setErrMsg] = useState("");
@@ -137,14 +138,17 @@ const fetchUsers = async (p = 1) => {
 };
 
 // Withdrawals pagination
-const indexOfLastWithdrawal = currentPage * itemsPerPage;
+const indexOfLastWithdrawal = withdrawalPage * itemsPerPage;
 const indexOfFirstWithdrawal = indexOfLastWithdrawal - itemsPerPage;
 const currentWithdrawals = pendingWithdrawals.slice(indexOfFirstWithdrawal, indexOfLastWithdrawal);
+const withdrawalTotalPages = Math.ceil(pendingWithdrawals.length / itemsPerPage);
 
 // Deposits pagination
-const indexOfLastDeposit = currentPage * itemsPerPage;
+const indexOfLastDeposit = depositPage * itemsPerPage;
 const indexOfFirstDeposit = indexOfLastDeposit - itemsPerPage;
 const currentDeposits = depositls.slice(indexOfFirstDeposit, indexOfLastDeposit);
+const depositTotalPages = Math.ceil(depositls.length / itemsPerPage);
+
 
   const loadAll = async (p = 1) => {
     setLoading(true); setErrMsg("");
@@ -327,6 +331,21 @@ const handleLogout = () => {
             )}
           </tbody>
         </table>
+           <div className="pagination">
+      <button 
+        disabled={withdrawalPage <= 1} 
+        onClick={() => setWithdrawalPage(withdrawalPage - 1)}
+      >
+        Prev
+      </button>
+      <span>Page {withdrawalPage} / {withdrawalTotalPages || 1}</span>
+      <button 
+        disabled={withdrawalPage >= withdrawalTotalPages} 
+        onClick={() => setWithdrawalPage(withdrawalPage + 1)}
+      >
+        Next
+      </button>
+    </div>
       </section>)}
       {methods === 1 &&(<section>
         <h2>deposit list</h2>
@@ -343,18 +362,18 @@ const handleLogout = () => {
             </tr>
           </thead>
           <tbody>
-            {currentDeposits.length ? currentDeposits.map((withdrawal) => (
-              <tr key={withdrawal._id}>
-               <td>{withdrawal.depositId}</td>
-                <td>{withdrawal.phoneNumber}</td>
-                <td>{withdrawal.method}</td>
-                <td>{withdrawal.type}</td>
-                <td>{withdrawal.amount}</td>
-                <td>{new Date(withdrawal.createdAt).toLocaleString()}</td>
+            {currentDeposits.length ? currentDeposits.map((deposit) => (
+              <tr key={deposit._id}>
+               <td>{deposit.depositId}</td>
+                <td>{deposit.phoneNumber}</td>
+                <td>{deposit.method}</td>
+                <td>{deposit.type}</td>
+                <td>{deposit.amount}</td>
+                <td>{new Date(deposit.createdAt).toLocaleString()}</td>
                 <td>
                   <button 
                     className="confirm-btn" 
-                    onClick={() => updateWithdrawalStatus(withdrawal.withdrawalId)}
+                    onClick={() => updateWithdrawalStatus(deposit.depositId)}
                   >
                     Confirm
                   </button>
@@ -366,6 +385,21 @@ const handleLogout = () => {
             )}
           </tbody>
         </table>
+         <div className="pagination">
+      <button 
+        disabled={depositPage <= 1} 
+        onClick={() => setDepositPage(depositPage - 1)}
+      >
+        Prev
+      </button>
+      <span>Page {depositPage} / {depositTotalPages || 1}</span>
+      <button 
+        disabled={depositPage >= depositTotalPages} 
+        onClick={() => setDepositPage(depositPage + 1)}
+      >
+        Next
+      </button>
+    </div>
       </section>)}
       {/* Registration */}
       
