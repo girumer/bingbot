@@ -7,4 +7,4 @@ const DepositSchema = new mongoose.Schema({
   seq: { type: Number, default: 0 } 
 });
 
-module.exports = mongoose.model("Counter", DepositSchema);
+module.exports = mongoose.model("Depoc", DepositSchema);

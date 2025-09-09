@@ -1,7 +1,7 @@
 const BingoBord = require('../Models/BingoBord');
 const Transaction = require("../Models/Transaction");
 
-const Counter=require('../Models/DepositSchema');
+const Depoc=require('../Models/DepositSchema');
 
 // Utility function to parse Telebirr messages
 function parseTelebirrMessage(message) {
@@ -156,7 +156,7 @@ exports.depositAmount = async (req, res) => {
       return res.status(400).json({ error: "type  mismatch. Please check your deposit type." });
     }
  
- const counter = await Counter.findOneAndUpdate(
+ const counter = await Depoc.findOneAndUpdate(
           { _id: "depositId" },
           { $inc: { seq: 1 } },
           { new: true, upsert: true }
