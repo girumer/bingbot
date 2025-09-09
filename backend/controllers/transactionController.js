@@ -157,7 +157,7 @@ exports.depositAmount = async (req, res) => {
     }
  
  const counter = await Counter.findOneAndUpdate(
-          { _id: "withdrawalId" },
+          { _id: "depositId" },
           { $inc: { seq: 1 } },
           { new: true, upsert: true }
         );
