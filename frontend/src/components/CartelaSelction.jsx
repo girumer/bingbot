@@ -291,7 +291,7 @@ function CartelaSelction() {
     }
 
     // THIS USER can select up to 4 cartelas
-    if (finalSelectedCartelas.length >= 4) {
+    if (finalSelectedCartelas.length >= selectedCartelas) {
       toast.error("You can only select up to 4 cartelas");
       return;
     }
