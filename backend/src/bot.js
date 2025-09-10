@@ -46,14 +46,16 @@ const mainMenu = {
 };
 
 
+
 const commands = [
-   { command: "start", callback_data: "start", description: "🏠 Back to main menu" },
-  { command: "balance", callback_data: "balance",description: "💰 Check your balance" },
-  { command: "play", callback_data: "play" ,description: "🎮 Play Bingo" },
-  { command: "deposit", callback_data: "deposit",description: "📥 Deposit funds" },
-  { command: "history", callback_data: "history",description: "📜 game  history" },
-  { command: "help",callback_data: "help", description: "ℹ️ Help info" }
+  { command: "start", description: "🏠 Back to main menu" }, // Corrected line
+  { command: "balance", description: "💰 Check your balance" },
+  { command: "play", description: "🎮 Play Bingo" },
+  { command: "deposit", description: "📥 Deposit funds" },
+  { command: "history", description: "📜 game  history" },
+  { command: "help", description: "ℹ️ Help info" }
 ];
+
 bot.setMyCommands(commands)
   .then(() => console.log("Bot menu commands set successfully"))
   .catch(console.error);
