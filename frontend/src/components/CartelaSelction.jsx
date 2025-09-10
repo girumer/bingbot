@@ -61,14 +61,12 @@ function CartelaSelction() {
   const [searchParams] = useSearchParams();
 
   // --- States ---
-  const [selectedCartelaIndex, setSelectedCartelaIndex] = useState(null); // Single selected cartela index
-  const [pendingCartelaIndex, setPendingCartelaIndex] = useState(null); // Cartela waiting for backend confirmation
-  const [finalSelectedCartelas, setFinalSelectedCartelas] = useState([]); // Accepted cartelas
+  const [selectedCartelas, setSelectedCartelas] = useState([]); // Cartelas selected by this user (not yet confirmed)
+  const [finalSelectedCartelas, setFinalSelectedCartelas] = useState([]); // Cartelas confirmed by backend for this user
   const [timer, setTimer] = useState(null);
   const [wallet, setWallet] = useState(0);
   const [activeGame, setActiveGame] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isConfirming, setIsConfirming] = useState(false);
 
   // --- Generate clientId ---
   const getClientId = () => {
@@ -91,7 +89,7 @@ function CartelaSelction() {
       console.log("Fetching wallet data for Telegram ID:", telegramIdParam);
       const response = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
-        { telegramId: telegramIdParam }
+        { telegramId: telegramIdParam}
       );
      
       let walletValue;
@@ -147,7 +145,16 @@ function CartelaSelction() {
     initializeGame();
 
     const handleGameState = (state) => {
-      setFinalSelectedCartelas(Array.from(new Set(state.selectedIndexes || [])));
+      // This should only contain cartelas taken by other users, not this user's confirmed cartelas
+      const otherUsersCartelas = (state.selectedIndexes || []).filter(
+        idx => !finalSelectedCartelas.includes(idx)
+      );
+      
+      // Remove any selected cartelas that are taken by others
+      setSelectedCartelas((prev) =>
+        prev.filter((idx) => !otherUsersCartelas.includes(idx))
+      );
+      
       if (state.timer != null) setTimer(state.timer);
       if (state.activeGame != null) setActiveGame(state.activeGame);
     };
@@ -156,7 +163,7 @@ function CartelaSelction() {
     return () => {
       socket.off("currentGameState", handleGameState);
     };
-  }, [roomId, usernameParam, telegramIdParam, clientId, stake]);
+  }, [roomId, usernameParam, telegramIdParam, clientId, stake, finalSelectedCartelas]);
 
   // Listen for wallet updates from server
   useEffect(() => {
@@ -173,17 +180,14 @@ function CartelaSelction() {
   // --- Other Socket event listeners ---
   useEffect(() => {
     const onCartelaAccepted = ({ cartelaIndex, Wallet: updatedWallet }) => {
-      setPendingCartelaIndex(null);
-      setFinalSelectedCartelas(prev => Array.from(new Set([...prev, cartelaIndex])));
+      setSelectedCartelas((prev) => prev.filter((idx) => idx !== cartelaIndex));
+      setFinalSelectedCartelas((prev) =>
+        Array.from(new Set([...prev, cartelaIndex]))
+      );
       if (updatedWallet != null) setWallet(updatedWallet);
-      setIsConfirming(false);
-      toast.success(`Cartela ${cartelaIndex + 1} accepted!`);
     };
    
-    const onCartelaError = ({ message }) => {
-      toast.error(message || "Cartela selection error");
-      setIsConfirming(false);
-    };
+    const onCartelaError = ({ message }) => toast.error(message || "Cartela selection error");
    
     const onCountdown = (seconds) => setTimer(seconds);
    
@@ -221,21 +225,17 @@ function CartelaSelction() {
     };
 
     const onUpdateSelectedCartelas = ({ selectedIndexes }) => {
-      setFinalSelectedCartelas(prev => Array.from(new Set([...prev, ...selectedIndexes])));
+      setFinalSelectedCartelas((prev) => Array.from(new Set([...prev, ...selectedIndexes])));
+      setSelectedCartelas((prev) => prev.filter((idx) => !selectedIndexes.includes(idx)));
     };
    
     const onActiveGameStatus = ({ activeGame }) => setActiveGame(activeGame);
    
-    const onCartelaRejected = ({ message }) => {
-      toast.error(message || "Cannot select this cartela");
-      setPendingCartelaIndex(null);
-      setIsConfirming(false);
-    };
+    const onCartelaRejected = ({ message }) => toast.error(message || "Cannot select this cartela");
    
     const onRoomAvailable = () => {
       setActiveGame(false);
-      setSelectedCartelaIndex(null);
-      setPendingCartelaIndex(null);
+      setSelectedCartelas([]);
       setFinalSelectedCartelas([]);
       setTimer(null);
      
@@ -302,43 +302,38 @@ function CartelaSelction() {
   // --- Button Handlers ---
   const handleButtonClick = (index) => {
     if (activeGame) return toast.error("Game in progress – wait until it ends");
-    if (finalSelectedCartelas.includes(index)) return;
-    if (selectedCartelaIndex !== null) return toast.error("Please confirm your current selection first");
-    if (pendingCartelaIndex !== null) return toast.error("Waiting for confirmation of previous selection");
+    if (finalSelectedCartelas.includes(index)) return toast.error("You already selected this cartela");
    
+    // Check if user has enough balance
     if (wallet < stake) {
-      toast.error("Insufficient balance");
+      toast.error("Insufficient balance to select cartela");
       return;
     }
-
-    // limit max cartelas to 4
-    if (finalSelectedCartelas.length >= 4) {
+   
+    // limit max cartelas to 4 per user
+    if (finalSelectedCartelas.length + selectedCartelas.length >= 4) {
       toast.error("You can only select up to 4 cartelas");
       return;
     }
 
-    setSelectedCartelaIndex(index);
+    setSelectedCartelas((prev) => {
+      if (prev.includes(index)) return prev.filter((i) => i !== index);
+      return [...prev, index];
+    });
   };
 
   const handleAddCartela = () => {
     if (activeGame) return toast.error("Cannot add cartela – game in progress");
-    if (selectedCartelaIndex === null) return toast.error("Select a cartela first");
-    if (wallet < stake) {
-      toast.error("Insufficient balance for selected cartela");
+    if (!selectedCartelas.length) return toast.error("Select at least one cartela first");
+    if (wallet < stake * selectedCartelas.length) {
+      toast.error("Insufficient balance for selected cartelas");
       return;
     }
-
-    setIsConfirming(true);
-    setPendingCartelaIndex(selectedCartelaIndex);
-    
-    // Send to backend for confirmation
-    socket.emit("selectCartela", { 
-      roomId, 
-      cartelaIndex: selectedCartelaIndex, 
-      clientId 
+   
+    selectedCartelas.forEach((idx) => {
+      socket.emit("selectCartela", { roomId, cartelaIndex: idx, clientId });
     });
-    
-    setSelectedCartelaIndex(null);
+    setSelectedCartelas([]);
   };
 
   // --- Render based on loading state ---
@@ -357,16 +352,15 @@ function CartelaSelction() {
           <div className="display-btn">Wallet: {wallet} ETB</div>
           <div className="display-btn">Active Game: {activeGame ? "Yes" : "No"}</div>
           <div className="display-btn">Stake: {stake} ETB</div>
-          <div className="display-btn">Selected: {finalSelectedCartelas.length}/4</div>
+          <div className="display-btn">Your Cartelas: {finalSelectedCartelas.length}/4</div>
         </div>
        
         {timer !== null && <div className="timer-display">Time Remaining: {timer}s</div>}
        
         <div className="Cartelacontainer">
           {cartela.map((_, index) => {
-            const isTakenByOthers = finalSelectedCartelas.includes(index);
-            const isSelected = selectedCartelaIndex === index;
-            const isPending = pendingCartelaIndex === index;
+            const isSelectedByMe = finalSelectedCartelas.includes(index);
+            const isSelectedPending = selectedCartelas.includes(index);
             
             return (
               <button
@@ -374,17 +368,15 @@ function CartelaSelction() {
                 onClick={() => handleButtonClick(index)}
                 className="cartela"
                 style={{
-                  background: isTakenByOthers 
-                    ? "red" 
-                    : isPending 
-                      ? "orange" 
-                      : isSelected 
-                        ? "yellow" 
-                        : "#eeeeee",
-                  color: isTakenByOthers || isPending || isSelected ? "white" : "black",
-                  cursor: isTakenByOthers || activeGame || isPending ? "not-allowed" : "pointer",
+                  background: isSelectedByMe 
+                    ? "green" 
+                    : isSelectedPending 
+                      ? "yellow" 
+                      : "#eeeeee",
+                  color: isSelectedByMe || isSelectedPending ? "white" : "black",
+                  cursor: isSelectedByMe || activeGame ? "not-allowed" : "pointer",
                 }}
-                disabled={isTakenByOthers || activeGame || isPending || wallet < stake}
+                disabled={isSelectedByMe || activeGame || wallet < stake}
               >
                 {index + 1}
               </button>
@@ -393,40 +385,16 @@ function CartelaSelction() {
         </div>
        
         {/* Only show the last selected cartela at the bottom */}
-        {selectedCartelaIndex !== null && (
+        {selectedCartelas.length > 0 && (
           <div className="selected-cartela-container">
             <h3>Selected Cartela (Click 'Add Cartela' to confirm):</h3>
             <div className="cartela-display selected">
               <div className="cartela-header">
-                <span>Cartela {selectedCartelaIndex + 1}</span>
+                <span>Cartela {selectedCartelas[selectedCartelas.length - 1] + 1}</span>
               </div>
               <div className="cartela-content">
-                {cartela[selectedCartelaIndex].cart.map((row, rowIndex) => (
-                  <div key={rowIndex} className="cartela-row">
-                    {row.map((cell, cellIndex) => (
-                      <span key={cellIndex} className="cartela-cell">
-                        {cell}
-                      </span>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Only show the pending cartela if there is one */}
-        {pendingCartelaIndex !== null && (
-          <div className="pending-cartela-container">
-            <h3>Cartela Waiting for Confirmation:</h3>
-            <div className="cartela-display pending">
-              <div className="cartela-header">
-                <span>Cartela {pendingCartelaIndex + 1}</span>
-                <span className="pending-text">Pending Confirmation...</span>
-              </div>
-              <div className="cartela-content">
-                {cartela[pendingCartelaIndex].cart.map((row, rowIndex) => (
-                  <div key={rowIndex} className="cartela-row">
+                {cartela[selectedCartelas[selectedCartelas.length - 1]].cart.map((row, rowIndex) => (
+                  <div key={rowIndex} className="cartela-row1">
                     {row.map((cell, cellIndex) => (
                       <span key={cellIndex} className="cartela-cell">
                         {cell}
@@ -442,10 +410,10 @@ function CartelaSelction() {
         <div className="buttonconfirm">
           <button
             className="game_start"
-            disabled={selectedCartelaIndex === null || activeGame || wallet < stake || isConfirming}
+            disabled={!selectedCartelas.length || activeGame || wallet < stake * selectedCartelas.length}
             onClick={handleAddCartela}
           >
-            {isConfirming ? "Confirming..." : `Add Cartela - Cost: ${stake} ETB`}
+            Add Cartela(s) - Cost: {stake * selectedCartelas.length} ETB
           </button>
         </div>
       </div>
