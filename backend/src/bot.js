@@ -48,10 +48,11 @@ const mainMenu = {
 
 
 const commands = [
-  { command: "start", description: "🏠 Back to main menu" }, // Corrected line
+  { command: "start", description: "🏠 start" }, // Corrected line
   { command: "balance", description: "💰 Check your balance" },
   { command: "play", description: "🎮 Play Bingo" },
   { command: "deposit", description: "📥 Deposit funds" },
+  { command: "withdraw", description: "📤 Withdraw" },
   { command: "history", description: "📜 game  history" },
   { command: "help", description: "ℹ️ Help info" }
 ];
@@ -83,7 +84,7 @@ bot.onText(/\/start/, async (msg) => {
 // ----------------------
 // Handle Commands (like /balance, /play, etc.)
 // ----------------------
-bot.onText(/\/(start|balance|play|deposit|history|help)/, async (msg, match) => {
+bot.onText(/\/(start|balance|play|deposit|history|help|withdraw)/, async (msg, match) => {
   const chatId = msg.chat.id;
   const cmd = match[1]; // the command without '/'
 
@@ -101,6 +102,18 @@ bot.onText(/\/(start|balance|play|deposit|history|help)/, async (msg, match) => 
       break;
     case "balance":
       bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} coins`);
+      break;
+       case "withdraw":
+      bot.sendMessage(chatId, "Choose your withdrawal method:", {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: "📲 Telebirr", callback_data: "withdraw_telebirr" },
+              { text: "🏦 CBE Birr", callback_data: "withdraw_cbebirr" }
+            ]
+          ]
+        }
+      });
       break;
   case "history":
   if (!user.gameHistory || user.gameHistory.length === 0) {
