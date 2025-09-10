@@ -12,7 +12,7 @@ function CartelaSelction() {
   const navigate = useNavigate();
   const ctx = useOutletContext() || {};
 
-  // 1) URL params
+  // [Keep all your existing parameter resolution code exactly as is]
   const search = new URLSearchParams(window.location.search);
   const qp = {
     username: search.get("username"),
@@ -21,7 +21,6 @@ function CartelaSelction() {
     stake: search.get("stake"),
   };
 
-  // 2) Context (if present)
   const cx = {
     username: ctx.usernameFromUrl,
     telegramId: ctx.telegramIdFromUrl,
@@ -29,14 +28,12 @@ function CartelaSelction() {
     stake: ctx.stakeFromUrl,
   };
 
-  // 3) Telegram WebApp (if available)
   const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
   const tg = {
     username: tgUser?.username || undefined,
     telegramId: tgUser?.id ? String(tgUser.id) : undefined,
   };
 
-  // 4) LocalStorage fallback
   const ls = {
     username: localStorage.getItem("username") || undefined,
     telegramId: localStorage.getItem("telegramId") || undefined,
@@ -44,13 +41,11 @@ function CartelaSelction() {
     stake: localStorage.getItem("stake") || undefined,
   };
 
-  // Final resolved params
   const usernameParam = qp.username || cx.username || tg.username || ls.username || "";
   const telegramIdParam = qp.telegramId || cx.telegramId || tg.telegramId || ls.telegramId || "";
   const roomId = qp.roomId || cx.roomId || ls.roomId || "";
   const stake = Number(qp.stake || cx.stake || ls.stake || 0);
 
-  // Persist once resolved so future navigations don't break
   useEffect(() => {
     if (usernameParam) localStorage.setItem("username", usernameParam);
     if (telegramIdParam) localStorage.setItem("telegramId", telegramIdParam);
@@ -61,8 +56,8 @@ function CartelaSelction() {
   const [searchParams] = useSearchParams();
 
   // --- States ---
-  const [selectedCartelas, setSelectedCartelas] = useState([]); // Cartelas selected by this user (not yet confirmed)
-  const [finalSelectedCartelas, setFinalSelectedCartelas] = useState([]); // Cartelas confirmed by backend for this user
+  const [selectedCartelas, setSelectedCartelas] = useState([]);
+  const [finalSelectedCartelas, setFinalSelectedCartelas] = useState([]);
   const [timer, setTimer] = useState(null);
   const [wallet, setWallet] = useState(0);
   const [activeGame, setActiveGame] = useState(false);
@@ -114,7 +109,6 @@ function CartelaSelction() {
 
   // --- MAIN INITIALIZATION EFFECT ---
   useEffect(() => {
-    // Check if we have all required parameters
     if (!roomId || !usernameParam || !telegramIdParam) {
       console.log("Waiting for all required URL parameters...");
       setIsLoading(false);
@@ -123,10 +117,8 @@ function CartelaSelction() {
 
     const initializeGame = async () => {
       try {
-        // Fetch wallet data
         await fetchWalletData();
 
-        // Join the game room
         socket.emit("joinRoom", {
           roomId,
           username: usernameParam,
@@ -145,16 +137,10 @@ function CartelaSelction() {
     initializeGame();
 
     const handleGameState = (state) => {
-      // This should only contain cartelas taken by other users, not this user's confirmed cartelas
-      const otherUsersCartelas = (state.selectedIndexes || []).filter(
-        idx => !finalSelectedCartelas.includes(idx)
-      );
-      
-      // Remove any selected cartelas that are taken by others
+      setFinalSelectedCartelas(Array.from(new Set(state.selectedIndexes || [])));
       setSelectedCartelas((prev) =>
-        prev.filter((idx) => !otherUsersCartelas.includes(idx))
+        prev.filter((idx) => !(state.selectedIndexes || []).includes(idx))
       );
-      
       if (state.timer != null) setTimer(state.timer);
       if (state.activeGame != null) setActiveGame(state.activeGame);
     };
@@ -163,7 +149,7 @@ function CartelaSelction() {
     return () => {
       socket.off("currentGameState", handleGameState);
     };
-  }, [roomId, usernameParam, telegramIdParam, clientId, stake, finalSelectedCartelas]);
+  }, [roomId, usernameParam, telegramIdParam, clientId, stake]);
 
   // Listen for wallet updates from server
   useEffect(() => {
@@ -199,13 +185,11 @@ function CartelaSelction() {
 
       localStorage.setItem("myCartelas", JSON.stringify(cartelasFromServer));
 
-      // --- Tell server this player is now in-game ---
       socket.emit("markPlayerInGame", {
         roomId,
         clientId
       });
 
-      // --- Navigate to BingoBoard with state ---
       const queryString = new URLSearchParams({
         username: usernameParam,
         telegramId: telegramIdParam,
@@ -239,7 +223,6 @@ function CartelaSelction() {
       setFinalSelectedCartelas([]);
       setTimer(null);
      
-      // Refresh wallet data when room becomes available again
       fetchWalletData();
     };
    
@@ -267,12 +250,10 @@ function CartelaSelction() {
   useEffect(() => {
     if (!roomId || !clientId) return;
 
-    // Ask server if this player is already in an active game
     socket.emit("checkPlayerStatus", { roomId, clientId });
 
     const handlePlayerStatus = ({ inGame, selectedCartelas }) => {
       if (inGame) {
-        // Player is already in a game → navigate directly to BingoBoard
         const queryString = new URLSearchParams({
           username: usernameParam,
           telegramId: telegramIdParam,
@@ -302,16 +283,15 @@ function CartelaSelction() {
   // --- Button Handlers ---
   const handleButtonClick = (index) => {
     if (activeGame) return toast.error("Game in progress – wait until it ends");
-    if (finalSelectedCartelas.includes(index)) return toast.error("You already selected this cartela");
+    if (finalSelectedCartelas.includes(index)) return;
    
-    // Check if user has enough balance
     if (wallet < stake) {
-      toast.error("Insufficient balance to select cartela");
+      toast.error("Insufficient balance");
       return;
     }
-   
-    // limit max cartelas to 4 per user
-    if (finalSelectedCartelas.length + selectedCartelas.length >= 4) {
+
+    // THIS USER can select up to 4 cartelas
+    if (finalSelectedCartelas.length >= 4) {
       toast.error("You can only select up to 4 cartelas");
       return;
     }
@@ -352,31 +332,25 @@ function CartelaSelction() {
           <div className="display-btn">Wallet: {wallet} ETB</div>
           <div className="display-btn">Active Game: {activeGame ? "Yes" : "No"}</div>
           <div className="display-btn">Stake: {stake} ETB</div>
-          <div className="display-btn">Your Cartelas: {finalSelectedCartelas.length}/4</div>
         </div>
        
         {timer !== null && <div className="timer-display">Time Remaining: {timer}s</div>}
        
         <div className="Cartelacontainer">
           {cartela.map((_, index) => {
-            const isSelectedByMe = finalSelectedCartelas.includes(index);
-            const isSelectedPending = selectedCartelas.includes(index);
-            
+            const isTakenByOthers = finalSelectedCartelas.includes(index);
+            const isSelectedByMe = selectedCartelas.includes(index);
             return (
               <button
                 key={`cartela-btn-${index}`}
                 onClick={() => handleButtonClick(index)}
                 className="cartela"
                 style={{
-                  background: isSelectedByMe 
-                    ? "green" 
-                    : isSelectedPending 
-                      ? "yellow" 
-                      : "#eeeeee",
-                  color: isSelectedByMe || isSelectedPending ? "white" : "black",
-                  cursor: isSelectedByMe || activeGame ? "not-allowed" : "pointer",
+                  background: isTakenByOthers ? "red" : isSelectedByMe ? "yellow" : "#eeeeee",
+                  color: isTakenByOthers || isSelectedByMe ? "white" : "black",
+                  cursor: isTakenByOthers || activeGame ? "not-allowed" : "pointer",
                 }}
-                disabled={isSelectedByMe || activeGame || wallet < stake}
+                disabled={isTakenByOthers || activeGame || wallet < stake}
               >
                 {index + 1}
               </button>
@@ -396,7 +370,7 @@ function CartelaSelction() {
                 {cartela[selectedCartelas[selectedCartelas.length - 1]].cart.map((row, rowIndex) => (
                   <div key={rowIndex} className="cartela-row1">
                     {row.map((cell, cellIndex) => (
-                      <span key={cellIndex} className="cartela-cell">
+                      <span key={cellIndex} className="cartela-cell1">
                         {cell}
                       </span>
                     ))}
