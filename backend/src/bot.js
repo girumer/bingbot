@@ -81,7 +81,7 @@ bot.onText(/\/start/, async (msg) => {
 // ----------------------
 // Handle Commands (like /balance, /play, etc.)
 // ----------------------
-bot.onText(/\/(balance|play|deposit|history|help)/, async (msg, match) => {
+bot.onText(/\/(start|balance|play|deposit|history|help)/, async (msg, match) => {
   const chatId = msg.chat.id;
   const cmd = match[1]; // the command without '/'
 
