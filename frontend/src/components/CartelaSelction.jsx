@@ -12,7 +12,7 @@ function CartelaSelction() {
   const navigate = useNavigate();
   const ctx = useOutletContext() || {};
 
-  // URL params
+  // --- Resolve Parameters ---
   const search = new URLSearchParams(window.location.search);
   const qp = {
     username: search.get("username"),
@@ -20,25 +20,22 @@ function CartelaSelction() {
     roomId: search.get("roomId"),
     stake: search.get("stake"),
   };
-
   const cx = {
     username: ctx.usernameFromUrl,
     telegramId: ctx.telegramIdFromUrl,
     roomId: ctx.roomIdFromUrl,
     stake: ctx.stakeFromUrl,
   };
-
   const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
   const tg = {
-    username: tgUser?.username || undefined,
+    username: tgUser?.username,
     telegramId: tgUser?.id ? String(tgUser.id) : undefined,
   };
-
   const ls = {
-    username: localStorage.getItem("username") || undefined,
-    telegramId: localStorage.getItem("telegramId") || undefined,
-    roomId: localStorage.getItem("roomId") || undefined,
-    stake: localStorage.getItem("stake") || undefined,
+    username: localStorage.getItem("username"),
+    telegramId: localStorage.getItem("telegramId"),
+    roomId: localStorage.getItem("roomId"),
+    stake: localStorage.getItem("stake"),
   };
 
   const usernameParam = qp.username || cx.username || tg.username || ls.username || "";
@@ -54,14 +51,14 @@ function CartelaSelction() {
   }, [usernameParam, telegramIdParam, roomId, stake]);
 
   // --- States ---
-  const [pendingCartela, setPendingCartela] = useState(null); // <--- single pending
+  const [selectedCartelas, setSelectedCartelas] = useState([]); // ✅ fixed
   const [finalSelectedCartelas, setFinalSelectedCartelas] = useState([]);
   const [timer, setTimer] = useState(null);
   const [wallet, setWallet] = useState(0);
   const [activeGame, setActiveGame] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- ClientId ---
+  // --- Client ID ---
   const getClientId = () => {
     let cid = localStorage.getItem("clientId");
     if (!cid) {
@@ -72,6 +69,7 @@ function CartelaSelction() {
   };
   const clientId = getClientId();
 
+  // --- Fetch Wallet ---
   const fetchWalletData = async () => {
     if (!telegramIdParam) return 0;
     try {
@@ -93,7 +91,7 @@ function CartelaSelction() {
     }
   };
 
-  // --- Main Initialization ---
+  // --- Initialize Game ---
   useEffect(() => {
     if (!roomId || !usernameParam || !telegramIdParam) {
       setIsLoading(false);
@@ -101,27 +99,28 @@ function CartelaSelction() {
     }
 
     const initializeGame = async () => {
-      await fetchWalletData();
-      socket.emit("joinRoom", { roomId, username: usernameParam, telegramId: telegramIdParam, clientId });
-      setIsLoading(false);
+      try {
+        await fetchWalletData();
+        socket.emit("joinRoom", { roomId, username: usernameParam, telegramId: telegramIdParam, clientId });
+      } catch (err) {
+        toast.error("Failed to initialize game. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
     };
     initializeGame();
 
     const handleGameState = (state) => {
       setFinalSelectedCartelas(Array.from(new Set(state.selectedIndexes || [])));
-
-      if (pendingCartela !== null && state.selectedIndexes?.includes(pendingCartela)) {
-        setPendingCartela(null); // pending approved by server
-      }
-
+      setSelectedCartelas((prev) => prev.filter((idx) => !(state.selectedIndexes || []).includes(idx)));
       if (state.timer != null) setTimer(state.timer);
       if (state.activeGame != null) setActiveGame(state.activeGame);
     };
     socket.on("currentGameState", handleGameState);
-
     return () => socket.off("currentGameState", handleGameState);
   }, [roomId, usernameParam, telegramIdParam, clientId]);
 
+  // --- Wallet Updates ---
   useEffect(() => {
     const handleWalletUpdate = ({ wallet: updatedWallet }) => {
       if (updatedWallet != null) setWallet(updatedWallet);
@@ -130,51 +129,40 @@ function CartelaSelction() {
     return () => socket.off("walletUpdate", handleWalletUpdate);
   }, []);
 
-  // --- Socket listeners ---
+  // --- Socket Event Listeners ---
   useEffect(() => {
     const onCartelaAccepted = ({ cartelaIndex, Wallet: updatedWallet }) => {
-      if (pendingCartela === cartelaIndex) setPendingCartela(null);
+      setSelectedCartelas((prev) => prev.filter((idx) => idx !== cartelaIndex));
       setFinalSelectedCartelas((prev) => Array.from(new Set([...prev, cartelaIndex])));
       if (updatedWallet != null) setWallet(updatedWallet);
     };
 
     const onCartelaError = ({ message }) => toast.error(message || "Cartela selection error");
-
     const onCountdown = (seconds) => setTimer(seconds);
 
     const onCountdownEnd = (cartelasFromServer) => {
       if (!cartelasFromServer || cartelasFromServer.length === 0) {
-        toast.error("You did not select any cartela.");
+        toast.error("You did not select any cartela. Please select at least one.");
         return;
       }
-
       localStorage.setItem("myCartelas", JSON.stringify(cartelasFromServer));
-
       socket.emit("markPlayerInGame", { roomId, clientId });
 
-      const queryString = new URLSearchParams({
-        username: usernameParam,
-        telegramId: telegramIdParam,
-        roomId,
-        stake,
-      }).toString();
-
+      const queryString = new URLSearchParams({ username: usernameParam, telegramId: telegramIdParam, roomId, stake }).toString();
       navigate(`/BingoBoard?${queryString}`, {
-        state: { username: usernameParam, roomId, stake, myCartelas: cartelasFromServer, telegramId: telegramIdParam },
+        state: { username: usernameParam, roomId, stake, myCartelas: cartelasFromServer, telegramId: telegramIdParam }
       });
     };
 
     const onUpdateSelectedCartelas = ({ selectedIndexes }) => {
       setFinalSelectedCartelas((prev) => Array.from(new Set([...prev, ...selectedIndexes])));
-      if (pendingCartela != null && selectedIndexes.includes(pendingCartela)) setPendingCartela(null);
+      setSelectedCartelas((prev) => prev.filter((idx) => !selectedIndexes.includes(idx)));
     };
-
     const onActiveGameStatus = ({ activeGame }) => setActiveGame(activeGame);
     const onCartelaRejected = ({ message }) => toast.error(message || "Cannot select this cartela");
-
     const onRoomAvailable = () => {
       setActiveGame(false);
-      setPendingCartela(null);
+      setSelectedCartelas([]);
       setFinalSelectedCartelas([]);
       setTimer(null);
       fetchWalletData();
@@ -199,31 +187,43 @@ function CartelaSelction() {
       socket.off("cartelaRejected", onCartelaRejected);
       socket.off("roomAvailable", onRoomAvailable);
     };
-  }, [pendingCartela, navigate]);
+  }, [navigate, roomId, usernameParam, stake, telegramIdParam]);
 
-  // --- Button Handlers ---
+  // --- Check Player Status ---
+  useEffect(() => {
+    if (!roomId || !clientId) return;
+    socket.emit("checkPlayerStatus", { roomId, clientId });
+
+    const handlePlayerStatus = ({ inGame, selectedCartelas }) => {
+      if (inGame) {
+        const queryString = new URLSearchParams({ username: usernameParam, telegramId: telegramIdParam, roomId, stake }).toString();
+        navigate(`/BingoBoard?${queryString}`, {
+          state: { username: usernameParam, roomId, stake, myCartelas: selectedCartelas, telegramId: telegramIdParam }
+        });
+      }
+    };
+
+    socket.on("playerStatus", handlePlayerStatus);
+    return () => socket.off("playerStatus", handlePlayerStatus);
+  }, [roomId, clientId, usernameParam, telegramIdParam, stake, navigate]);
+
+  // --- Handlers ---
   const handleButtonClick = (index) => {
-    if (activeGame) return toast.error("Game in progress");
+    if (activeGame) return toast.error("Game in progress – wait until it ends");
     if (finalSelectedCartelas.includes(index)) return;
-    if (pendingCartela != null) return toast.info("Wait until previous cartela is approved");
-
-    if (wallet < stake) {
-      toast.error("Insufficient balance");
-      return;
-    }
+    if (wallet < stake) return toast.error("Insufficient balance");
+    if (finalSelectedCartelas.length >= 4) return toast.error("You can only select up to 4 cartelas");
 
     socket.emit("selectCartela", { roomId, cartelaIndex: index, clientId });
-    setPendingCartela(index);
   };
 
-  const handleAddCartela = () => {
-    toast.info("Click a cartela to send it. No need for this button anymore.");
-  };
+  const handleAddCartela = () => toast.info("Just click a cartela to send it. You don’t need this button anymore.");
 
+  // --- Render ---
   if (isLoading) return <div className="flex items-center justify-center min-h-screen text-lg">Loading...</div>;
 
   return (
-    <React.Fragment>
+    <>
       <div className="Cartelacontainer-wrapper">
         <div className="wallet-stake-display">
           <div className="display-btn">Wallet: {wallet} ETB</div>
@@ -236,15 +236,15 @@ function CartelaSelction() {
         <div className="Cartelacontainer">
           {cartela.map((_, index) => {
             const isTakenByOthers = finalSelectedCartelas.includes(index);
-            const isPendingByMe = pendingCartela === index;
+            const isSelectedByMe = selectedCartelas.includes(index);
             return (
               <button
-                key={`cartela-btn-${index}`}
+                key={index}
                 onClick={() => handleButtonClick(index)}
                 className="cartela"
                 style={{
-                  background: isTakenByOthers ? "red" : isPendingByMe ? "yellow" : "#eeeeee",
-                  color: isTakenByOthers || isPendingByMe ? "white" : "black",
+                  background: isTakenByOthers ? "red" : isSelectedByMe ? "yellow" : "#eeeeee",
+                  color: isTakenByOthers || isSelectedByMe ? "white" : "black",
                   cursor: isTakenByOthers || activeGame ? "not-allowed" : "pointer",
                 }}
                 disabled={isTakenByOthers || activeGame || wallet < stake}
@@ -255,19 +255,19 @@ function CartelaSelction() {
           })}
         </div>
 
-        {pendingCartela !== null && (
+        {selectedCartelas.length > 0 && (
           <div className="pending-cartelas">
-            <div className="cartela-display1 pending">
-              {cartela[pendingCartela].cart.map((row, rowIndex) => (
-                <div key={rowIndex} className="cartela-row1">
-                  {row.map((cell, cellIndex) => (
-                    <span key={cellIndex} className="cartela-cell1">
-                      {cell}
-                    </span>
-                  ))}
-                </div>
-              ))}
-            </div>
+            {selectedCartelas.map((idx, i) => (
+              <div key={`pending-${idx}-${i}`} className="cartela-display1 pending">
+                {cartela[idx].cart.map((row, rowIndex) => (
+                  <div key={rowIndex} className="cartela-row1">
+                    {row.map((cell, cellIndex) => (
+                      <span key={cellIndex} className="cartela-cell1">{cell}</span>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         )}
 
@@ -278,7 +278,7 @@ function CartelaSelction() {
         </div>
       </div>
       <ToastContainer />
-    </React.Fragment>
+    </>
   );
 }
 
