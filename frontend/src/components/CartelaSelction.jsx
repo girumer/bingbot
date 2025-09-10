@@ -629,7 +629,7 @@ const handleButtonClick = (index) => {
   }
 
   // limit max cartelas to 4
-  if (finalSelectedCartelas.length >= 4) {
+  if (selectedCartelas.length >= 4) {
     toast.error("You can only select up to 4 cartelas");
     return;
   }
