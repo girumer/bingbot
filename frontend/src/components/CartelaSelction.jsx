@@ -392,7 +392,7 @@ function CartelaSelction() {
           })}
         </div>
        
-        {/* Selected Cartela Display at Bottom */}
+        {/* Only show the last selected cartela at the bottom */}
         {selectedCartelaIndex !== null && (
           <div className="selected-cartela-container">
             <h3>Selected Cartela (Click 'Add Cartela' to confirm):</h3>
@@ -415,7 +415,7 @@ function CartelaSelction() {
           </div>
         )}
 
-        {/* Pending Cartela Display */}
+        {/* Only show the pending cartela if there is one */}
         {pendingCartelaIndex !== null && (
           <div className="pending-cartela-container">
             <h3>Cartela Waiting for Confirmation:</h3>
@@ -435,34 +435,6 @@ function CartelaSelction() {
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-        )}
-       
-        {/* Confirmed Cartelas Display */}
-        {finalSelectedCartelas.length > 0 && (
-          <div className="confirmed-cartelas-container">
-            <h3>Your Confirmed Cartelas:</h3>
-            <div className="confirmed-cartelas-grid">
-              {finalSelectedCartelas.map((cartelaIndex) => (
-                <div key={`confirmed-${cartelaIndex}`} className="cartela-display confirmed">
-                  <div className="cartela-header">
-                    <span>Cartela {cartelaIndex + 1}</span>
-                    <span className="confirmed-text">Confirmed</span>
-                  </div>
-                  <div className="cartela-content">
-                    {cartela[cartelaIndex].cart.map((row, rowIndex) => (
-                      <div key={rowIndex} className="cartela-row">
-                        {row.map((cell, cellIndex) => (
-                          <span key={cellIndex} className="cartela-cell">
-                            {cell}
-                          </span>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         )}
