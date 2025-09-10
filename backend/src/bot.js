@@ -47,6 +47,7 @@ const mainMenu = {
 
 
 const commands = [
+   { command: "start", callback_data: "start", description: "🏠 Back to main menu" },
   { command: "balance", callback_data: "balance",description: "💰 Check your balance" },
   { command: "play", callback_data: "play" ,description: "🎮 Play Bingo" },
   { command: "deposit", callback_data: "deposit",description: "📥 Deposit funds" },
@@ -93,6 +94,9 @@ bot.onText(/\/(balance|play|deposit|history|help)/, async (msg, match) => {
 
   // Call the same logic as your callback_query switch
   switch (cmd) {
+    case "start":
+      bot.sendMessage(chatId, "🏠 Main Menu:", mainMenu);
+      break;
     case "balance":
       bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} coins`);
       break;
@@ -101,7 +105,7 @@ bot.onText(/\/(balance|play|deposit|history|help)/, async (msg, match) => {
     bot.sendMessage(chatId, "You have no game history yet.");
     return;
   }
-
+   
   // Get last 10 items only
   const lastGames = user.gameHistory.slice(-10);
 

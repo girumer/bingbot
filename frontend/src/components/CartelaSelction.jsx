@@ -726,7 +726,7 @@ className="cartela"
 
  style={{
 
- background: isTakenByOthers ? "red" : isSelectedByMe ? "yellow" : "#eeeeee",
+ background: isTakenByOthers ? "red" : isSelectedByMe ? "green" : "#30c918ff",
 
 color: isTakenByOthers || isSelectedByMe ? "white" : "black",
 
