@@ -716,115 +716,112 @@ useEffect(() => {
 
        
 
-        {timer !== null && <div className="timer-display">Time Remaining: {timer}s</div>}
+ {timer !== null && <div className="timer-display">Time Remaining: {timer}s</div>}
 
-       
 
-        <div className="Cartelacontainer">
+ <div className="Cartelacontainer">
 
-          {cartela.map((_, index) => {
+{cartela.map((_, index) => {
 
-            const isTakenByOthers = finalSelectedCartelas.includes(index);
+ const isTakenByOthers = finalSelectedCartelas.includes(index);
 
-            const isSelectedByMe = selectedCartelas.includes(index);
+const isSelectedByMe = selectedCartelas.includes(index);
 
-            return (
+return (
 
-              <button
+ <button
 
-                key={`cartela-btn-${index}`}
+key={`cartela-btn-${index}`}
 
-                onClick={() => handleButtonClick(index)}
+onClick={() => handleButtonClick(index)}
 
-                className="cartela"
+className="cartela"
 
-                style={{
+ style={{
 
-                  background: isTakenByOthers ? "red" : isSelectedByMe ? "yellow" : "#eeeeee",
+ background: isTakenByOthers ? "red" : isSelectedByMe ? "yellow" : "#eeeeee",
 
-                  color: isTakenByOthers || isSelectedByMe ? "white" : "black",
+color: isTakenByOthers || isSelectedByMe ? "white" : "black",
 
-                  cursor: isTakenByOthers || activeGame ? "not-allowed" : "pointer",
+cursor: isTakenByOthers || activeGame ? "not-allowed" : "pointer",
 
-                }}
+ }}
+ disabled={isTakenByOthers || activeGame || wallet < stake}
 
-                disabled={isTakenByOthers || activeGame || wallet < stake}
+>
 
-              >
+ {index + 1}
 
-                {index + 1}
+</button>
 
-              </button>
+);
 
-            );
+ })}
 
-          })}
+</div>
 
-        </div>
 
-       
+ {selectedCartelas.length > 0 && (
 
-        {selectedCartelas.length > 0 && (
+ <div className="pending-cartelas">
 
-          <div className="pending-cartelas">
+ {selectedCartelas.map((idx, i) => (
 
-            {selectedCartelas.map((idx, i) => (
+ <div key={`pending-${idx}-${i}`} className="cartela-display1 pending">
 
-              <div key={`pending-${idx}-${i}`} className="cartela-display1 pending">
+ {cartela[idx].cart.map((row, rowIndex) => (
 
-                {cartela[idx].cart.map((row, rowIndex) => (
+<div key={rowIndex} className="cartela-row1">
 
-                  <div key={rowIndex} className="cartela-row1">
+{row.map((cell, cellIndex) => (
 
-                    {row.map((cell, cellIndex) => (
+<span key={cellIndex} className="cartela-cell1">
 
-                      <span key={cellIndex} className="cartela-cell1">
+ {cell}
 
-                        {cell}
+ </span>
 
-                      </span>
+))}
 
-                    ))}
+</div>
 
-                  </div>
+ ))}
 
-                ))}
+ </div>
 
-              </div>
+ ))}
 
-            ))}
+</div>
 
-          </div>
+)}
 
-        )}
 
-       
 
-        <div className="buttonconfirm">
+ <div className="buttonconfirm">
 
-          <button
+<button
 
-            className="game_start"
+ className="game_start"
 
-            disabled={!selectedCartelas.length || activeGame || wallet < stake * selectedCartelas.length}
+ disabled={!selectedCartelas.length || activeGame || wallet < stake * selectedCartelas.length}
 
-            onClick={handleAddCartela}
+onClick={handleAddCartela}
 
-          >
+ >
 
-            Add Cartela(s) - Cost: {stake * selectedCartelas.length} ETB
+ Add Cartela(s) - Cost: {stake * selectedCartelas.length} ETB
 
-          </button>
+</button>
 
-        </div>
+ </div>
 
-      </div>
+</div>
 
-      <ToastContainer />
+<ToastContainer />
 
-    </React.Fragment>
+ </React.Fragment>
 
-  );
+ );
 
 }
 
