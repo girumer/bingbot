@@ -17,6 +17,7 @@ router.post("/api/saveHistory", async (req, res) => {
     }
 
     user.gameHistory.push({
+      gameId,
       roomId,
       stake,
       outcome,
