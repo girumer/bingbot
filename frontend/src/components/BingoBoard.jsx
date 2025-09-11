@@ -144,6 +144,7 @@ const usernameFromState = location.state?.username;
   const { myCartelas: initialCartelas } = location.state || {};
  //const [myCartelas, setMyCartelas] = useState(initialCartelas || storedCartelas);
   const [totalPlayers, setTotalPlayers] = useState(0);
+  const [ gameId,setGameId]=useState(0);
     const [highlightCartelas, setHighlightCartelas] = useState(true);
   const [myCartelas, setMyCartelas] = useState(initialCartelas || storedCartelas);
   const [allCalledNumbers, setAllCalledNumbers] = useState([]);
@@ -250,9 +251,10 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
-    const handleGameStarted = ({ totalAward, totalPlayers }) => {
+    const handleGameStarted = ({ totalAward, totalPlayers, gameId  }) => {
       setTotalAward(totalAward);
       setTotalPlayers(totalPlayers);
+      setGameId(gameId)
     };
     socket.on("gameStarted", handleGameStarted);
     return () => socket.off("gameStarted", handleGameStarted);
@@ -300,10 +302,12 @@ useEffect(() => {
     <div className="bingo-board-wrapper">
       {/* TOP STATS */}
       <div className="top-stats">
+         <div className="stat-button">👥 GameID {gameId}</div>
         <div className="stat-button">
           💰 Prize{" "}
           {totalAward !== null ? totalAward.toLocaleString() + " ETB" : "Loading..."}
         </div>
+   
         <div className="stat-button">👥 Players {totalPlayers}</div>
         <div className="stat-button">🔢 {allCalledNumbers.length}/75</div>
       </div>

@@ -4,7 +4,7 @@ const express = require("express")
 const async = require('async');
 const cartela = require('./cartela.json');
 const BingoBord=require("../Models/BingoBord")
-
+const crypto = require('crypto');
 const Transaction = require("../Models/Transaction");
 const jwt=require('jsonwebtoken')
 const cors = require("cors")
@@ -338,7 +338,11 @@ function startNumberGenerator(roomId) {
     checkWinners(roomId, nextNumber);
   }, 4000);
 }
-
+function generateGameId() {
+  const timestamp = Date.now();
+  const randomSuffix = crypto.randomBytes(4).toString('hex'); // Generates a short random string
+  return `game-${timestamp}-${randomSuffix}`;
+}
 function startCountdown(roomId, seconds) {
   if (!rooms[roomId]) return;
   let timeLeft = seconds;
@@ -363,9 +367,9 @@ function startCountdown(roomId, seconds) {
             }
         }
       }
-
+        room.gameId =generateGameId();
       room.activeGame = true;
-      io.to(roomId).emit("activeGameStatus", { activeGame: true });
+      io.to(roomId).emit("activeGameStatus", { activeGame: true ,  gameId:room.gameId});
 
       const totalCartelas = Object.values(room.playerCartelas).reduce(
         (sum, arr) => sum + arr.length,
@@ -375,6 +379,7 @@ function startCountdown(roomId, seconds) {
       io.to(roomId).emit("gameStarted", {
         totalAward: room.totalAward,
         totalPlayers: Object.keys(room.players).length,
+         gameId: room.gameId ,
       });
 
       startNumberGenerator(roomId);
@@ -417,7 +422,7 @@ function findWinningPattern(cartelaData, calledNumbers) {
   return null;
 }
 
-async function saveGameHistory(username, roomId, stake, outcome) {
+async function saveGameHistory(username, roomId, stake, outcome,  gameId ) {
   try {
     const user = await BingoBord.findOne({ username });
     if (!user) return;
@@ -426,6 +431,7 @@ async function saveGameHistory(username, roomId, stake, outcome) {
       stake: Number(stake),
       outcome,
       timestamp: new Date(),
+      gameId,
     });
     await user.save();
   } catch (err) {
@@ -473,7 +479,7 @@ async function checkWinners(roomId, calledNumber) {
         user.Wallet += awardPerWinner;
         user.coins += 1;
         await user.save();
-        await saveGameHistory(winner.winnerName, roomId, awardPerWinner, "win");
+        await saveGameHistory(winner.winnerName, roomId, awardPerWinner, "win", room.gameId);
       }
     }
     
@@ -485,7 +491,7 @@ async function checkWinners(roomId, calledNumber) {
       if (!username) continue;
       
       if (!winners.some((w) => w.winnerName === username)) {
-        await saveGameHistory(username, roomId, Number(roomId), "loss");
+        await saveGameHistory(username, roomId, Number(roomId), "loss", room.gameId);
       }
     }
 
