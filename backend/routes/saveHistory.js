@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const BingoBord = require("../Models/BingoBord"); // adjust path if your model is elsewhere
 
-router.post("/api/saveHistory", async (req, res) => {
+/* router.post("/api/saveHistory", async (req, res) => {
   const { username, roomId, stake, outcome } = req.body;
 
   if (!username || !roomId || !stake || !outcome) {
@@ -34,6 +34,6 @@ router.post("/api/saveHistory", async (req, res) => {
     console.error("Failed to save game history:", err);
     res.status(500).json({ error: "Server error" });
   }
-});
+}); */
 
 module.exports = router;
