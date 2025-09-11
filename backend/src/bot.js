@@ -195,24 +195,32 @@ bot.on("message", async (msg) => {
   }
 
   // Deposit Amount
-  if (step === "depositAmount") {
+ // ...
+// Deposit Amount
+if (step === "depositAmount") {
     const amount = parseFloat(text);
     if (isNaN(amount) || amount <= 0) {
-      bot.sendMessage(chatId, "⚠️ Please enter a valid amount.");
-      return;
+        bot.sendMessage(chatId, "⚠️ Please enter a valid amount.");
+        return;
     }
     userStates[chatId].amount = amount;
 
-    bot.sendMessage(chatId, "💵 Click below to see deposit instructions:", {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: "Manual Deposit", callback_data: "manualDeposit" }]
-        ]
-      }
+    // ✅ New Logic: Directly present the deposit method options
+    bot.sendMessage(chatId, "Choose your deposit method:", {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: "📲 Telebirr", callback_data: "deposit_telebirr" },
+                    { text: "🏦 CBE Birr", callback_data: "deposit_cbebirr" }
+                ]
+            ]
+        }
     });
-    userStates[chatId].step = "depositMessage";
+    // Update the state to wait for the method selection
+    userStates[chatId].step = "selectDepositMethod"; 
     return;
-  }
+}
+// ...
 if (step === "withdrawAmount") {
     const amount = parseFloat(text);
     if (isNaN(amount) || amount <= 0) {
@@ -377,17 +385,7 @@ bot.on('callback_query', async (callbackQuery) => {
       userStates[chatId] = { step: "depositAmount" };
       break;
 
-    case "manualDeposit":
-      bot.sendMessage(chatId, "Choose your deposit method:", {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: "📲 Telebirr", callback_data: "deposit_telebirr" },
-          { text: "🏦 CBE Birr", callback_data: "deposit_cbebirr" }
-        ]
-      ]
-    }
-  });
+   
   break;
     case "deposit_telebirr":
 case "deposit_cbebirr":
