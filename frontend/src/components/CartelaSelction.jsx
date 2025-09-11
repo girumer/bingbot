@@ -156,7 +156,9 @@ useEffect(() => {
 
   const [isLoading, setIsLoading] = useState(true);
 
-
+ // Currently selected by this user (not confirmed)
+const [myConfirmedCartelas, setMyConfirmedCartelas] = useState([]); // Confirmed cartelas for THIS user
+const [otherUsersCartelas, setOtherUsersCartelas] = useState([]); // Cartelas selected by OTHER users
 
   // --- Generate clientId ---
 
@@ -312,22 +314,19 @@ useEffect(() => {
 
 
 
-    const handleGameState = (state) => {
-
-      setFinalSelectedCartelas(Array.from(new Set(state.selectedIndexes || [])));
-
-      setSelectedCartelas((prev) =>
-
-        prev.filter((idx) => !(state.selectedIndexes || []).includes(idx))
-
-      );
-
-      if (state.timer != null) setTimer(state.timer);
-
-      if (state.activeGame != null) setActiveGame(state.activeGame);
-
-    };
-
+      const handleGameState = (state) => {
+  // Separate current user's cartelas from other users'
+  const allSelected = Array.from(new Set(state.selectedIndexes || []));
+  const myCartelas = allSelected.filter(index => myConfirmedCartelas.includes(index));
+  const otherCartelas = allSelected.filter(index => !myConfirmedCartelas.includes(index));
+  
+  setOtherUsersCartelas(otherCartelas);
+  setSelectedCartelas((prev) =>
+    prev.filter((idx) => !allSelected.includes(idx))
+  );
+  if (state.timer != null) setTimer(state.timer);
+  if (state.activeGame != null) setActiveGame(state.activeGame);
+};
     socket.on("currentGameState", handleGameState);
 
 
@@ -370,21 +369,15 @@ useEffect(() => {
 
   useEffect(() => {
 
-    const onCartelaAccepted = ({ cartelaIndex, Wallet: updatedWallet }) => {
 
-      setSelectedCartelas((prev) => prev.filter((idx) => idx !== cartelaIndex));
 
-      setFinalSelectedCartelas((prev) =>
-
-        Array.from(new Set([...prev, cartelaIndex]))
-
-      );
-
-      if (updatedWallet != null) setWallet(updatedWallet);
-
-    };
-
-   
+   const onCartelaAccepted = ({ cartelaIndex, Wallet: updatedWallet }) => {
+  setSelectedCartelas((prev) => prev.filter((idx) => idx !== cartelaIndex));
+  setMyConfirmedCartelas((prev) =>
+    Array.from(new Set([...prev, cartelaIndex]))
+  );
+  if (updatedWallet != null) setWallet(updatedWallet);
+};
 
     const onCartelaError = ({ message }) => toast.error(message || "Cartela selection error");
 
@@ -462,13 +455,12 @@ useEffect(() => {
 
    
 
-    const onUpdateSelectedCartelas = ({ selectedIndexes }) => {
-
-      setFinalSelectedCartelas((prev) => Array.from(new Set([...prev, ...selectedIndexes])));
-
-      setSelectedCartelas((prev) => prev.filter((idx) => !selectedIndexes.includes(idx)));
-
-    };
+const onUpdateSelectedCartelas = ({ selectedIndexes }) => {
+  // Update other users' cartelas when new ones are selected
+  const newOtherCartelas = selectedIndexes.filter(index => !myConfirmedCartelas.includes(index));
+  setOtherUsersCartelas(prev => Array.from(new Set([...prev, ...newOtherCartelas])));
+  setSelectedCartelas((prev) => prev.filter((idx) => !selectedIndexes.includes(idx)));
+};
 
    
 
@@ -709,41 +701,25 @@ const handleButtonClick = (index) => {
  <div className="Cartelacontainer">
 
 {cartela.map((_, index) => {
-
- const isTakenByOthers = finalSelectedCartelas.includes(index);
-
-const isSelectedByMe = selectedCartelas.includes(index);
-
-return (
-
- <button
-
-key={`cartela-btn-${index}`}
-
-onClick={() => handleButtonClick(index)}
-
-className="cartela"
-
- style={{
-
- background: isTakenByOthers ? "red" : isSelectedByMe ? "green" : "#30c918ff",
-
-color: isTakenByOthers || isSelectedByMe ? "white" : "black",
-
-cursor: isTakenByOthers || activeGame ? "not-allowed" : "pointer",
-
- }}
- disabled={isTakenByOthers || activeGame || wallet < stake}
-
->
-
- {index + 1}
-
-</button>
-
-);
-
- })}
+  const isSelectedByMe = selectedCartelas.includes(index) || myConfirmedCartelas.includes(index);
+  const isSelectedByOthers = otherUsersCartelas.includes(index);
+  
+  return (
+    <button
+      key={`cartela-btn-${index}`}
+      onClick={() => handleButtonClick(index)}
+      className="cartela"
+      style={{
+        background: isSelectedByOthers ? "red" : isSelectedByMe ? "green" : "#eeeeee",
+        color: isSelectedByOthers || isSelectedByMe ? "white" : "black",
+        cursor: isSelectedByOthers || activeGame ? "not-allowed" : "pointer",
+      }}
+      disabled={isSelectedByOthers || activeGame || wallet < stake}
+    >
+      {index + 1}
+    </button>
+  );
+})}
 
 </div>
 
