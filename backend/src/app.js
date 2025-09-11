@@ -340,9 +340,22 @@ function startNumberGenerator(roomId) {
   }, 4000);
 }
 function generateGameId() {
-  const timestamp = Date.now();
-  const randomSuffix = crypto.randomBytes(4).toString('hex'); // Generates a short random string
-  return `game-${timestamp}-${randomSuffix}`;
+  let newGameId;
+  let isUnique = false;
+  while (!isUnique) {
+    newGameId = Math.floor(Math.random() * 90000) + 10000;
+    let idExists = false;
+    for (const roomId in rooms) {
+      if (rooms[roomId].gameId === newGameId) {
+        idExists = true;
+        break;
+      }
+    }
+    if (!idExists) {
+      isUnique = true;
+    }
+  }
+  return newGameId;
 }
 function startCountdown(roomId, seconds) {
   if (!rooms[roomId]) return;
