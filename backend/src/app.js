@@ -382,7 +382,7 @@ function startCountdown(roomId, seconds) {
         totalPlayers: Object.keys(room.players).length,
          gameId: room.gameId ,
       });
-    console.log("game id is ",gameId);
+    console.log("game id is ",room.gameId);
       startNumberGenerator(roomId);
     }
   }, 1000);
