@@ -302,9 +302,9 @@ useEffect(() => {
     <div className="bingo-board-wrapper">
       {/* TOP STATS */}
       <div className="top-stats">
-         <div className="flex items-center space-x-2">
-            <span>👥</span>
-            <span>Game ID: {gameId || "Waiting..."}</span>
+         <div className="stat-button">
+            
+            Game ID: {gameId || "Waiting..."}
           </div>
         <div className="stat-button">
           💰 Prize{" "}
