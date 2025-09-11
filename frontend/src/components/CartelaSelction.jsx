@@ -744,23 +744,7 @@ if (!selectedCartelas.length) return toast.error("Select at least one cartela fi
   </div>
 )}
 
- <div className="buttonconfirm">
 
-<button
-
- className="game_start1"
-
- disabled={!selectedCartelas.length || activeGame || wallet < stake * selectedCartelas.length}
-
-onClick={handleAddCartela}
-
- >
-
- Cancel
-
-</button>
-
- </div>
  <div className="buttonconfirm">
 
 <button
@@ -776,7 +760,19 @@ onClick={handleAddCartela}
  confirm
 
 </button>
+<button
 
+ className="game_start1"
+
+ disabled={!selectedCartelas.length || activeGame || wallet < stake * selectedCartelas.length}
+
+onClick={handleremoveCartela}
+
+ >
+
+ Cancel
+
+</button>
  </div>
 
 </div>
