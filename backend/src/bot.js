@@ -447,12 +447,7 @@ Please send the money and then reply with the transaction message.`;
         return;
       }
 
-      user.gameHistory.push({
-        roomId: stake,
-        stake: stake,
-        outcome: "pending",
-        timestamp: new Date()
-      });
+     
      // user.Wallet -= stake;
       await user.save();
 
