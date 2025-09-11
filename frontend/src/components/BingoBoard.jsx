@@ -144,7 +144,7 @@ const usernameFromState = location.state?.username;
   const { myCartelas: initialCartelas } = location.state || {};
  //const [myCartelas, setMyCartelas] = useState(initialCartelas || storedCartelas);
   const [totalPlayers, setTotalPlayers] = useState(0);
-  const [ gameId,setGameId]=useState(0);
+  const [ gameId,setGameId]=useState(null);
     const [highlightCartelas, setHighlightCartelas] = useState(true);
   const [myCartelas, setMyCartelas] = useState(initialCartelas || storedCartelas);
   const [allCalledNumbers, setAllCalledNumbers] = useState([]);
@@ -302,7 +302,10 @@ useEffect(() => {
     <div className="bingo-board-wrapper">
       {/* TOP STATS */}
       <div className="top-stats">
-         <div className="stat-button">👥 GameID {gameId}</div>
+         <div className="flex items-center space-x-2">
+            <span>👥</span>
+            <span>Game ID: {gameId || "Waiting..."}</span>
+          </div>
         <div className="stat-button">
           💰 Prize{" "}
           {totalAward !== null ? totalAward.toLocaleString() + " ETB" : "Loading..."}
