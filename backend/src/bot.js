@@ -452,8 +452,8 @@ case "room_30":
 
   const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;
   
-  // Most direct approach - single button that's hard to miss
-  bot.sendMessage(chatId, `🎮 *play ${stake} ETB`, {
+  // ✅ Corrected Markdown: Added a closing *
+  bot.sendMessage(chatId, `🎮 *play ${stake} ETB*`, {
     parse_mode: "Markdown",
     reply_markup: {
       inline_keyboard: [
@@ -465,8 +465,7 @@ case "room_30":
     }
   });
   break;
-  
-  // Alternative: If you want to automatically open the web app without a button
+    // Alternative: If you want to automatically open the web app without a button
   // Note: This requires the user to have interacted with the bot first
   // bot.sendMessage(chatId, `✅ You joined Room ${stake}! ${stake} coins deducted.`, {
   //   reply_markup: {
