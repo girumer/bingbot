@@ -158,7 +158,7 @@ io.on("connection", (socket) => {
         numberInterval: null,
         alreadyWon: [],
         totalAward: 0,
-        gameId: null,
+        gameId: 0,
       };
       console.log(`Room created: ${rId}`);
     }
