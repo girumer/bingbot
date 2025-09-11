@@ -476,7 +476,7 @@ case "transactions":
 
     let historyText = "📜 Your last 10 transactions:\n";
     transactions.forEach((t, i) => {
-      historyText += `${i + 1}. Type: ${t.type.toUpperCase()}, Amount: ${t.amount} ብር, Date: ${t.createdAt.toLocaleString()}\n`;
+      historyText += `${i + 1}. via: ${t.type.toUpperCase()},via: ${t.method.toUpperCase()}, Amount: ${t.amount} ብር, Date: ${t.createdAt.toLocaleString()}\n`;
     });
 
     bot.sendMessage(chatId, historyText);
