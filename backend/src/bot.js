@@ -447,23 +447,24 @@ case "room_30":
     return;
   }
 
-  // Deduct the stake from user's wallet
   user.Wallet -= stake;
   await user.save();
 
   const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;
   
-  // Send a direct link that automatically opens the web app
-  bot.sendMessage(chatId, `✅ You joined Room ${stake}! ${stake} coins deducted. Redirecting to cartela selection...`);
-  
-  // Send the web app URL that will automatically open in Telegram
-  bot.sendMessage(chatId, "Click to open:", {
+  // Most direct approach - single button that's hard to miss
+  bot.sendMessage(chatId, `🎮 *play ${stake} ETB`, {
+    parse_mode: "Markdown",
     reply_markup: {
       inline_keyboard: [
-        [{ text: "Open Cartela Selection", web_app: { url: webAppUrl } }]
+        [{
+          text: "🚀 PLAY NOW", 
+          web_app: { url: webAppUrl }
+        }]
       ]
     }
   });
+  break;
   
   // Alternative: If you want to automatically open the web app without a button
   // Note: This requires the user to have interacted with the bot first
