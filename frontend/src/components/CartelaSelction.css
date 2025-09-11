@@ -248,11 +248,13 @@
 }
 
 .game_start1 {
-    width: 150px;            /* button width */
+    width: 150px; 
+    height: 50px;           /* button width */
     padding: 12px 0;         /* vertical padding */
     font-size: 16px;
     font-weight: bold;
     border: none;
+    margin-left: 1px;
     border-radius: 8px;
     background-color: #ff4000;
     color: #f4f6f6;
@@ -261,7 +263,8 @@
 }
 
 .game_start {
-    width: 150px;            /* button width */
+    width: 150px; 
+    height: 50px;            /* button width */
     padding: 12px 0;         /* vertical padding */
     font-size: 16px;
     font-weight: bold;
@@ -280,6 +283,14 @@
 
 .game_start:hover:not(:disabled) {
     background-color: #0056b3;
+}
+.game_start1:disabled {
+    background-color: #935353;
+    cursor: not-allowed;
+}
+
+.game_start1:hover:not(:disabled) {
+    background-color: #ff4000;
 }
 
 @media (max-width: 480px) {
