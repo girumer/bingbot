@@ -365,7 +365,7 @@ bot.on('callback_query', async (callbackQuery) => {
         .slice(-10) // last 10 only
         .reverse() // newest first
         .forEach((g, i) => {
-          gameText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
+          gameText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, gameid:${g.gameId},Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
         });
 
       bot.sendMessage(chatId, gameText);

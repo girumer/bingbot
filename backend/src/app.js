@@ -383,7 +383,7 @@ function startCountdown(roomId, seconds) {
       }
         room.gameId =generateGameId();
       room.activeGame = true;
-      io.to(roomId).emit("activeGameStatus", { activeGame: true ,  gameId:room.gameId});
+      io.to(roomId).emit("activeGameStatus", { activeGame: true   });
 
       const totalCartelas = Object.values(room.playerCartelas).reduce(
         (sum, arr) => sum + arr.length,

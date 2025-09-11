@@ -49,8 +49,9 @@ const BingoBordSchema = new mongoose.Schema({
     {
       roomId: { type: Number, required: true }, 
       stake: { type: Number, required: true },
-      outcome: { type: String, enum: ["win", "loss","pending"], required: true }, 
-      timestamp: { type: Date, default: Date.now }
+      outcome: { type: String, enum: ["win", "loss"], required: true }, 
+      timestamp: { type: Date, default: Date.now },
+       gameId: { type: Number, required: true }
     }
   ],
 
