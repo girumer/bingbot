@@ -1,11 +1,14 @@
 const express = require("express");
 const router = express.Router();
-const BingoBord = require("../Models/BingoBord"); // adjust path if your model is elsewhere
+const BingoBord = require("../Models/BingoBord");
 
-/* router.post("/api/saveHistory", async (req, res) => {
-  const { username, roomId, stake, outcome } = req.body;
+router.post("/api/saveHistory", async (req, res) => {
+  // Step 1: Correctly destructure all required fields from the request body.
+  const { username, gameId, roomId, stake, outcome } = req.body;
 
-  if (!username || !roomId || !stake || !outcome) {
+  // Step 2: Perform a single, complete validation check.
+  // This ensures all required fields are present.
+  if (!username || !gameId || !roomId || !stake || !outcome) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -16,8 +19,9 @@ const BingoBord = require("../Models/BingoBord"); // adjust path if your model i
       return res.status(404).json({ error: "User not found" });
     }
 
+    // Step 3: Push the new object, including gameId, to the array.
     user.gameHistory.push({
-      gameId,
+      gameId, // This is now a valid variable from req.body
       roomId,
       stake,
       outcome,
@@ -34,6 +38,6 @@ const BingoBord = require("../Models/BingoBord"); // adjust path if your model i
     console.error("Failed to save game history:", err);
     res.status(500).json({ error: "Server error" });
   }
-}); */
+});
 
 module.exports = router;

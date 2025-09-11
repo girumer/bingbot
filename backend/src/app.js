@@ -33,7 +33,7 @@ const refreshKey=process.env.JwT_PRIVATE;
 
 
 const bodyParser=require("body-parser")
-//const saveHistoryRoutes = require("../routes/saveHistory"); // adjust path
+const saveHistoryRoutes = require("../routes/saveHistory"); // adjust path
 
 
 //const workoutrouter=require("./src/Routes/Users");
@@ -158,7 +158,7 @@ io.on("connection", (socket) => {
         numberInterval: null,
         alreadyWon: [],
         totalAward: 0,
-        gameId: 0,
+        gameId: null,
       };
       console.log(`Room created: ${rId}`);
     }
