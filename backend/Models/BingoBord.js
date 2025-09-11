@@ -51,7 +51,7 @@ const BingoBordSchema = new mongoose.Schema({
       stake: { type: Number, required: true },
       outcome: { type: String, enum: ["win", "loss"], required: true }, 
       timestamp: { type: Date, default: Date.now },
-       gameId: { type: Number,   default:0 }
+       gameId: { type: Number, required: true}
     }
   ],
 
