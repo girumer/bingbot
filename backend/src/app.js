@@ -158,6 +158,7 @@ io.on("connection", (socket) => {
         numberInterval: null,
         alreadyWon: [],
         totalAward: 0,
+        gameId: null,
       };
       console.log(`Room created: ${rId}`);
     }
@@ -381,7 +382,7 @@ function startCountdown(roomId, seconds) {
         totalPlayers: Object.keys(room.players).length,
          gameId: room.gameId ,
       });
-
+    console.log("game id is ",gameId);
       startNumberGenerator(roomId);
     }
   }, 1000);
