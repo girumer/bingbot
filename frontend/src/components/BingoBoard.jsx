@@ -229,6 +229,7 @@ useEffect(() => {
       if (state.countdown != null) setTimer(state.countdown);
       setSelectedIndexes(state.selectedIndexes || []);
       if (state.totalAward != null) setTotalAward(state.totalAward);
+      if (state.gameId != null) setGameId(state.gameId);
     };
 
     socket.on("currentGameState", handleGameState);

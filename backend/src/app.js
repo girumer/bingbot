@@ -183,6 +183,7 @@ io.on("connection", (socket) => {
       totalAward: rooms[rId].totalAward,
       totalPlayers: Object.keys(rooms[rId].players).length,
       activeGame: rooms[rId].activeGame || false,
+       gameId: rooms[rId].gameId || null
     });
 
     // ✅ Broadcast updated player count
