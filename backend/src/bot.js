@@ -435,7 +435,9 @@ Please send the money and then reply with the transaction message.`;
     userStates[chatId] = { step: "withdrawAmount", method };
     bot.sendMessage(chatId, `Enter the amount you want to withdraw via ${method.toUpperCase()}:`);
     break;
-
+    case "room_5":
+    case "room_50":
+    case "room_100":
     case "room_10":
     case "room_20":
     case "room_30":

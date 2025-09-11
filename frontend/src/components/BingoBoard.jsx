@@ -144,7 +144,7 @@ const usernameFromState = location.state?.username;
   const { myCartelas: initialCartelas } = location.state || {};
  //const [myCartelas, setMyCartelas] = useState(initialCartelas || storedCartelas);
   const [totalPlayers, setTotalPlayers] = useState(0);
-  const [ gameId,setGameId]=useState(null);
+  const [ gameId,setGameId]=useState(0);
     const [highlightCartelas, setHighlightCartelas] = useState(true);
   const [myCartelas, setMyCartelas] = useState(initialCartelas || storedCartelas);
   const [allCalledNumbers, setAllCalledNumbers] = useState([]);
@@ -304,7 +304,7 @@ useEffect(() => {
       <div className="top-stats">
          <div className="stat-button">
             
-            Game ID: {gameId || "Waiting..."}
+            GameID {gameId || "Waiting..."}
           </div>
         <div className="stat-button">
           💰 Prize{" "}
