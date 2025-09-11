@@ -126,7 +126,7 @@ bot.onText(/\/(start|balance|play|deposit|history|help|withdraw)/, async (msg, m
 
   let historyText = "📜 Your last 10 game history:\n";
   lastGames.forEach((g, i) => {
-    historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
+    historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, gameid:${g.gameId},Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
   });
 
   bot.sendMessage(chatId, historyText);
@@ -325,7 +325,7 @@ bot.on('callback_query', async (callbackQuery) => {
       }
       let historyText = "📜 Your game history:\n";
       user.gameHistory.forEach((g, i) => {
-        historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
+        historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, gameid:${g.gameId},Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
       });
       bot.sendMessage(chatId, historyText);
       break;
@@ -476,7 +476,7 @@ case "transactions":
 
     let historyText = "📜 Your last 10 transactions:\n";
     transactions.forEach((t, i) => {
-      historyText += `${i + 1}. via: ${t.type.toUpperCase()},via: ${t.method.toUpperCase()}, Amount: ${t.amount} ብር, Date: ${t.createdAt.toLocaleString()}\n`;
+      historyText += `${i + 1}. via: ${t.type.toUpperCase()},type: ${t.method.toUpperCase()}, Amount: ${t.amount} ብር, Date: ${t.createdAt.toLocaleString()}\n`;
     });
 
     bot.sendMessage(chatId, historyText);

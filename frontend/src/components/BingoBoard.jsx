@@ -250,15 +250,17 @@ useEffect(() => {
     return () => socket.off("playerCount", handlePlayerCount);
   }, []);
 
-  useEffect(() => {
-    const handleGameStarted = ({ totalAward, totalPlayers, gameId  }) => {
-      setTotalAward(totalAward);
-      setTotalPlayers(totalPlayers);
-      setGameId(gameId)
+// In your BingoBoard component
+useEffect(() => {
+    const handleGameStarted = ({ totalAward, totalPlayers, gameId }) => {
+        setTotalAward(totalAward);
+        setTotalPlayers(totalPlayers);
+        setGameId(gameId);
+        toast.success(`Game started! Game ID: ${gameId}`);
     };
     socket.on("gameStarted", handleGameStarted);
     return () => socket.off("gameStarted", handleGameStarted);
-  }, []);
+}, []);
 
   useEffect(() => {
     const handleWinningPattern = (winnersArr) => {
