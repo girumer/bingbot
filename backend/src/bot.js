@@ -435,31 +435,46 @@ Please send the money and then reply with the transaction message.`;
     userStates[chatId] = { step: "withdrawAmount", method };
     bot.sendMessage(chatId, `Enter the amount you want to withdraw via ${method.toUpperCase()}:`);
     break;
-    case "room_5":
-    case "room_50":
-    case "room_100":
-    case "room_10":
-    case "room_20":
-    case "room_30":
-      const stake = parseInt(data.split("_")[1]);
-      if (user.Wallet < stake) {
-        bot.sendMessage(chatId, "⚠️ Not enough coins. Earn more to play.");
-        return;
-      }
+case "room_5":
+case "room_50":
+case "room_100":
+case "room_10":
+case "room_20":
+case "room_30":
+  const stake = parseInt(data.split("_")[1]);
+  if (user.Wallet < stake) {
+    bot.sendMessage(chatId, "⚠️ Not enough coins. Earn more to play.");
+    return;
+  }
 
-     
-     // user.Wallet -= stake;
-      await user.save();
+  // Deduct the stake from user's wallet
+  user.Wallet -= stake;
+  await user.save();
 
-      const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;
-      bot.sendMessage(chatId, `✅ You joined Room ${stake}! ${stake} coins deducted. Click below to select your cartelas:`, {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: `Open Cartela Selection`, web_app: { url: webAppUrl } }]
-          ]
-        }
-      });
-      break;
+  const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;
+  
+  // Send a direct link that automatically opens the web app
+  bot.sendMessage(chatId, `✅ You joined Room ${stake}! ${stake} coins deducted. Redirecting to cartela selection...`);
+  
+  // Send the web app URL that will automatically open in Telegram
+  bot.sendMessage(chatId, "Click to open:", {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "Open Cartela Selection", web_app: { url: webAppUrl } }]
+      ]
+    }
+  });
+  
+  // Alternative: If you want to automatically open the web app without a button
+  // Note: This requires the user to have interacted with the bot first
+  // bot.sendMessage(chatId, `✅ You joined Room ${stake}! ${stake} coins deducted.`, {
+  //   reply_markup: {
+  //     inline_keyboard: [
+  //       [{ text: "Continue", web_app: { url: webAppUrl } }]
+  //     ]
+  //   }
+  // });
+  break;
 case "transactions":
   try {
     // Fetch last 10 transactions for the user's phone number
