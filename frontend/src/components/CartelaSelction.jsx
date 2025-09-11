@@ -630,14 +630,16 @@ const handleButtonClick = (index) => {
 };
 
  
+const  handleremoveCartela=()=>{
+  setSelectedCartelas([]);
+}
+ const handleAddCartela = () => {
 
-  const handleAddCartela = () => {
+ if (activeGame) return toast.error("Cannot add cartela – game in progress");
 
-    if (activeGame) return toast.error("Cannot add cartela – game in progress");
+if (!selectedCartelas.length) return toast.error("Select at least one cartela first");
 
-    if (!selectedCartelas.length) return toast.error("Select at least one cartela first");
-
-    if (wallet < stake * selectedCartelas.length) {
+ if (wallet < stake * selectedCartelas.length) {
 
       toast.error("Insufficient balance for selected cartelas");
 
@@ -742,7 +744,23 @@ const handleButtonClick = (index) => {
   </div>
 )}
 
+ <div className="buttonconfirm">
 
+<button
+
+ className="game_start1"
+
+ disabled={!selectedCartelas.length || activeGame || wallet < stake * selectedCartelas.length}
+
+onClick={handleAddCartela}
+
+ >
+
+ Cancel
+
+</button>
+
+ </div>
  <div className="buttonconfirm">
 
 <button
@@ -755,7 +773,7 @@ onClick={handleAddCartela}
 
  >
 
- Add Cartela
+ confirm
 
 </button>
 
