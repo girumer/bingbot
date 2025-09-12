@@ -430,7 +430,9 @@ Account: \`${process.env.CBE_ACCOUNT}\`
 •     ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
 •     ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ`;
   }
-
+bot.sendMessage(chatId, instructionsMsg, {
+        parse_mode: 'MarkdownV2'
+    });
   bot.sendMessage(chatId, instructionsMsg);
   userStates[chatId].depositMethod = depositMethod;
   userStates[chatId].step = "depositMessage"; // continue as usual
