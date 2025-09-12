@@ -74,12 +74,20 @@ bot.onText(/\/start/, async (msg) => {
 
   let user = await BingoBord.findOne({ telegramId: chatId });
 
-  if (!user) {
-    userStates[chatId] = { step: "askName" };
-    bot.sendMessage(chatId, "Welcome! Please enter your name:");
-  } else {
-    bot.sendMessage(chatId, `Welcome back, ${user.username}!`, mainMenu);
-  }
+ if (!user) {
+ // ✅ Change this part to immediately ask for contact
+ userStates[chatId] = { step: "waitingForContact" };
+ bot.sendMessage(chatId, "Welcome! Please share your phone number to register:", {
+reply_markup: {
+ keyboard: [[{ text: "📱 Share Contact", request_contact: true }]],
+ resize_keyboard: true,
+ one_time_keyboard: true,
+remove_keyboard: true // Optional: hide the keyboard after use
+ }
+ });
+ } else {
+ bot.sendMessage(chatId, `Welcome back, ${user.username}!`, mainMenu);
+ }
 });
 // ----------------------
 // Handle Commands (like /balance, /play, etc.)
@@ -90,10 +98,29 @@ bot.onText(/\/(start|balance|play|deposit|history|help|withdraw)/, async (msg, m
 
   // Fetch the user
   const user = await BingoBord.findOne({ telegramId: chatId });
-  if (!user) {
-    bot.sendMessage(chatId, "You are not registered. Use /start to register.");
-    return;
-  }
+  // ----------------------
+// /start command
+// ----------------------
+bot.onText(/\/start/, async (msg) => {
+ const chatId = msg.chat.id;
+
+ let user = await BingoBord.findOne({ telegramId: chatId });
+
+ if (!user) {
+ // ✅ Change this part to immediately ask for contact
+ userStates[chatId] = { step: "waitingForContact" };
+ bot.sendMessage(chatId, "Welcome! Please share your phone number to register:", {
+reply_markup: {
+ keyboard: [[{ text: "📱 Share Contact", request_contact: true }]],
+ resize_keyboard: true,
+ one_time_keyboard: true,
+remove_keyboard: true // Optional: hide the keyboard after use
+ }
+ });
+ } else {
+ bot.sendMessage(chatId, `Welcome back, ${user.username}!`, mainMenu);
+ }
+});
 
   // Call the same logic as your callback_query switch
   switch (cmd) {
@@ -188,18 +215,7 @@ bot.on("message", async (msg) => {
   const step = userStates[chatId].step;
 
   // Ask Name
-  if (step === "askName") {
-    userStates[chatId].name = text;
-    userStates[chatId].step = "askPhone";
-    bot.sendMessage(chatId, "Please share your phone number:", {
-      reply_markup: {
-        keyboard: [[{ text: "📱 Share Contact", request_contact: true }]],
-        resize_keyboard: true,
-        one_time_keyboard: true
-      }
-    });
-    return;
-  }
+ 
 
   // Deposit Amount
  // ...
@@ -292,30 +308,37 @@ const txType = userStates[chatId].method;
 // ----------------------
 // Handle Contact
 // ----------------------
+// ----------------------
+// Handle Contact
+// ----------------------
 bot.on("contact", async (msg) => {
-  const chatId = msg.chat.id;
-  const contact = msg.contact;
+ const chatId = msg.chat.id;
+ const contact = msg.contact;
 
-  if (userStates[chatId] && userStates[chatId].step === "askPhone") {
-    let existingUser = await BingoBord.findOne({ telegramId: chatId });
-    if (existingUser) {
-      bot.sendMessage(chatId, "⚠️ This phone number is already registered.");
-      delete userStates[chatId];
-      return;
-    }
+// ✅ Check for the new state from the /start command
+ if (userStates[chatId] && userStates[chatId].step === "waitingForContact") {
+ let existingUser = await BingoBord.findOne({ telegramId: chatId });
+ if (existingUser) {
+ bot.sendMessage(chatId, "⚠️ This phone number is already registered.");
+ delete userStates[chatId];
+ return;
+ }
 
-    const newUser = new BingoBord({
-      telegramId: chatId,
-      username: userStates[chatId].name,
-      phoneNumber: contact.phone_number,
-      Wallet: 100,
-      gameHistory: []
-    });
+ // ✅ Get the name directly from the contact object
+ const username = contact.first_name + (contact.last_name ? " " + contact.last_name : "");
 
-    await newUser.save();
-    delete userStates[chatId];
-    bot.sendMessage(chatId, "✅ Registration complete! 🎉", mainMenu);
-  }
+ const newUser = new BingoBord({
+ telegramId: chatId,
+ username: username, // Use the name from the contact
+ phoneNumber: contact.phone_number,
+ Wallet: 100,
+ gameHistory: []
+ });
+
+ await newUser.save();
+ delete userStates[chatId];
+ bot.sendMessage(chatId, "✅ Registration complete! 🎉", mainMenu);
+}
 });
 
 // ----------------------
