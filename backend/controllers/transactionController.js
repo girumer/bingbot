@@ -148,7 +148,7 @@ exports.depositAmount = async (req, res) => {
 
         // Step 3: Update user's wallet and handle referral logic
         user.Wallet += updatedTx.amount;
-        if (user.referredBy && !user.referralBonusPaid) {
+        if (user.referredBy) {
             const referrer = await BingoBord.findOne({ telegramId: user.referredBy });
             if (referrer) {
                 const referralBonus = amount * REFERRAL_BONUS_PERCENTAGE;
