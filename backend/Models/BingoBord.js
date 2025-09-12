@@ -54,7 +54,14 @@ const BingoBordSchema = new mongoose.Schema({
        gameId: { type: Number, required: true}
     }
   ],
-
+ referredBy: {
+    type: Number, // <-- CORRECTED: Must be a Number to match Telegram IDs
+    default: null,
+  },
+referralBonusPaid: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // Hash password before saving (only for admins)

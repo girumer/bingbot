@@ -665,15 +665,10 @@ if (!selectedCartelas.length) return toast.error("Select at least one cartela fi
 
   if (isLoading) {
 
-    return (
+    
 
-      <div className="flex items-center justify-center min-h-screen text-lg">
-
-        Loading...
-
-      </div>
-
-    );
+      return null;
+    
 
   }
 

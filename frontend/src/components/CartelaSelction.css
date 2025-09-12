@@ -261,7 +261,9 @@
     cursor: pointer;
     transition: background-color 0.3s;
 }
-
+.loading{
+    display: none;
+}
 .game_start {
     width: 150px; 
     height: 50px;            /* button width */

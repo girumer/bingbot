@@ -40,7 +40,10 @@ const mainMenu = {
         { text: "📤 Withdraw", callback_data: "withdraw" },
         { text: "🎮 Game History", callback_data: "gameHistory" },
         
-      ]
+      ],
+      [
+        { text: "🔗 Referral Link", callback_data: "referral" },
+      ]
     ]
   }
 };
@@ -69,19 +72,6 @@ let userStates = {}; // { chatId: { step: "askName" | "askPhone" | "depositAmoun
 // ----------------------
 // /start command
 // ----------------------
-
-// ----------------------
-// Handle Commands (like /balance, /play, etc.)
-// ----------------------
-bot.onText(/\/(start|balance|play|deposit|history|help|withdraw)/, async (msg, match) => {
-  const chatId = msg.chat.id;
-  const cmd = match[1]; // the command without '/'
-
-  // Fetch the user
-  const user = await BingoBord.findOne({ telegramId: chatId });
-  // ----------------------
-// /start command
-// ----------------------
 bot.onText(/\/start/, async (msg) => {
  const chatId = msg.chat.id;
 
@@ -102,12 +92,23 @@ remove_keyboard: true // Optional: hide the keyboard after use
  bot.sendMessage(chatId, `Welcome back, ${user.username}!`, mainMenu);
  }
 });
+// ----------------------
+// Handle Commands (like /balance, /play, etc.)
+// ----------------------
+bot.onText(/\/(|balance|play|deposit|history|help|withdraw)/, async (msg, match) => {
+  const chatId = msg.chat.id;
+  const cmd = match[1]; // the command without '/'
+
+  // Fetch the user
+  const user = await BingoBord.findOne({ telegramId: chatId });
+  // ----------------------
+// /start command
+// ----------------------
+
 
   // Call the same logic as your callback_query switch
   switch (cmd) {
-    case "start":
-      bot.sendMessage(chatId, "🏠 Main Menu:", mainMenu);
-      break;
+  
     case "balance":
       bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} coins`);
       break;
@@ -292,36 +293,40 @@ const txType = userStates[chatId].method;
 // ----------------------
 // Handle Contact
 // ----------------------
+// ----------------------
+// Handle Contact
+// ----------------------
 bot.on("contact", async (msg) => {
- const chatId = msg.chat.id;
- const contact = msg.contact;
+  const chatId = msg.chat.id;
+  const contact = msg.contact;
+  const state = userStates[chatId];
 
-// ✅ Check for the new state from the /start command
- if (userStates[chatId] && userStates[chatId].step === "waitingForContact") {
- let existingUser = await BingoBord.findOne({ telegramId: chatId });
- if (existingUser) {
- bot.sendMessage(chatId, "⚠️ This phone number is already registered.");
- delete userStates[chatId];
- return;
- }
+  if (state && state.step === "waitingForContact") {
+    let existingUser = await BingoBord.findOne({ telegramId: chatId });
+    if (existingUser) {
+      bot.sendMessage(chatId, "⚠️ This phone number is already registered.");
+      delete userStates[chatId];
+      return;
+    }
 
- // ✅ Get the name directly from the contact object
- const username = contact.first_name + (contact.last_name ? " " + contact.last_name : "");
+    const username = contact.first_name + (contact.last_name ? " " + contact.last_name : "");
+    const newUser = new BingoBord({
+      telegramId: chatId,
+      username: username,
+      phoneNumber: contact.phone_number,
+      Wallet: 0,
+      gameHistory: [],
+      // NEW: Add the referrer's ID to the new user's document
+      referredBy: state.referrerId || null,
+      referralBonusPaid: false, // Explicitly set, though it's the default
+    });
 
- const newUser = new BingoBord({
- telegramId: chatId,
- username: username, // Use the name from the contact
- phoneNumber: contact.phone_number,
- Wallet: 10,
- gameHistory: []
- });
+    await newUser.save();
 
- await newUser.save();
- delete userStates[chatId];
- bot.sendMessage(chatId, "✅ Registration complete! 🎉", mainMenu);
-}
+    delete userStates[chatId];
+    bot.sendMessage(chatId, "✅ Registration complete! 🎉", mainMenu);
+  }
 });
-
 // ----------------------
 // Handle Menu Buttons
 // ----------------------
@@ -530,7 +535,15 @@ case "transactions":
     bot.sendMessage(chatId, "❌ Failed to fetch transaction history.");
   }
   break;
-
+ case "referral":
+      const botUsername = (await bot.getMe()).username;
+      const referralLink = `https://t.me/${adeyebingo_bot}?start=${msg.from.id}`;
+      bot.sendMessage(
+        chatId,
+        `🔗 Here is your personal referral link: \n\n\`${referralLink}\`\n\nShare this link with your friends. When a friend makes their first deposit, you will receive a bonus!`,
+        { parse_mode: 'Markdown' }
+      );
+      break;
     default:
       bot.sendMessage(chatId, "Unknown action.");
   }
