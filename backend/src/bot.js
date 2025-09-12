@@ -76,33 +76,35 @@ let userStates = {}; // { chatId: { step: "askName" | "askPhone" | "depositAmoun
 // /start command (CORRECTED)
 // ----------------------
 bot.onText(/^\/start\s?(\d+)?$/, async (msg, match) => {
-    const chatId = msg.chat.id;
-    const referrerId = match[1]; // The referred ID is the first captured group
+    try {
+        const chatId = msg.chat.id;
+        const referrerId = match[1];
 
-    let user = await BingoBord.findOne({ telegramId: chatId });
+        let user = await BingoBord.findOne({ telegramId: chatId });
 
-    if (!user) {
-        // User does not exist, start the registration process
-        userStates[chatId] = { step: "waitingForContact" };
+        if (!user) {
+            userStates[chatId] = { step: "waitingForContact" };
 
-        // **NEW:** Check if a referrer ID was provided in the link
-        if (referrerId && !isNaN(referrerId) && Number(referrerId) !== chatId) {
-            userStates[chatId].referrerId = Number(referrerId);
-        }
+            if (referrerId && !isNaN(referrerId) && Number(referrerId) !== chatId) {
+                userStates[chatId].referrerId = Number(referrerId);
+            }
 
-        bot.sendMessage(chatId, "Welcome! Please share your phone number to register:", {
-            reply_markup: {
-                keyboard: [[{ text: "📱 Share Contact", request_contact: true }]],
-                resize_keyboard: true,
-                one_time_keyboard: true,
-                remove_keyboard: true 
-            }
-        });
-    } else {
-        // User already exists, send the main menu
-        bot.sendMessage(chatId, `Welcome back, ${user.username}!`, mainMenu);
-    }
+            bot.sendMessage(chatId, "Welcome! Please share your phone number to register:", {
+                reply_markup: {
+                    keyboard: [[{ text: "📱 Share Contact", request_contact: true }]],
+                    resize_keyboard: true,
+                    one_time_keyboard: true,
+                    remove_keyboard: true
+                }
+            });
+        } else {
+            bot.sendMessage(chatId, `Welcome back, ${user.username}!`, mainMenu);
+        }
+    } catch (error) {
+        console.error("Error in /start handler:", error);
+    }
 });
+
 // ----------------------
 // Handle Commands (like /balance, /play, etc.)
 // ----------------------
