@@ -94,7 +94,9 @@ exports.parseTransaction = async (req, res) => {
  // 10% bonus
 // Add this constant at the top of your file for easy modification
 const REFERRAL_BONUS_PERCENTAGE = 0.10; // 10% bonus
-
+const isAmountMismatch = (dbAmount, requestAmount) => {
+  return parseFloat(dbAmount) !== parseFloat(requestAmount);
+};
 exports.depositAmount = async (req, res) => {
     try {
         // ... (your existing code for input validation and finding `updatedTx` and `user`)
@@ -128,7 +130,10 @@ exports.depositAmount = async (req, res) => {
         if (!updatedTx) {
             return res.status(400).json({ error: "Invalid or already-claimed transaction number." });
         }
-
+       console.log("--- DEBUGGING AMOUNT MISMATCH ---");
+console.log(`Amount from Bot: Value=${amount}, Type=${typeof amount}`);
+ console.log(`Amount from DB: Value=${updatedTx.amount}, Type=${typeof updatedTx.amount}`);
+ console.log("-----------------------------------");
         if (updatedTx.amount !== amount) {
             return res.status(400).json({ error: "Amount mismatch. Please check your deposit amount." });
         }
@@ -196,7 +201,9 @@ exports.depositAmount = async (req, res) => {
             message: `Deposit of ${updatedTx.amount} ETB confirmed successfully! Your new wallet balance is ${user.Wallet}.`,
             wallet: user.Wallet,
         });
-
+           if (isAmountMismatch(updatedTx.amount, amount)) {
+            return res.status(400).json({ error: "Amount mismatch. Please check your deposit amount." });
+        }
     } catch (err) {
         console.error("Deposit confirmation error:", err);
         res.status(500).json({ error: "check the amount you deposit." }); // Fixed typo here
