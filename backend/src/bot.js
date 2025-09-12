@@ -331,7 +331,7 @@ bot.on("contact", async (msg) => {
  telegramId: chatId,
  username: username, // Use the name from the contact
  phoneNumber: contact.phone_number,
- Wallet: 100,
+ Wallet: 10,
  gameHistory: []
  });
 
