@@ -550,6 +550,6 @@ case "referral":
       );
       break;
     default:
-      bot.sendMessage(chatId, "Unknown action.");
+      bot.sendMessage(chatId, "Unknown action occured.");
   }
 });
