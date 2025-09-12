@@ -496,7 +496,7 @@ case "room_30":
     return;
   }
 
-  user.Wallet -= stake;
+  
   await user.save();
 
   const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;

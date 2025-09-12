@@ -170,7 +170,7 @@ exports.depositAmount = async (req, res) => {
     const totalCredit = updatedTx.amount + bonus;
     user.Wallet += totalCredit;;
  
-      
+      await user.save();
 
        const newTx = new Transaction({
             transactionNumber: `WD${Date.now()}`,
