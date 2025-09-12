@@ -194,7 +194,25 @@ io.on("connection", (socket) => {
 
     console.log(`New connection: ${socket.id}, username=${username}, telegramId=${telegramId}, clientId=${clientId}`);
   });
+// --- CHECK PLAYER STATUS ---
+socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
+    const room = rooms[String(roomId)];
 
+    // 1. Check if the room exists.
+    // 2. Check if there's an active game in the room.
+    // 3. Check if this specific player has selected cartelas.
+    if (!room || !room.activeGame || !room.playerCartelas[clientId] || room.playerCartelas[clientId].length === 0) {
+        // Player is not in an active game or has no cartelas, so they should go to the selection page.
+        socket.emit("playerStatus", { inGame: false });
+        console.log(`Player ${clientId} is not in an active game in room ${roomId}.`);
+        return;
+    }
+
+    // Player is already in an active game with selected cartelas.
+    const selectedCartelas = room.playerCartelas[clientId];
+    socket.emit("playerStatus", { inGame: true, selectedCartelas });
+    console.log(`Player ${clientId} is already in game in room ${roomId}.`);
+});
   // --- SELECT CARTELA ---
   socket.on("selectCartela", async ({ roomId, cartelaIndex }) => {
     const rId = String(roomId);
