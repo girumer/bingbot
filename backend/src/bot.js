@@ -535,9 +535,14 @@ case "transactions":
     bot.sendMessage(chatId, "❌ Failed to fetch transaction history.");
   }
   break;
- case "referral":
-      const botUsername = (await bot.getMe()).username;
-      const referralLink = `https://t.me/${adeyebingo_bot}?start=${msg.from.id}`;
+case "referral":
+      // Step 1: Get the bot's username dynamically from the API.
+      const botInfo = await bot.getMe();
+      const botUsername = botInfo.username;
+      
+      // Step 2: Use the bot's username and the correct user ID from the callbackQuery.
+      const referralLink = `https://t.me/${botUsername}?start=${callbackQuery.from.id}`;
+      
       bot.sendMessage(
         chatId,
         `🔗 Here is your personal referral link: \n\n\`${referralLink}\`\n\nShare this link with your friends. When a friend makes their first deposit, you will receive a bonus!`,
