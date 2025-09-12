@@ -392,52 +392,52 @@ bot.on('callback_query', async (callbackQuery) => {
       userStates[chatId] = { step: "depositAmount" };
       break;
 
-   
-  break;
-    case "deposit_telebirr":
+   case "deposit_telebirr":
 case "deposit_cbebirr":
-  const depositMethod  = data.split("_")[1]; // telebirr / cbebirr
-  const amountDep = userStates[chatId]?.amount || "N/A";
+    const depositMethod = data.split("_")[1];
+    const amountDep = userStates[chatId]?.amount || "N/A";
 
-  let instructionsMsg = "";
-  if (depositMethod === "telebirr") {
-    instructionsMsg = `
+    let instructionsMsg = "";
+    if (depositMethod === "telebirr") {
+        instructionsMsg = `
 📲 ማኑዋል ዲፖዚት መመሪያ ቴሌብር
 Account: \`${process.env.TELEBIRR_ACCOUNT}\`
 ዲፖዚት መጠን: ${amountDep} ብር
 
-1. ከላይ ባለው ቁጥር TeleBirr በመጠቀም  ${amountDep} ብር ያስገቡ
+1. ከላይ ባለው ቁጥር TeleBirr በመጠቀም  ${amountDep} ብር ያስገቡ
 2. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከ TeleBirr ይደርሳችኋል
 3. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ወደዚህ ቦት ይላኩ
 ⚠️ አስፈላጊ ማሳሰቢያ:
 •1. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን መላክ ያረጋግጡ
 •2. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
-•     ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
-•     ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ
+•  ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
+•  ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ
 እገዛ ይፈልጋሉ?`;
-  } else if (depositMethod === "cbebirr") {
-    instructionsMsg = `
+    } else if (depositMethod === "cbebirr") {
+        instructionsMsg = `
 🏦 ማኑዋል ዲፖዚት መመሪያ
 Account: \`${process.env.CBE_ACCOUNT}\`
 ዲፖዚት መጠን: ${amountDep} ብር
 
-1. ከላይ ባለው ቁጥር ሲቢኢ  በመጠቀም  ${amountDep}ብር ያስገቡ
+1. ከላይ ባለው ቁጥር ሲቢኢ  በመጠቀም  ${amountDep}ብር ያስገቡ
 2. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከ TeleBirr ይደርሳችኋል
 3. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ወደዚህ ቦት ይላኩ
 ⚠️ አስፈላጊ ማሳሰቢያ:
 •1. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን መላክ ያረጋግጡ
 •2. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
-•     ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
-•     ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ`;
-  }
-bot.sendMessage(chatId, instructionsMsg, {
+•  ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
+•  ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ`;
+    }
+    
+    // ✅ Keep only this single bot.sendMessage call.
+    bot.sendMessage(chatId, instructionsMsg, {
         parse_mode: 'MarkdownV2'
     });
-  bot.sendMessage(chatId, instructionsMsg);
-  userStates[chatId].depositMethod = depositMethod;
-  userStates[chatId].step = "depositMessage"; // continue as usual
-  break;
-
+    
+    userStates[chatId].depositMethod = depositMethod;
+    userStates[chatId].step = "depositMessage"; 
+    break;
+  
   case "withdraw":
     bot.sendMessage(chatId, "Choose your withdrawal method:", {
       reply_markup: {
