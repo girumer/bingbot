@@ -234,7 +234,10 @@ if (step === "withdrawAmount") {
       bot.sendMessage(chatId, "⚠️ Please enter a valid withdrawal amount.");
       return;
     }
-
+if (amount < 50) {
+        bot.sendMessage(chatId, "❌ The minimum withdrawal amount is 50 Birr.");
+        return; // Stop the function here
+    }
     const type = userStates[chatId].method;
 
     try {
