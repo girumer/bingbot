@@ -166,7 +166,9 @@ exports.depositAmount = async (req, res) => {
         }
         const depositId = counter.seq;
     // Step 3: Credit the user's wallet.
-    user.Wallet += updatedTx.amount;
+    const bonus = updatedTx.amount * 0.10;
+    const totalCredit = updatedTx.amount + bonus;
+    user.Wallet += totalCredit;;
  
       
 
