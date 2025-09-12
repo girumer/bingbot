@@ -72,25 +72,36 @@ let userStates = {}; // { chatId: { step: "askName" | "askPhone" | "depositAmoun
 // ----------------------
 // /start command
 // ----------------------
-bot.onText(/\/start/, async (msg) => {
- const chatId = msg.chat.id;
+// ----------------------
+// /start command (CORRECTED)
+// ----------------------
+bot.onText(/^\/start\s?(\d+)?$/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const referrerId = match[1]; // The referred ID is the first captured group
 
- let user = await BingoBord.findOne({ telegramId: chatId });
+    let user = await BingoBord.findOne({ telegramId: chatId });
 
- if (!user) {
- // ✅ Change this part to immediately ask for contact
- userStates[chatId] = { step: "waitingForContact" };
- bot.sendMessage(chatId, "Welcome! Please share your phone number to register:", {
-reply_markup: {
- keyboard: [[{ text: "📱 Share Contact", request_contact: true }]],
- resize_keyboard: true,
- one_time_keyboard: true,
-remove_keyboard: true // Optional: hide the keyboard after use
- }
- });
- } else {
- bot.sendMessage(chatId, `Welcome back, ${user.username}!`, mainMenu);
- }
+    if (!user) {
+        // User does not exist, start the registration process
+        userStates[chatId] = { step: "waitingForContact" };
+
+        // **NEW:** Check if a referrer ID was provided in the link
+        if (referrerId && !isNaN(referrerId) && Number(referrerId) !== chatId) {
+            userStates[chatId].referrerId = Number(referrerId);
+        }
+
+        bot.sendMessage(chatId, "Welcome! Please share your phone number to register:", {
+            reply_markup: {
+                keyboard: [[{ text: "📱 Share Contact", request_contact: true }]],
+                resize_keyboard: true,
+                one_time_keyboard: true,
+                remove_keyboard: true 
+            }
+        });
+    } else {
+        // User already exists, send the main menu
+        bot.sendMessage(chatId, `Welcome back, ${user.username}!`, mainMenu);
+    }
 });
 // ----------------------
 // Handle Commands (like /balance, /play, etc.)
