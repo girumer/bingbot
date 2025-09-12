@@ -97,117 +97,92 @@ const REFERRAL_BONUS_PERCENTAGE = 0.10; // 10% bonus
 const isAmountMismatch = (dbAmount, requestAmount) => {
   return parseFloat(dbAmount) !== parseFloat(requestAmount);
 };
+
+
 exports.depositAmount = async (req, res) => {
-    try {
-        // ... (your existing code for input validation and finding `updatedTx` and `user`)
-        let { message, phoneNumber, amount, type } = req.body;
-        message = message ? message.trim() : null;
-        phoneNumber = phoneNumber ? phoneNumber.trim() : null;
-        amount = parseFloat(amount);
-        const user = await BingoBord.findOne({ phoneNumber });
-        if (!message || !phoneNumber || isNaN(amount) || amount <= 0 || !type || !["telebirr", "cbebirr"].includes(type.toLowerCase())) {
-            return res.status(400).json({ error: "Invalid or missing parameters." });
-        }
-        if (!user) {
-            console.error(`User not found for phone number: ${phoneNumber}`);
-            return res.status(404).json({ error: "User not found. Please register or provide a valid phone number." });
-        }
-        
-        let transactionNumber;
-        if (type.toLowerCase() === "telebirr") {
-            const transMatch = message.match(/transaction number is\s*(\w+)/i);
-            if (transMatch) transactionNumber = transMatch[1].trim();
-        } else if (type.toLowerCase() === "cbebirr") {
-            const transMatch = message.match(/Txn[:\s]+(\w+)/i);
-            if (transMatch) transactionNumber = transMatch[1].trim();
-        }
+    try {
+        let { message, phoneNumber, amount, type } = req.body;
+        message = message ? message.trim() : null;
+        phoneNumber = phoneNumber ? phoneNumber.trim() : null;
+        amount = parseFloat(amount);
+        const user = await BingoBord.findOne({ phoneNumber });
+        if (!message || !phoneNumber || isNaN(amount) || amount <= 0 || !type || !["telebirr", "cbebirr"].includes(type.toLowerCase())) {
+            return res.status(400).json({ error: "Invalid or missing parameters." });
+        }
+        if (!user) {
+            console.error(`User not found for phone number: ${phoneNumber}`);
+            return res.status(404).json({ error: "User not found. Please register or provide a valid phone number." });
+        }
+        
+        let transactionNumber;
+        if (type.toLowerCase() === "telebirr") {
+            const transMatch = message.match(/transaction number is\s*(\w+)/i);
+            if (transMatch) transactionNumber = transMatch[1].trim();
+        } else if (type.toLowerCase() === "cbebirr") {
+            const transMatch = message.match(/Txn[:\s]+(\w+)/i);
+            if (transMatch) transactionNumber = transMatch[1].trim();
+        }
 
-        if (!transactionNumber) {
-            return res.status(400).json({ error: "Failed to extract transaction number from message." });
-        }
-        const updatedTx = await Transaction.findOne({ transactionNumber: transactionNumber });
+        if (!transactionNumber) {
+            return res.status(400).json({ error: "Failed to extract transaction number from message." });
+        }
+        
+        // Step 1: Find the PENDING transaction. This is the crucial security check.
+        const updatedTx = await Transaction.findOne({
+            transactionNumber: transactionNumber,
+            method: "depositpend" // This ensures it can't be claimed twice
+        });
+        
+        // If the transaction is not found, it has already been claimed or does not exist.
+        if (!updatedTx) {
+            return res.status(400).json({ error: "Invalid or already-claimed transaction number." });
+        }
 
-        if (!updatedTx) {
-            return res.status(400).json({ error: "Invalid or already-claimed transaction number." });
-        }
-       console.log("--- DEBUGGING AMOUNT MISMATCH ---");
-console.log(`Amount from Bot: Value=${amount}, Type=${typeof amount}`);
- console.log(`Amount from DB: Value=${updatedTx.amount}, Type=${typeof updatedTx.amount}`);
- console.log("-----------------------------------");
-        if (updatedTx.amount !== amount) {
-            return res.status(400).json({ error: "Amount mismatch. Please check your deposit amount." });
-        }
-        if (updatedTx.type !== type) {
-            return res.status(400).json({ error: "type mismatch. Please check your deposit type." });
-        }
-
-        const counter = await Depoc.findOneAndUpdate(
-            { _id: "depositId" },
-            { $inc: { seq: 1 } },
-            { new: true, upsert: true }
-        );
-        if (!counter) {
-            return res.status(500).json({ message: "Failed to generate a unique withdrawal ID." });
-        }
-        const depositId = counter.seq;
-        
-        // --- Corrected logic starts here ---
-        user.Wallet += updatedTx.amount;
-
-        if (user.referredBy && !user.referralBonusPaid) {
-            // Find the user who referred this customer
-            const referrer = await BingoBord.findOne({ telegramId: user.referredBy });
-
-            if (referrer) {
-                const referralBonus = amount * REFERRAL_BONUS_PERCENTAGE;
-                referrer.Wallet += referralBonus;
-                await referrer.save();
-
-                console.log(`Referral bonus of ${referralBonus} ETB credited to user ${referrer.telegramId}`);
-
-                const referralBonusTx = new Transaction({
-                    transactionNumber: `REF${Date.now()}${referrer.telegramId}`,
-                    phoneNumber: referrer.phoneNumber, 
-                    method: "referral_bonus",
-                    type: "bonus",
-                    amount: referralBonus,
-                    rawMessage: `Referral bonus from a new user's first deposit (${user.username})`,
-                });
-                await referralBonusTx.save();
-                
-                user.referralBonusPaid = true;
-            }
-        }
-
-        await user.save();
-
-        const newTx = new Transaction({
-            // Use the original transaction number for this new deposit record
-            transactionNumber: updatedTx.transactionNumber,
-            depositId,
-            phoneNumber,
-            method: "deposit",
-            type,
-            amount,
-            rawMessage: `deposit via ${type}`,
-        });
-        
-        await newTx.save();
-        await Transaction.deleteOne({ transactionNumber });
-        
-        console.log(`User wallet updated. New balance: ${user.Wallet}`);
-        
-        res.json({
-            message: `Deposit of ${updatedTx.amount} ETB confirmed successfully! Your new wallet balance is ${user.Wallet}.`,
-            wallet: user.Wallet,
-        });
-           if (isAmountMismatch(updatedTx.amount, amount)) {
+        // Step 2: Perform all necessary checks BEFORE processing the transaction.
+        if (parseFloat(updatedTx.amount) !== amount) {
             return res.status(400).json({ error: "Amount mismatch. Please check your deposit amount." });
         }
-    } catch (err) {
-        console.error("Deposit confirmation error:", err);
-        res.status(500).json({ error: "check the amount you deposit." }); // Fixed typo here
-    }
+        if (updatedTx.type !== type) {
+            return res.status(400).json({ error: "type mismatch. Please check your deposit type." });
+        }
+
+        // Step 3: Update user's wallet and handle referral logic
+        user.Wallet += updatedTx.amount;
+        if (user.referredBy && !user.referralBonusPaid) {
+            const referrer = await BingoBord.findOne({ telegramId: user.referredBy });
+            if (referrer) {
+                const referralBonus = amount * REFERRAL_BONUS_PERCENTAGE;
+                referrer.Wallet += referralBonus;
+                await referrer.save();
+                const referralBonusTx = new Transaction({
+                    transactionNumber: `REF${Date.now()}${referrer.telegramId}`,
+                    phoneNumber: referrer.phoneNumber, 
+                    method: "referral_bonus",
+                    type: "bonus",
+                    amount: referralBonus,
+                    rawMessage: `Referral bonus from a new user's first deposit (${user.username})`,
+                });
+                await referralBonusTx.save();
+                user.referralBonusPaid = true;
+            }
+        }
+        await user.save();
+
+        // Step 4: Delete the pending transaction.
+        // This ensures it can never be used again and cleans your database.
+        await Transaction.deleteOne({ transactionNumber: transactionNumber });
+
+        console.log(`User wallet updated. New balance: ${user.Wallet}`);
+        
+        res.json({
+            message: `Deposit of ${updatedTx.amount} ETB confirmed successfully! Your new wallet balance is ${user.Wallet}.`,
+            wallet: user.Wallet,
+        });
+
+    } catch (err) {
+        console.error("Deposit confirmation error:", err);
+        res.status(500).json({ error: "check the amount you deposit." });
+    }
 };
 
 // Get all pending transactions
