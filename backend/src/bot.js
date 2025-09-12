@@ -158,8 +158,15 @@ bot.onText(/\/(start|balance|play|deposit|history|help|withdraw)/, async (msg, m
       
     
     case "help":
-      bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history.");
-
+     bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history. If you need further assistance, please contact our support team.", {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: "🤝 Contact Support", url: `https://t.me/${process.env.SUPPORT_USERNAME}` }
+                ]
+            ]
+        }
+    });
       break;
       
     case "deposit":
@@ -395,18 +402,33 @@ case "deposit_cbebirr":
   let instructionsMsg = "";
   if (depositMethod === "telebirr") {
     instructionsMsg = `
-📲 Telebirr Deposit
-Account: 0932157512
-Amount: ${amountDep} ብር
+📲 ማኑዋል ዲፖዚት መመሪያ ቴሌብር
+Account: \`${process.env.TELEBIRR_ACCOUNT}\`
+ዲፖዚት መጠን: ${amountDep} ብር
 
-Please send the money and then reply with the transaction message.`;
+1. ከላይ ባለው ቁጥር TeleBirr በመጠቀም  ${amountDep} ብር ያስገቡ
+2. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከ TeleBirr ይደርሳችኋል
+3. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ወደዚህ ቦት ይላኩ
+⚠️ አስፈላጊ ማሳሰቢያ:
+•1. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን መላክ ያረጋግጡ
+•2. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
+•     ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
+•     ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ
+እገዛ ይፈልጋሉ?`;
   } else if (depositMethod === "cbebirr") {
     instructionsMsg = `
-🏦 CBE wallet Deposit
-Account: 0932157512
-Amount: ${amountDep} ብር
+🏦 ማኑዋል ዲፖዚት መመሪያ
+Account: \`${process.env.CBE_ACCOUNT}\`
+ዲፖዚት መጠን: ${amountDep} ብር
 
-Please send the money and then reply with the transaction message.`;
+1. ከላይ ባለው ቁጥር ሲቢኢ  በመጠቀም  ${amountDep}ብር ያስገቡ
+2. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከ TeleBirr ይደርሳችኋል
+3. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ወደዚህ ቦት ይላኩ
+⚠️ አስፈላጊ ማሳሰቢያ:
+•1. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን መላክ ያረጋግጡ
+•2. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
+•     ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
+•     ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ`;
   }
 
   bot.sendMessage(chatId, instructionsMsg);
