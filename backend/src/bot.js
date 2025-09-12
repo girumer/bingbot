@@ -397,7 +397,6 @@ case "deposit_cbebirr":
     const depositMethod = data.split("_")[1];
     const amountDep = userStates[chatId]?.amount || "N/A";
 
-
     let instructionsMsg = "";
 if (depositMethod === "telebirr") {
   instructionsMsg = `
@@ -406,13 +405,13 @@ Account: \`${process.env.TELEBIRR_ACCOUNT}\`
 ዲፖዚት መጠን: ${amountDep} ብር
 
 1\\. ከላይ ባለው ቁጥር TeleBirr በመጠቀም  ${amountDep} ብር ያስገቡ
-2\\. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከ TeleBirr ይደርሳችኋል
-3\\. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ወደዚህ ቦት ይላኩ
+2\\. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልክት\\(sms\\) ከ TeleBirr ይደርሳችኋል
+3\\. የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) ሙሉዉን ኮፒ\\(copy\\) በማረግ ወደዚህ ቦት ይላኩ
 ⚠️ አስፈላጊ ማሳሰቢያ:
-4\\. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን መላክ ያረጋግጡ
-5\\. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
-• ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
-•  ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ
+•1\\. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) ሙሉዉን መላክ ያረጋግጡ
+•2\\. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
+•     ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
+•     ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ
 እገዛ ይፈልጋሉ?`;
 } else if (depositMethod === "cbebirr") {
   instructionsMsg = `
@@ -421,16 +420,15 @@ Account: \`${process.env.CBE_ACCOUNT}\`
 ዲፖዚት መጠን: ${amountDep} ብር
 
 1\\. ከላይ ባለው ቁጥር ሲቢኢ  በመጠቀም  ${amountDep}ብር ያስገቡ
-2\\. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከ TeleBirr ይደርሳችኋል
-3\\. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ወደዚህ ቦት ይላኩ
+2\\. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልክት\\(sms\\) ከ TeleBirr ይደርሳችኋል
+3\\. የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) ሙሉዉን ኮፒ\\(copy\\) በማረግ ወደዚህ ቦት ይላኩ
 ⚠️ አስፈላጊ ማሳሰቢያ:
-4\\. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን መላክ ያረጋግጡ
-5\\. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
-•  ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
-•  ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ`;
+•1\\. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) ሙሉዉን መላክ ያረጋግጡ
+•2\\. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
+•     ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
+•     ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ`;
 }
-
-// ... rest of your code to send the message ...
+// ...
     
     // ✅ Keep only this single bot.sendMessage call.
     bot.sendMessage(chatId, instructionsMsg, {
