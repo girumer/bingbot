@@ -559,13 +559,13 @@ case "referral":
     // This is the file_id you found.
     const botProfilePictureId = 'AgACAgQAAxkBAAIK7mjE1Y1VX0ivUkBQGwJsXW08-92LAAKm0DEb55coUv1XJCHTpYurAQADAgADeAADNgQ'; 
     
-    // The text you want to use as the photo caption.
+    // Use the [Text](URL) format to create a clickable link
     const captionText = `
 *Here is your personal referral link!*
     
 Invite friends to join our bot using this link and earn a bonus on every deposit they make.
     
-🔗 ${referralLink}
+🔗 [Click Here to Invite](${referralLink})
     
 Start inviting now and earn unlimited commissions!
 `;
@@ -579,6 +579,7 @@ Start inviting now and earn unlimited commissions!
         }
     );
     break;
+ 
     
     default:
       bot.sendMessage(chatId, "Unknown action occured.");
