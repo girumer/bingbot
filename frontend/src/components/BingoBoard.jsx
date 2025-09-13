@@ -335,7 +335,7 @@ useEffect(() => {
       />
       <span className="toggle-slider"></span>
     </label>
-    <div className="stat-button1" onClick={refreshpg}>Refrsh</div>
+    <div className="stat-button1" onClick={refreshpg}>REFRESH</div>
     </div>
     
     

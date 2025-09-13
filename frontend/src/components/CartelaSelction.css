@@ -19,16 +19,28 @@
 
 .display-btn {
   flex: 1 1 30%;
-  margin: 0.5rem;
-  padding: 0.8rem;
+  margin: 0.4rem;
+  padding: 0.6rem;
   background-color: #1d1e1f;
   color: white;
   font-weight: bold;
   text-align: center;
-  border-radius: 8px;
+  border-radius: 4px;
   box-shadow: 0px 2px 5px rgba(0,0,0,0.2);
 }
 
+
+.display-btn1 {
+  flex: 1 1 30%;
+  margin: 0.4rem;
+  padding: 0.6rem;
+  background-color: #de4a10;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  border-radius: 4px;
+  box-shadow: 0px 2px 5px rgba(0,0,0,0.2);
+}
 /* Cartela container (grid of 10 rows) */
 .Cartelacontainer {
   display: grid;
