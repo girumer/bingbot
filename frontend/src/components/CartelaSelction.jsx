@@ -660,7 +660,10 @@ if (!selectedCartelas.length) return toast.error("Select at least one cartela fi
   };
 
 
-
+const refreshpg = () => {
+    // This command will reload the entire page from the server
+    window.location.reload();
+};
   // --- Render based on loading state ---
 
   if (isLoading) {
@@ -687,7 +690,9 @@ if (!selectedCartelas.length) return toast.error("Select at least one cartela fi
           <div className="display-btn">Active Game: {activeGame ? "Yes" : "No"}</div>
 
           <div className="display-btn">Stake: {stake} ETB</div>
-
+         <div className="display-btn">Stake: {stake} ETB</div>
+         <div className="display-btn" onClick={refreshpg}>Refresh</div>
+      
         </div>
 
        
