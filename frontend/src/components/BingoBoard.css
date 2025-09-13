@@ -460,11 +460,12 @@ input:checked + .toggle-slider:before {
 
 .bingo-button {
   width: 75%;
-  height: 20px;
+  height: 40px;
   padding: 3px 0;
   font-size: 12px;
   background: #f67d05;
   color: white;
+  align-items: center;
   border: none;
   border-radius: 7px;
   cursor: pointer;
