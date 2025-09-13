@@ -35,8 +35,8 @@
 .display-btn1 {
   flex: 1 1 30%;
   margin: 0.4rem;
-  max-width: 80px;
-  min-width: 60px;
+  max-width: 90px;
+  min-width: 80px;
   padding: 0.6rem;
   background-color: #de4a10;
   color: white;
