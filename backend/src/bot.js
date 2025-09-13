@@ -549,36 +549,40 @@ case "transactions":
   }
   break;
 case "referral":
-      // Step 1: Get the bot's username dynamically from the API.
-      const botInfo = await bot.getMe();
-      const botUsername = botInfo.username;
-      
-      // Step 2: Use the bot's username and the correct user ID from the callbackQuery.
-      const referralLink = `https://t.me/${botUsername}?start=${callbackQuery.from.id}`;
-      
-      bot.sendMessage(
-        chatId,
-        `🔗 Here is your personal referral link: \n\n\`${referralLink}\``,
-        { parse_mode: 'Markdown' }
-      );
-      break;
+    // Get the bot's username dynamically from the API.
+    const botInfo = await bot.getMe();
+    const botUsername = botInfo.username;
+    
+    // Use the bot's username and the correct user ID from the callbackQuery.
+    const referralLink = `https://t.me/${botUsername}?start=${callbackQuery.from.id}`;
+    
+    // This is the file_id you found.
+    const botProfilePictureId = 'AgACAgQAAxkBAAIK7mjE1Y1VX0ivUkBQGwJsXW08-92LAAKm0DEb55coUv1XJCHTpYurAQADAgADeAADNgQ'; 
+    
+    // The text you want to use as the photo caption. This was missing.
+    const captionText = `
+*Here is your personal referral link!*
+    
+
+    
+🔗 \`${referralLink}\`
+    
+Start inviting now and earn unlimited commissions!
+`;
+    
+    bot.sendPhoto(
+        chatId,
+        botProfilePictureId, 
+        {
+            caption: captionText,
+            parse_mode: 'Markdown'
+        }
+    );
+    break;
     default:
       bot.sendMessage(chatId, "Unknown action occured.");
   }
-// TEMPORARY CODE TO GET PHOTO FILE_ID
-bot.on('photo', (msg) => {
-    // The `photo` property is an array of different sizes. The last one is the largest.
-    const fileId = msg.photo[msg.photo.length - 1].file_id;
-    console.log('✅ Found file_id from a PHOTO:', fileId);
-    console.log('Now, copy this ID and put it in your referral code.');
-});
 
-bot.on('document', (msg) => {
-    // Check if the document is an image
-    if (msg.document.mime_type.startsWith('image')) {
-        const fileId = msg.document.file_id;
-        console.log('✅ Found file_id from a DOCUMENT:', fileId);
-        console.log('Now, copy this ID and put it in your referral code.');
-    }
-});
+// TEMPORARY CODE TO GET PHOTO FILE_ID
+
 });
