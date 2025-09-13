@@ -184,6 +184,10 @@ const usernameFromState = location.state?.username;
       prev.includes(num) ? prev.filter((n) => n !== num) : [...prev, num]
     );
   };
+  const refreshpg = () => {
+    // This command will reload the entire page from the server
+    window.location.reload();
+};
   // ✅ Corrected code in BingoBoard.js
 // ✅ Corrected reset handler in BingoBoard.js
 useEffect(() => {
@@ -320,6 +324,7 @@ useEffect(() => {
 
       {/* MIDDLE NUMBERS GRID */}
       <div className="numbers-grid-wrapper">
+
         <div className="toggle-container">
     <span className="toggle-label">AUTO SELECT</span>
     <label className="toggle-switch">
@@ -330,6 +335,7 @@ useEffect(() => {
       />
       <span className="toggle-slider"></span>
     </label>
+    <div className="stat-button1" onClick={refreshpg}>Refrsh</div>
     </div>
     
     

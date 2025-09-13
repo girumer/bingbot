@@ -438,7 +438,18 @@ input:checked + .toggle-slider:before {
   background: #90ee90;
   border-color: #32cd32;
 }
-
+.stat-button1{
+    padding: 10px;
+  background:#c10f0f;
+  border: 1px solid #190909;
+  border-radius: 10%;
+  color:white;
+  font-size: 18px;
+  align-items: end;
+  font-weight: bold;
+  text-align: center;
+  min-width: 100px;
+}
 .cartela-index {
   text-align: center;
   font-size: 12px;
