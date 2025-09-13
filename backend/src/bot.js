@@ -75,6 +75,89 @@ let userStates = {}; // { chatId: { step: "askName" | "askPhone" | "depositAmoun
 // ----------------------
 // /start command (CORRECTED)
 // ----------------------
+// ----------------------
+// Handle Commands (like /balance, /play, etc.)
+// ----------------------
+bot.onText(/\/(start|balance|play|deposit|history|help|withdraw)/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const cmd = match[1]; // the command without '/'
+  
+    // Fetch the user
+    const user = await BingoBord.findOne({ telegramId: chatId });
+  
+    // Call the same logic as your callback_query switch
+    switch (cmd) {
+      case "start":
+        bot.sendMessage(chatId, "🏠 Main Menu:", mainMenu);
+        break;
+      case "balance":
+        bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} coins`);
+        break;
+      case "withdraw":
+        bot.sendMessage(chatId, "Choose your withdrawal method:", {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: "📲 Telebirr", callback_data: "withdraw_telebirr" },
+                { text: "🏦 CBE Birr", callback_data: "withdraw_cbebirr" }
+              ]
+            ]
+          }
+        });
+        break;
+      case "history":
+        if (!user.gameHistory || user.gameHistory.length === 0) {
+          bot.sendMessage(chatId, "You have no game history yet.");
+          return;
+        }
+        
+        // Get last 10 items only
+        const lastGames = user.gameHistory.slice(-10);
+  
+        let historyText = "📜 Your last 10 game history:\n";
+        lastGames.forEach((g, i) => {
+          historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, gameid:${g.gameId},Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
+        });
+  
+        bot.sendMessage(chatId, historyText);
+        break;
+      case "play":
+        bot.sendMessage(chatId, "Select a room to play:", {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: "Room 5 (Stake 5)", callback_data: "room_5" },
+                { text: "Room 10 (Stake 10)", callback_data: "room_10" },
+              ],
+              [
+                { text: "Room 20 (Stake 20)", callback_data: "room_20" },
+                { text: "Room 30 (Stake 30)", callback_data: "room_30" },
+              ],
+              [
+                { text: "Room 50 (Stake 50)", callback_data: "room_50" },
+                { text: "Room 100 (Stake 100)", callback_data: "room_100" },
+              ]
+            ]
+          }
+        });
+        break;
+      case "help":
+        bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history. If you need further assistance, please contact our support team.", {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: "🤝 Contact Support", url: `https://t.me/${process.env.SUPPORT_USERNAME}` }
+              ]
+            ]
+          }
+        });
+        break;
+      case "deposit":
+        bot.sendMessage(chatId, "💵 How much money do you want to deposit?");
+        userStates[chatId] = { step: "depositAmount" };
+        break;
+    }
+});
 bot.onText(/^\/start\s?(\d+)?$/, async (msg, match) => {
     try {
         const chatId = msg.chat.id;
