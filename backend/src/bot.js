@@ -565,9 +565,20 @@ case "referral":
     default:
       bot.sendMessage(chatId, "Unknown action occured.");
   }
-  bot.on('photo', (msg) => {
+// TEMPORARY CODE TO GET PHOTO FILE_ID
+bot.on('photo', (msg) => {
     // The `photo` property is an array of different sizes. The last one is the largest.
     const fileId = msg.photo[msg.photo.length - 1].file_id;
-    console.log('✅ Your bot profile picture file_id is:', fileId);
+    console.log('✅ Found file_id from a PHOTO:', fileId);
+    console.log('Now, copy this ID and put it in your referral code.');
+});
+
+bot.on('document', (msg) => {
+    // Check if the document is an image
+    if (msg.document.mime_type.startsWith('image')) {
+        const fileId = msg.document.file_id;
+        console.log('✅ Found file_id from a DOCUMENT:', fileId);
+        console.log('Now, copy this ID and put it in your referral code.');
+    }
 });
 });
