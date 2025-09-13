@@ -563,11 +563,11 @@ case "referral":
     const captionText = `
 *Here is your personal referral link!*
     
-Invite friends to join our bot using this link and earn a bonus on every deposit they make.
+ከታች ያለውን ሊንክ ለወዳጆቾ በመጋበዝ የጋበዟቸው ደንበኞች ከሚያስቀምጡት ዲፖዛት የማያቋርጥ የ10% ባለድርሻ ይሁኑ.
     
 🔗 [Click Here to Invite](${referralLink})
     
-Start inviting now and earn unlimited commissions!
+እየተዝናን አብረን  እንስራ
 `;
     
     bot.sendPhoto(
