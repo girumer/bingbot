@@ -78,7 +78,7 @@ let userStates = {}; // { chatId: { step: "askName" | "askPhone" | "depositAmoun
 // ----------------------
 // Handle Commands (like /balance, /play, etc.)
 // ----------------------
-bot.onText(/\/(start|balance|play|deposit|history|help|withdraw)/, async (msg, match) => {
+bot.onText(/\/(balance|play|deposit|history|help|withdraw)/, async (msg, match) => {
     const chatId = msg.chat.id;
     const cmd = match[1]; // the command without '/'
   
