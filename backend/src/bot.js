@@ -558,11 +558,16 @@ case "referral":
       
       bot.sendMessage(
         chatId,
-        `🔗 Here is your personal referral link: \n\n\`${referralLink}\`\n\nShare this link with your friends. When a friend makes their first deposit, you will receive a bonus!`,
+        `🔗 Here is your personal referral link: \n\n\`${referralLink}\``,
         { parse_mode: 'Markdown' }
       );
       break;
     default:
       bot.sendMessage(chatId, "Unknown action occured.");
   }
+  bot.on('photo', (msg) => {
+    // The `photo` property is an array of different sizes. The last one is the largest.
+    const fileId = msg.photo[msg.photo.length - 1].file_id;
+    console.log('✅ Your bot profile picture file_id is:', fileId);
+});
 });
