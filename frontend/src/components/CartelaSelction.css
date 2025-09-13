@@ -21,8 +21,8 @@
   flex: 1 1 30%;
   margin: 0.4rem;
   padding: 0.6rem;
-    max-width: 120px;
-  min-width: 100px;
+    max-width: 80px;
+  min-width: 60px;
   background-color: #1d1e1f;
   color: white;
   font-weight: bold;
@@ -35,8 +35,8 @@
 .display-btn1 {
   flex: 1 1 30%;
   margin: 0.4rem;
-  max-width: 120px;
-  min-width: 100px;
+  max-width: 80px;
+  min-width: 60px;
   padding: 0.6rem;
   background-color: #de4a10;
   color: white;
