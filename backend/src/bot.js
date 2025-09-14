@@ -211,7 +211,7 @@ bot.onText(/\/transferWalletToFrieand/, async (msg) => {
         return;
     }
     userStates[chatId] = { step: "waitingForRecipientPhone" };
-    bot.sendMessage(chatId, "Please send the phone number of the user you want to transfer to (e.g., `251912345678`).");
+    bot.sendMessage(chatId, "Please us send the phone number of the user you want to transfer to with the following format(e.g., `251912345678`).");
 });
 // ----------------------
 // Handle Commands (like /balance, /play, etc.)
