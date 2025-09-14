@@ -23,29 +23,7 @@ function parseTelebirrMessage(message) {
 // Utility function to parse CBE messages (you can expand if needed)
 // utils/messageParsers.js
 
-const parseTelebirrMessage = (message) => {
-    const transactions = [];
 
-    // Regex to find transaction number, amount, and sender phone number
-    const transactionRegex = /(?:transaction number|txn no)\s*[:]?\s*(\S+).*(?:etb|birr)\s*(\S+).*?(?:from|from:)\s*(\+?251\d{9}|09\d{8})/i;
-    const matches = message.match(transactionRegex);
-
-    if (matches) {
-        const transactionNumber = matches[1];
-        const amount = parseFloat(matches[2]);
-        const phoneNumber = matches[3].replace(/^0/, '+251').replace(/^251/, '+251'); // Standardize phone number format
-
-        if (!isNaN(amount) && transactionNumber) {
-            transactions.push({
-                transactionNumber,
-                amount,
-                phoneNumber,
-                type: 'telebirr' // Add the type here
-            });
-        }
-    }
-    return transactions;
-};
 
 // In your utils/messageParsers.js file
 
