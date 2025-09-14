@@ -135,8 +135,9 @@ try {
         if (type.toLowerCase() === "telebirr") {
             const transMatch = message.match(/transaction number is\s*(\w+)/i);
             if (transMatch) transactionNumber = transMatch[1].trim();
-        } else if (type.toLowerCase() === "cbebirr") {
-    const transMatch = message.match(/Txn[:\s]+(\w+)/i);
+        }  else if (type.toLowerCase() === "cbebirr") {
+    // FIX: Use the correct, multi-language regex for CBE
+    const transMatch = message.match(/(?:በደረሰኝ ቁ?ጠ?ር|txn id)\s*[:]?\s*([a-zA-Z0-9]+)/i);
     if (transMatch) transactionNumber = transMatch[1].trim();
 }
         if (!transactionNumber) {
