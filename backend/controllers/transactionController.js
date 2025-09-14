@@ -21,21 +21,62 @@ function parseTelebirrMessage(message) {
 }
 
 // Utility function to parse CBE messages (you can expand if needed)
-function parseCBEMessages(message) {
-  const transactions = [];
+// utils/messageParsers.js
 
-  const amountMatches = [...message.matchAll(/ETB\s*([\d,]+\.\d{2})/gi)];
-  const transMatches = [...message.matchAll(/Txn[:\s]+(\w+)/gi)];
+const parseTelebirrMessage = (message) => {
+    const transactions = [];
 
-  for (let i = 0; i < Math.min(amountMatches.length, transMatches.length); i++) {
-    const amount = parseFloat(amountMatches[i][1].replace(/,/g, ""));
-    const transactionNumber = transMatches[i][1].trim();
+    // Regex to find transaction number, amount, and sender phone number
+    const transactionRegex = /(?:transaction number|txn no)\s*[:]?\s*(\S+).*(?:etb|birr)\s*(\S+).*?(?:from|from:)\s*(\+?251\d{9}|09\d{8})/i;
+    const matches = message.match(transactionRegex);
 
-    transactions.push({ type: "cbe", amount, transactionNumber });
-  }
+    if (matches) {
+        const transactionNumber = matches[1];
+        const amount = parseFloat(matches[2]);
+        const phoneNumber = matches[3].replace(/^0/, '+251').replace(/^251/, '+251'); // Standardize phone number format
 
-  return transactions;
-}
+        if (!isNaN(amount) && transactionNumber) {
+            transactions.push({
+                transactionNumber,
+                amount,
+                phoneNumber,
+                type: 'telebirr' // Add the type here
+            });
+        }
+    }
+    return transactions;
+};
+
+// In your utils/messageParsers.js file
+
+exports.parseCBEMessages = (message) => {
+    const transactions = [];
+
+    // Regex to find the deposit amount (number followed by "Br." or "ብር")
+    const amountRegex = /([\d,]+\.\d+)\s*(?:Br\.|ብር)/i;
+
+    // Regex to find "በደረሰኝ ቁጥር" and extract the alphanumeric ID that follows
+    const transactionNumberRegex = /በደረሰኝ ቁጥር\s+([a-zA-Z0-9]+)/i;
+
+    const amountMatch = message.match(amountRegex);
+    const txNumberMatch = message.match(transactionNumberRegex);
+
+    if (amountMatch && txNumberMatch) {
+        const amount = parseFloat(amountMatch[1].replace(/,/g, '')); // Handle comma separators if they appear
+        const transactionNumber = txNumberMatch[1];
+        
+        if (!isNaN(amount) && transactionNumber) {
+            transactions.push({
+                transactionNumber,
+                amount,
+                phoneNumber: null, // No sender phone number for this message type
+                type: 'cbebirr' 
+            });
+        }
+    }
+    return transactions;
+};
+
 
 exports.parseTransaction = async (req, res) => {
   try {
