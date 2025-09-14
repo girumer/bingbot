@@ -26,7 +26,7 @@ function parseTelebirrMessage(message) {
 
 
 // In your utils/messageParsers.js file
-function parseCBEMessages = (message) => {
+function parseCBEMessages  (message)  {
     const transactions = [];
 
     // Regex to find the deposit amount (number followed by "Br." or "ብር")
