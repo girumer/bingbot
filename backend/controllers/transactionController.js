@@ -199,7 +199,7 @@ if (!message || !phoneNumber || isNaN(amount) || amount <= 0 || !type || !["tele
  wallet: user.Wallet,
  });
 
- } catch (err) {
+  catch (err) {
  console.error("Deposit confirmation error:", err);
   res.status(500).json({ error: "check the amount you deposit." });
  };
