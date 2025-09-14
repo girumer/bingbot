@@ -30,7 +30,7 @@ function parseTelebirrMessage(message) {
 function parseCBEMessages(message) {
     const transactions = [];
     const amountRegex = /([\d,]+\.\d+)\s*(?:Br\.|ብር)/i;
-    const transactionNumberRegex = /በደረሰኝ ቁ?ጠ?ር\s+([a-zA-Z0-9]+)/i;
+const transactionNumberRegex = /(?:በደረሰኝ ቁ?ጠ?ር|txn id|transaction number)\s*[:]?\s*([a-Z0-9]+)/i;;
 
     const amountMatch = message.match(amountRegex);
     const txNumberMatch = message.match(transactionNumberRegex);
