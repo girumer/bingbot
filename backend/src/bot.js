@@ -58,7 +58,7 @@ const commands = [
   { command: "withdraw", description: "📤 Withdraw" },
   { command: "history", description: "📜 game  history" },
   { command: "changeusername", description: "✏️ Change your username" },
-  { command: "transferWallet", description: "➡️ Transfer funds" }, 
+  { command: "transferwallet", description: "➡️ Transfer funds" }, 
   { command: "help", description: "ℹ️ Help info" },
    
 ];
@@ -203,7 +203,7 @@ bot.onText(/\/changeusername/, async (msg) => {
     
     bot.sendMessage(chatId, "Please send your new username now. It must be a single word, without spaces.");
 });
-bot.onText(/\/transferWallet/, async (msg) => {
+bot.onText(/\/transferwallet/, async (msg) => {
     const chatId = msg.chat.id;
     const user = await BingoBord.findOne({ telegramId: chatId });
     if (!user) {
