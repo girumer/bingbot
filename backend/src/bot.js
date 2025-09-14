@@ -57,7 +57,8 @@ const commands = [
   { command: "deposit", description: "📥 Deposit funds" },
   { command: "withdraw", description: "📤 Withdraw" },
   { command: "history", description: "📜 game  history" },
-  { command: "help", description: "ℹ️ Help info" }
+  { command: "help", description: "ℹ️ Help info" },
+   { command: "changeusername", description: "✏️ Change your username" }
 ];
 
 bot.setMyCommands(commands)
@@ -187,7 +188,19 @@ bot.onText(/^\/start\s?(\d+)?$/, async (msg, match) => {
         console.error("Error in /start handler:", error);
     }
 });
+bot.onText(/\/changeusername/, async (msg) => {
+    const chatId = msg.chat.id;
 
+    const user = await BingoBord.findOne({ telegramId: chatId });
+    if (!user) {
+        bot.sendMessage(chatId, "You are not registered. Please use /start to begin.");
+        return;
+    }
+
+    userStates[chatId] = { step: "waitingForNewUsername" };
+    
+    bot.sendMessage(chatId, "Please send your new username now. It must be a single word, without spaces.");
+});
 // ----------------------
 // Handle Commands (like /balance, /play, etc.)
 // ----------------------
@@ -298,6 +311,40 @@ bot.on("message", async (msg) => {
   // Deposit Amount
  // ...
 // Deposit Amount
+  if (step === "waitingForNewUsername") {
+        const newUsername = text.trim();
+        delete userStates[chatId]; // Clear state immediately
+
+        if (newUsername.includes(' ') || newUsername.length < 3) {
+            bot.sendMessage(chatId, "Invalid username. Usernames must be a single word and at least 3 characters long. Please try again with /changeusername.");
+            return;
+        }
+
+        try {
+            const user = await BingoBord.findOne({ telegramId: chatId });
+            if (!user) {
+                bot.sendMessage(chatId, "User not found. Please start with /start.");
+                return;
+            }
+
+            const existingUser = await BingoBord.findOne({ username: newUsername });
+            if (existingUser) {
+                bot.sendMessage(chatId, `The username "${newUsername}" is already taken. Please choose another one.`);
+                return;
+            }
+
+            user.username = newUsername;
+            await user.save();
+
+            bot.sendMessage(chatId, `✅ Your username has been successfully changed to **${newUsername}**!`, { parse_mode: 'Markdown' });
+
+        } catch (error) {
+            console.error("Error changing username:", error);
+            bot.sendMessage(chatId, "An error occurred while changing your username. Please try again later.");
+        }
+        return;
+    }
+    
 if (step === "depositAmount") {
     const amount = parseFloat(text);
     if (isNaN(amount) || amount <= 0) {
