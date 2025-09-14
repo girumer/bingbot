@@ -26,11 +26,9 @@ function parseTelebirrMessage(message) {
 
 
 // In your utils/messageParsers.js file
+// In your utils/messageParsers.js file or where the function is located
 function parseCBEMessages(message) {
     const transactions = [];
-
-    // FIX: Corrected regex to be more flexible for Amharic spelling variations
-    // This regex will match either "ቁጥር" or "ቁጠር"
     const amountRegex = /([\d,]+\.\d+)\s*(?:Br\.|ብር)/i;
     const transactionNumberRegex = /በደረሰኝ ቁ?ጠ?ር\s+([a-zA-Z0-9]+)/i;
 
@@ -45,8 +43,8 @@ function parseCBEMessages(message) {
             transactions.push({
                 transactionNumber,
                 amount,
-                phoneNumber: null,
-                type: 'cbebirr'
+                phoneNumber: undefined, // <-- Change this from null to undefined
+                type: 'cbebirr' 
             });
         }
     }
@@ -89,13 +87,15 @@ exports.parseTransaction = async (req, res) => {
     const savedTransactions = [];
     for (const tx of transactionsToSave) {
       try {
-        const newTx = new Transaction(tx);
+       const newTx = new Transaction(tx);
         await newTx.save();
         savedTransactions.push(newTx);
       } catch (e) {
-        if (e.code === 11000) {
-          console.log(`Transaction ${tx.transactionNumber} already exists. Skipping.`);
-        } else {
+         if (e.code === 11000) {
+            console.log(`Transaction ${tx.transactionNumber} already exists. Skipping.`);
+            // This is the new part: return a clear error to the client
+            return res.status(409).json({ error: "Transaction already exists." });}
+             else {
           console.error("Error saving transaction:", e);
         }
       }
