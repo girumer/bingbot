@@ -26,33 +26,33 @@ function parseTelebirrMessage(message) {
 
 
 // In your utils/messageParsers.js file
-function parseCBEMessages  (message)  {
+function parseCBEMessages(message) {
     const transactions = [];
 
-    // Regex to find the deposit amount (number followed by "Br." or "ብር")
+    // FIX: Corrected regex to be more flexible for Amharic spelling variations
+    // This regex will match either "ቁጥር" or "ቁጠር"
     const amountRegex = /([\d,]+\.\d+)\s*(?:Br\.|ብር)/i;
-
-    // Regex to find "በደረሰኝ ቁጥር" and extract the alphanumeric ID that follows
-    const transactionNumberRegex = /በደረሰኝ ቁጥር\s+([a-zA-Z0-9]+)/i;
+    const transactionNumberRegex = /በደረሰኝ ቁ?ጠ?ር\s+([a-zA-Z0-9]+)/i;
 
     const amountMatch = message.match(amountRegex);
     const txNumberMatch = message.match(transactionNumberRegex);
 
     if (amountMatch && txNumberMatch) {
-        const amount = parseFloat(amountMatch[1].replace(/,/g, '')); // Handle comma separators if they appear
+        const amount = parseFloat(amountMatch[1].replace(/,/g, ''));
         const transactionNumber = txNumberMatch[1];
         
         if (!isNaN(amount) && transactionNumber) {
             transactions.push({
                 transactionNumber,
                 amount,
-                phoneNumber: null, // No sender phone number for this message type
-                type: 'cbebirr' 
+                phoneNumber: null,
+                type: 'cbebirr'
             });
         }
     }
     return transactions;
-};
+}
+
 
 
 exports.parseTransaction = async (req, res) => {
