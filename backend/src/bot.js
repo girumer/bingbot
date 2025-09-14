@@ -462,6 +462,21 @@ if (amount < 50) {
         delete userStates[chatId];
         return;
       }
+      const depositTransactions = await Transaction.find({
+            phoneNumber: user.phoneNumber,
+            method: 'deposit' // Make sure this matches your model field
+        });
+          const totalDeposits = depositTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+ if (totalDeposits < 50) {
+            bot.sendMessage(chatId, `❌ Withdrawal requires a total deposit of at least 50 Birr. Your total deposit is only ${totalDeposits} Birr.`);
+            delete userStates[chatId]; // Clear state
+            return;
+        }
+          if (user.Wallet < amount) {
+            bot.sendMessage(chatId, `❌ You have insufficient funds. Your current balance is ${user.Wallet} ETB.`);
+            delete userStates[chatId];
+            return;
+        }
 const txType = userStates[chatId].method; 
       const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/transactions/withdraw`, {
         username: user.username,
