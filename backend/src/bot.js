@@ -57,8 +57,10 @@ const commands = [
   { command: "deposit", description: "📥 Deposit funds" },
   { command: "withdraw", description: "📤 Withdraw" },
   { command: "history", description: "📜 game  history" },
+  { command: "changeusername", description: "✏️ Change your username" },
+  { command: "transferWalletToFrieand", description: "➡️ Transfer funds" }, 
   { command: "help", description: "ℹ️ Help info" },
-   { command: "changeusername", description: "✏️ Change your username" }
+   
 ];
 
 bot.setMyCommands(commands)
@@ -201,6 +203,16 @@ bot.onText(/\/changeusername/, async (msg) => {
     
     bot.sendMessage(chatId, "Please send your new username now. It must be a single word, without spaces.");
 });
+bot.onText(/\/transferWalletToFrieand/, async (msg) => {
+    const chatId = msg.chat.id;
+    const user = await BingoBord.findOne({ telegramId: chatId });
+    if (!user) {
+        bot.sendMessage(chatId, "You are not registered. Please use /start to begin.");
+        return;
+    }
+    userStates[chatId] = { step: "waitingForRecipientPhone" };
+    bot.sendMessage(chatId, "Please send the phone number of the user you want to transfer to (e.g., `251912345678`).");
+});
 // ----------------------
 // Handle Commands (like /balance, /play, etc.)
 // ----------------------
@@ -341,6 +353,68 @@ bot.on("message", async (msg) => {
         } catch (error) {
             console.error("Error changing username:", error);
             bot.sendMessage(chatId, "An error occurred while changing your username. Please try again later.");
+        }
+        return;
+    }
+    // NEW: Transfer Phone Number logic
+    if (step === "waitingForRecipientPhone") {
+        const recipientPhone = text.trim();
+        try {
+            const recipient = await BingoBord.findOne({ phoneNumber: recipientPhone });
+            if (!recipient) {
+                bot.sendMessage(chatId, "❌ No user found with that phone number. Please try again or use /transfer to start over.");
+                delete userStates[chatId];
+                return;
+            }
+            // Save recipient details to state and move to the next step
+            userStates[chatId] = { step: "waitingForTransferAmount", recipientId: recipient.telegramId, recipientPhone: recipient.phoneNumber };
+            bot.sendMessage(chatId, `Found user: **${recipient.username}**. How much do you want to transfer?`, { parse_mode: 'Markdown' });
+        } catch (error) {
+            console.error("Error finding recipient:", error);
+            bot.sendMessage(chatId, "An error occurred. Please try again later.");
+            delete userStates[chatId];
+        }
+        return;
+    }
+
+    // NEW: Transfer Amount logic
+    if (step === "waitingForTransferAmount") {
+        const amount = parseFloat(text);
+        const recipientId = userStates[chatId].recipientId;
+        const recipientPhone = userStates[chatId].recipientPhone;
+
+        delete userStates[chatId]; // Clear state immediately
+
+        if (isNaN(amount) || amount <= 0) {
+            bot.sendMessage(chatId, "⚠️ Please enter a valid positive number.");
+            return;
+        }
+
+        try {
+            const sender = await BingoBord.findOne({ telegramId: chatId });
+            const recipient = await BingoBord.findOne({ telegramId: recipientId });
+
+            if (!sender || !recipient) {
+                bot.sendMessage(chatId, "User not found. Please try again.");
+                return;
+            }
+            
+            if (sender.Wallet < amount) {
+                bot.sendMessage(chatId, `❌ You have insufficient funds. Your current balance is ${sender.Wallet} coins.`);
+                return;
+            }
+            
+            // Perform the transfer
+            sender.Wallet -= amount;
+            recipient.Wallet += amount;
+            
+            await Promise.all([sender.save(), recipient.save()]);
+
+            bot.sendMessage(chatId, `✅ Successfully transferred **${amount}** coins to **${recipient.username}**! Your new balance is ${sender.Wallet} coins.`, { parse_mode: 'Markdown' });
+            bot.sendMessage(recipientId, `🎉 You have received **${amount}** coins from **${sender.username}**! Your new balance is ${recipient.Wallet} coins.`, { parse_mode: 'Markdown' });
+        } catch (error) {
+            console.error("Error performing transfer:", error);
+            bot.sendMessage(chatId, "An error occurred during the transfer. Please try again later.");
         }
         return;
     }
