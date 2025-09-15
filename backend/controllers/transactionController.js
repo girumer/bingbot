@@ -4,20 +4,31 @@ const Transaction = require("../Models/Transaction");
 const Depoc=require('../Models/DepositSchema');
  
 // Utility function to parse Telebirr messages
+// Corrected parseTelebirrMessage function
 function parseTelebirrMessage(message) {
-  const transactions = [];
+    const transactions = [];
+    const lowerCaseMessage = message.toLowerCase();
 
-  const amountMatches = [...message.matchAll(/ETB\s*([\d,.]+(?:\.\d{2})?)/gi)];
-  const transMatches = [...message.matchAll(/transaction number\s*is\s*([A-Z0-9]+)/gi)];
+    // Regex to find the amount. This already works.
+    const amountMatches = [...message.matchAll(/ETB\s*([\d,.]+(?:\.\d{2})?)/gi)];
 
-  for (let i = 0; i < Math.min(amountMatches.length, transMatches.length); i++) {
-    const amount = parseFloat(amountMatches[i][1].replace(/,/g, ""));
-    const transactionNumber = transMatches[i][1].trim();
+    // FIX: Removed the word 'is' and made the regex more robust
+    // It now looks for "transaction number" or "transaction no"
+    const transMatches = [...lowerCaseMessage.matchAll(/(?:transaction number|transaction no)\s*([a-z0-9]+)/gi)];
 
-    transactions.push({ type: "telebirr", amount, transactionNumber });
-  }
+    for (let i = 0; i < Math.min(amountMatches.length, transMatches.length); i++) {
+        const amount = parseFloat(amountMatches[i][1].replace(/,/g, ""));
+        const transactionNumber = transMatches[i][1].trim();
 
-  return transactions;
+        transactions.push({ 
+            type: "telebirr", 
+            amount, 
+            transactionNumber, 
+            phoneNumber: undefined, // Consistent with CBE messages
+        });
+    }
+
+    return transactions;
 }
 
 // Utility function to parse CBE messages (you can expand if needed)
