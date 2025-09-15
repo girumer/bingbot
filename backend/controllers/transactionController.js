@@ -55,6 +55,7 @@ function parseCBEMessages(message) {
 
 exports.parseTransaction = async (req, res) => {
   try {
+    console.log('Received request body:', req.body); 
     const { message } = req.body;
     if (!message) return res.status(400).json({ error: "Message mustbe  required" });
 
