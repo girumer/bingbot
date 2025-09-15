@@ -40,39 +40,6 @@ function parseTelebirrMessage(message) {
 // In your utils/messageParsers.js file or where the function is located
 function parseCBEMessages(message) {
     const transactions = [];
-    const amountRegex = /([\d,]+\.\d+)\s*(?:Br\.|ብር)/i;
-     const transactionNumberRegex = /(?:በደረሰኝ ቁ?ጠ?ር|txn id|transaction number)\s*[:]?\s*([a-zA-Z0-9]+)/i;
-
-    const amountMatch = message.match(amountRegex);
-    const txNumberMatch = message.match(transactionNumberRegex);
-
-    if (amountMatch && txNumberMatch) {
-        const amount = parseFloat(amountMatch[1].replace(/,/g, ''));
-        const transactionNumber = txNumberMatch[1];
-        
-        if (!isNaN(amount) && transactionNumber) {
-            transactions.push({
-                transactionNumber,
-                amount,
-                phoneNumber: undefined, // <-- Change this from null to undefined
-                type: 'cbebirr' 
-            });
-        }
-    }
-    return transactions;
-}
-
-
-
-// Ensure these parser functions are defined or imported at the top of your file
-// function parseTelebirrMessage(message) { ... }
-// function parseCBEMessages(message) { ... }
-
-// Ensure these parser functions are defined or imported at the top of your file
-// function parseTelebirrMessage(message) { ... }
-// function parseCBEMessages(message) { ... }
-function parseCBEMessages(message) {
-    const transactions = [];
     const lowerCaseMessage = message.toLowerCase();
     
     // Regex to find the amount
@@ -94,6 +61,72 @@ function parseCBEMessages(message) {
     return transactions;
 }
 
+
+// Ensure these parser functions are defined or imported at the top of your file
+// function parseTelebirrMessage(message) { ... }
+// function parseCBEMessages(message) { ... }
+
+// Ensure these parser functions are defined or imported at the top of your file
+// function parseTelebirrMessage(message) { ... }
+// function parseCBEMessages(message) { ... }
+
+exports.parseTransaction = async (req, res) => {
+    try {
+        console.log('Received request body:', req.body);
+        const { key: message } = req.body;
+        console.log('messsage is:', message);
+        if (!message) return res.status(400).json({ error: "Message is required" });
+
+        let transactions = [];
+        const lowerCaseMessage = message.toLowerCase();
+
+        // New, more robust logic based on regex matches
+        const cbebirrRegex = /(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|by receipt number)\s*([a-zA-Z0-9]+)/i;
+        
+        // Check for CBE regex pattern first (more specific)
+        if (lowerCaseMessage.match(cbebirrRegex)) {
+            transactions = parseCBEMessages(message);
+        }
+        // Then check for Telebirr keyword (since it seems to be consistent)
+        else if (lowerCaseMessage.includes("telebirr")) {
+            transactions = parseTelebirrMessage(message);
+        } else {
+            return res.status(400).json({ error: "Unsupported transaction type" });
+        }
+
+        if (transactions.length === 0) {
+            return res.status(400).json({ error: "No transaction found in message" });
+        }
+
+        const transactionsToSave = transactions.map(tx => {
+            return {
+                ...tx,
+                method: "depositpend"
+            };
+        });
+
+        const savedTransactions = [];
+        for (const tx of transactionsToSave) {
+            try {
+                const newTx = new Transaction(tx);
+                await newTx.save();
+                savedTransactions.push(newTx);
+            } catch (e) {
+                if (e.code === 11000) {
+                    console.log(`Transaction ${tx.transactionNumber} already exists. Skipping.`);
+                    return res.status(409).json({ error: "Transaction already exists." });
+                } else {
+                    console.error("Error saving transaction:", e);
+                }
+            }
+        }
+        res.json({ success: true, transactions: savedTransactions });
+
+    } catch (err) {
+        console.error("Server error:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+};
 // Add this constant at the top of your file for easy modification
  // 10% bonus
 // Add this constant at the top of your file for easy modification
