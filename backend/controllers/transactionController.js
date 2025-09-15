@@ -42,25 +42,29 @@ function parseCBEMessages(message) {
     const transactions = [];
     const lowerCaseMessage = message.toLowerCase();
     
-    // Regex to find the amount
-    const amountRegex = /([\d,]+\.\d+)\s*(?:br\.|ብር)/gi;
-    const amountMatches = [...message.matchAll(amountRegex)];
-    
-    // FIX: This is the corrected regex for CBE
-    const transRegex = /(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|by receipt number)\s*([a-zA-Z0-9]+)/gi;
-    const transMatches = [...lowerCaseMessage.matchAll(transRegex)];
+    // Regex to find the amount and currency.
+    const amountMatches = [...message.matchAll(/([\d,]+\.\d+)\s*(?:br\.|ብር)/gi)];
 
-    console.log('Amount Matches:', amountMatches); // <-- ADD THIS LINE
-    console.log('Transaction Matches:', transMatches); // <-- ADD THIS LINE
-    
-    // Your original loop condition
+    // Corrected regex for CBE that handles the multiple Amharic characters
+    const transMatches = [...lowerCaseMessage.matchAll(/(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|by receipt number)\s*([a-zA-Z0-9]+)/gi)];
+
+    // This loop ensures that we only process a transaction if both parts are found
     for (let i = 0; i < Math.min(amountMatches.length, transMatches.length); i++) {
-        // ...
+        const amount = parseFloat(amountMatches[i][1].replace(/,/g, ""));
+        const transactionNumber = transMatches[i][1].trim();
+        
+        // Push the new transaction object to the transactions array
+        transactions.push({ 
+            type: "cbebirr", 
+            amount, 
+            transactionNumber, 
+            phoneNumber: undefined, 
+        });
     }
 
+    // This is the crucial part: The function must return the array
     return transactions;
 }
-
 
 // Ensure these parser functions are defined or imported at the top of your file
 // function parseTelebirrMessage(message) { ... }
