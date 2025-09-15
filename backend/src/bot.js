@@ -94,7 +94,7 @@ bot.onText(/\/(balance|play|deposit|history|help|withdraw)/, async (msg, match) 
         bot.sendMessage(chatId, "🏠 Main Menu:", mainMenu);
         break;
       case "balance":
-        bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} coins`);
+        bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} ETB`);
         break;
       case "withdraw":
         bot.sendMessage(chatId, "Choose your withdrawal method:", {
@@ -231,7 +231,7 @@ bot.onText(/\/(|balance|play|deposit|history|help|withdraw)/, async (msg, match)
   switch (cmd) {
   
     case "balance":
-      bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} coins`);
+      bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} ETB`);
       break;
        case "withdraw":
       bot.sendMessage(chatId, "Choose your withdrawal method:", {
@@ -400,7 +400,7 @@ bot.on("message", async (msg) => {
             }
             
             if (sender.Wallet < amount) {
-                bot.sendMessage(chatId, `❌ You have insufficient funds. Your current balance is ${sender.Wallet} coins.`);
+                bot.sendMessage(chatId, `❌ You have insufficient funds. Your current balance is ${sender.Wallet} ETB.`);
                 return;
             }
             
@@ -410,8 +410,8 @@ bot.on("message", async (msg) => {
             
             await Promise.all([sender.save(), recipient.save()]);
 
-            bot.sendMessage(chatId, `✅ Successfully transferred **${amount}** coins to **${recipient.username}**! Your new balance is ${sender.Wallet} coins.`, { parse_mode: 'Markdown' });
-            bot.sendMessage(recipientId, `🎉 You have received **${amount}** coins from **${sender.username}**! Your new balance is ${recipient.Wallet} coins.`, { parse_mode: 'Markdown' });
+            bot.sendMessage(chatId, `✅ Successfully transferred **${amount}** birr to **${recipient.username}**! Your new balance is ${sender.Wallet} Birr.`, { parse_mode: 'Markdown' });
+            bot.sendMessage(recipientId, `🎉 You have received **${amount}** birr from **${sender.username}**! Your new balance is ${recipient.Wallet} Birr.`, { parse_mode: 'Markdown' });
         } catch (error) {
             console.error("Error performing transfer:", error);
             bot.sendMessage(chatId, "An error occurred during the transfer. Please try again later.");
@@ -574,7 +574,7 @@ bot.on('callback_query', async (callbackQuery) => {
 
   switch (data) {
     case "balance":
-      bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} coins`);
+      bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} Birr`);
       break;
 
     case "history":
@@ -667,7 +667,7 @@ Account: \`${process.env.CBE_ACCOUNT}\`
 2\\. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልክት\\(sms\\) ከ TeleBirr ይደርሳችኋል
 3\\. የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) ሙሉዉን ኮፒ\\(copy\\) በማረግ ወደዚህ ቦት ይላኩ
 ⚠️ አስፈላጊ ማሳሰቢያ:
-•1\\. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) ሙሉዉን መላክ ያረጋግጡ
+•1\\. ከcbebirr የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) ሙሉዉን መላክ ያረጋግጡ
 •2\\. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
 •     ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
 •     ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ`;
@@ -710,7 +710,7 @@ case "room_20":
 case "room_30":
   const stake = parseInt(data.split("_")[1]);
   if (user.Wallet < stake) {
-    bot.sendMessage(chatId, "⚠️ Not enough coins. Earn more to play.");
+    bot.sendMessage(chatId, "⚠️ Not enough birr. Earn more to play.");
     return;
   }
 

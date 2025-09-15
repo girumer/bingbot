@@ -64,62 +64,71 @@ function parseCBEMessages(message) {
 
 
 
+// Ensure these parser functions are defined or imported at the top of your file
+// function parseTelebirrMessage(message) { ... }
+// function parseCBEMessages(message) { ... }
+
+// Ensure these parser functions are defined or imported at the top of your file
+// function parseTelebirrMessage(message) { ... }
+// function parseCBEMessages(message) { ... }
+
 exports.parseTransaction = async (req, res) => {
-  try {
-    console.log('Received request body:', req.body); 
-   const { key: message } = req.body;
-   console.log('messsage is:', message); 
-    if (!message) return res.status(400).json({ error: "Message mustbe  required" });
+    try {
+        console.log('Received request body:', req.body);
+        const { key: message } = req.body;
+        console.log('messsage is:', message);
+        if (!message) return res.status(400).json({ error: "Message is required" });
 
-    let transactions = [];
+        let transactions = [];
+        const lowerCaseMessage = message.toLowerCase();
 
-    // Check which type of message it is and call the appropriate parser
-    if (message.toLowerCase().includes("telebirr")) {
-      transactions = parseTelebirrMessage(message);
-    } else if (message.toLowerCase().includes("cbe") || message.toLowerCase().includes("commercial bank")) {
-      transactions = parseCBEMessages(message);
-    } else {
-      return res.status(400).json({ error: "Unsupported transaction type" });
-    }
-
-    if (transactions.length === 0) {
-      return res.status(400).json({ error: "No transaction found in message" });
-    }
-
-    // --- FIX: Add the required 'method' field to each transaction ---
-    const transactionsToSave = transactions.map(tx => {
-      // Create a new object with all the existing properties from `tx`
-      // and add the `method` field which is required by your model.
-      return {
-        ...tx,
-        method: "depositpend"
-      };
-    });
-
-    // Save each transaction to DB
-    const savedTransactions = [];
-    for (const tx of transactionsToSave) {
-      try {
-       const newTx = new Transaction(tx);
-        await newTx.save();
-        savedTransactions.push(newTx);
-      } catch (e) {
-         if (e.code === 11000) {
-            console.log(`Transaction ${tx.transactionNumber} already exists. Skipping.`);
-            // This is the new part: return a clear error to the client
-            return res.status(409).json({ error: "Transaction already exists." });}
-             else {
-          console.error("Error saving transaction:", e);
+        // New, more robust logic based on regex matches
+        // Check for CBE regex pattern first (more specific)
+        if (lowerCaseMessage.match(/(?:በደረሰኝ ቁ?ጠ?ር|txn id|by receipt number)\s*([a-z0-9]+)/i)) {
+            transactions = parseCBEMessages(message);
         }
-      }
+        // Then check for Telebirr keyword (since it seems to be consistent)
+        else if (lowerCaseMessage.includes("telebirr")) {
+            transactions = parseTelebirrMessage(message);
+        } else {
+            return res.status(400).json({ error: "Unsupported transaction type" });
+        }
+
+        if (transactions.length === 0) {
+            return res.status(400).json({ error: "No transaction found in message" });
+        }
+
+        // --- Add the required 'method' field to each transaction ---
+        const transactionsToSave = transactions.map(tx => {
+            return {
+                ...tx,
+                method: "depositpend"
+            };
+        });
+
+        // Save each transaction to DB
+        const savedTransactions = [];
+        for (const tx of transactionsToSave) {
+            try {
+                const newTx = new Transaction(tx);
+                await newTx.save();
+                savedTransactions.push(newTx);
+            } catch (e) {
+                if (e.code === 11000) {
+                    console.log(`Transaction ${tx.transactionNumber} already exists. Skipping.`);
+                    return res.status(409).json({ error: "Transaction already exists." });
+                } else {
+                    console.error("Error saving transaction:", e);
+                    // You might want to handle other errors differently
+                }
+            }
+        }
+        res.json({ success: true, transactions: savedTransactions });
+
+    } catch (err) {
+        console.error("Server error:", err);
+        res.status(500).json({ error: "Server error" });
     }
-
-    res.json({ success: true, transactions: savedTransactions });
-
-  } catch (err) {
-    console.error("Server error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
 };
 // Add this constant at the top of your file for easy modification
  // 10% bonus
