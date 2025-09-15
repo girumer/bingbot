@@ -304,28 +304,56 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
 
 
   // --- DISCONNECT ---
-  socket.on("disconnect", () => {
-    // ✅ Get the clientId for the disconnecting socket
+// --- DISCONNECT ---
+socket.on("disconnect", () => {
+    // Get the clientId for the disconnecting socket
     const clientId = socketIdToClientId.get(socket.id);
-    if (!clientId) return; // Ignore if client ID is not found
+    if (!clientId) {
+        console.log(`Socket ID ${socket.id} not found in map.`);
+        return; // Ignore if client ID is not found
+    }
 
-    // ✅ Clean up the global maps
+    // Clean up the global maps
     socketIdToClientId.delete(socket.id);
     clientIdToSocketId.delete(clientId);
 
-    // ✅ Clean up from rooms based on clientId
+    // Clean up from rooms based on clientId
     for (const roomId in rooms) {
-      if (rooms[roomId]?.players?.[clientId]) {
-        delete rooms[roomId].players[clientId];
-        io.to(roomId).emit("updateSelectedCartelas", {
-          selectedIndexes: rooms[roomId].selectedIndexes,
-        });
-        io.to(roomId).emit("playerCount", {
-          totalPlayers: Object.keys(rooms[roomId].players).length,
-        });
-      }
+        const room = rooms[roomId];
+        if (!room) continue;
+
+        // Check if the player exists in this room
+        if (room.players[clientId]) {
+            // Delete player's cartelas and player data to prevent memory leak
+            if (room.playerCartelas[clientId]) {
+                const disconnectedCartelas = room.playerCartelas[clientId];
+                
+                // Clean up selectedIndexes array
+                room.selectedIndexes = room.selectedIndexes.filter(
+                    (index) => !disconnectedCartelas.includes(index)
+                );
+                
+                // Delete the player's cartelas from the room object
+                delete room.playerCartelas[clientId];
+            }
+            
+            // Delete the player from the players list
+            delete room.players[clientId];
+
+            // Emit updates to the room
+            io.to(roomId).emit("updateSelectedCartelas", {
+                selectedIndexes: room.selectedIndexes,
+            });
+            const activePlayers = Object.values(room.playerCartelas).filter(
+                (arr) => arr.length > 0
+            ).length;
+            io.to(roomId).emit("playerCount", { totalPlayers: activePlayers });
+            
+            // Log the cleanup
+            console.log(`Cleaned up player ${clientId} from room ${roomId}.`);
+        }
     }
-  });
+});
 });
 
 // ================= GAME FUNCTIONS =================
