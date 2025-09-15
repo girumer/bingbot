@@ -83,8 +83,10 @@ exports.parseTransaction = async (req, res) => {
         const lowerCaseMessage = message.toLowerCase();
 
         // New, more robust logic based on regex matches
+        const cbebirrRegex = /(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|by receipt number)\s*([a-zA-Z0-9]+)/i;
+        
         // Check for CBE regex pattern first (more specific)
-        if (lowerCaseMessage.match(/(?:በደረሰኝ ቁ?ጠ?ር|txn id|by receipt number)\s*([a-z0-9]+)/i)) {
+        if (lowerCaseMessage.match(cbebirrRegex)) {
             transactions = parseCBEMessages(message);
         }
         // Then check for Telebirr keyword (since it seems to be consistent)
@@ -98,7 +100,6 @@ exports.parseTransaction = async (req, res) => {
             return res.status(400).json({ error: "No transaction found in message" });
         }
 
-        // --- Add the required 'method' field to each transaction ---
         const transactionsToSave = transactions.map(tx => {
             return {
                 ...tx,
@@ -106,7 +107,6 @@ exports.parseTransaction = async (req, res) => {
             };
         });
 
-        // Save each transaction to DB
         const savedTransactions = [];
         for (const tx of transactionsToSave) {
             try {
@@ -119,7 +119,6 @@ exports.parseTransaction = async (req, res) => {
                     return res.status(409).json({ error: "Transaction already exists." });
                 } else {
                     console.error("Error saving transaction:", e);
-                    // You might want to handle other errors differently
                 }
             }
         }
