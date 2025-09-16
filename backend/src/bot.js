@@ -503,7 +503,7 @@ const txType = userStates[chatId].method;
       }
      const depositAmount = userStates[chatId].amount;
       const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/deposit`, {
-        message: text,
+        transactionNumber: text,
         phoneNumber: user.phoneNumber,
          amount: depositAmount,
           type: userStates[chatId].depositMethod

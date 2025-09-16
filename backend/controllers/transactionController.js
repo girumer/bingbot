@@ -141,39 +141,30 @@ const isAmountMismatch = (dbAmount, requestAmount) => {
 
 exports.depositAmount = async (req, res) => {
     try {
-        let { message, phoneNumber, amount, type } = req.body;
-        message = message ? message.trim() : null;
+        // ✅ NEW: We now accept transactionNumber directly in the request body
+        let { transactionNumber, phoneNumber, amount, type } = req.body;
+        
+        // Trim and parse inputs
+        transactionNumber = transactionNumber ? transactionNumber.trim() : null;
         phoneNumber = phoneNumber ? phoneNumber.trim() : null;
         amount = parseFloat(amount);
-        const user = await BingoBord.findOne({ phoneNumber });
-        
-        if (!message || !phoneNumber || isNaN(amount) || amount <= 0 || !type || !["telebirr", "cbebirr"].includes(type.toLowerCase())) {
+
+        // ✅ UPDATED: Validate the new required parameter
+        if (!transactionNumber || !phoneNumber || isNaN(amount) || amount <= 0 || !type || !["telebirr", "cbebirr"].includes(type.toLowerCase())) {
             return res.status(400).json({ error: "Invalid or missing parameters." });
         }
+        
+        const user = await BingoBord.findOne({ phoneNumber });
         
         if (!user) {
             console.error(`User not found for phone number: ${phoneNumber}`);
             return res.status(404).json({ error: "User not found. Please register or provide a valid phone number." });
         }
         
-        let transactionNumber;
-        if (type.toLowerCase() === "telebirr") {
-            // Your existing telebirr regex
-            const transMatch = message.match(/transaction number is\s*(\w+)/i);
-            if (transMatch) transactionNumber = transMatch[1].trim();
-        } else if (type.toLowerCase() === "cbebirr") {
-            // FIX: Use the correct, multi-language regex for CBE
-            const transMatch = message.match(/(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|by receipt number)\s*([a-zA-Z0-9]+)/i);
-            if (transMatch) transactionNumber = transMatch[1].trim();
-        }
-        
-        console.log("Parsed transaction number:", transactionNumber); // <-- ADD THIS TO CHECK
+        console.log("Received transaction number directly:", transactionNumber); 
 
-        if (!transactionNumber) {
-            return res.status(400).json({ error: "Failed to extract transaction number from message." });
-        }
-        
-        // Step 1: Find the PENDING transaction. This is the crucial security check.
+        // ✅ The core security check remains the same
+        // Step 1: Find the PENDING transaction using the provided transactionNumber
         const updatedTx = await Transaction.findOne({
             transactionNumber: transactionNumber,
             method: "depositpend" // This ensures it can't be claimed twice
@@ -189,12 +180,27 @@ exports.depositAmount = async (req, res) => {
             return res.status(400).json({ error: "Amount mismatch. Please check your deposit amount." });
         }
         if (updatedTx.type !== type) {
-            return res.status(400).json({ error: "type mismatch. Please check your deposit type." });
+            return res.status(400).json({ error: "Type mismatch. Please check your deposit type." });
         }
 
-        // ... rest of your code to update wallet, handle referral, and delete transaction ...
+        // Step 3: If all checks pass, update the user's wallet
+        user.Wallet += amount;
 
-        // Step 4: Delete the pending transaction.
+        // Step 4: Handle referral bonus
+        if (user.referal) {
+            const referer = await BingoBord.findOne({ telegramId: user.referal });
+            if (referer) {
+                const bonusAmount = amount * 0.05;
+                referer.Wallet += bonusAmount;
+                await referer.save();
+                // ✅ You may want to log this referral transaction for a complete record
+            }
+        }
+
+        // Step 5: Save the user's updated wallet
+        await user.save();
+        
+        // Step 6: Delete the pending transaction.
         // This ensures it can never be used again and cleans your database.
         await Transaction.deleteOne({ transactionNumber: transactionNumber });
         
@@ -207,7 +213,7 @@ exports.depositAmount = async (req, res) => {
 
     } catch (err) {
         console.error("Deposit confirmation error:", err);
-        res.status(500).json({ error: "check the amount you deposit." });
+        res.status(500).json({ error: "An unexpected error occurred. Please check the amount you deposited and try again." });
     }
 };
 
