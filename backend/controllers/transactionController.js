@@ -87,18 +87,19 @@ exports.parseTransaction = async (req, res) => {
         console.log('Received request body:', req.body);
         const { key: message } = req.body;
         console.log('messsage is:', message);
-        if (!message) return res.status(400).json({ error: "Message is required" });
+        
+        if (!message) {
+            return res.status(400).json({ error: "Message is required" });
+        }
 
         let transactions = [];
-        const lowerCaseMessage = message.toLowerCase();
+        const telebirrRegex = /telebirr/i; // New regex for case-insensitive check
 
         const cbebirrRegex = /(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|by receipt number)\s*([a-zA-Z0-9]+)/i;
         
-        if (lowerCaseMessage.match(cbebirrRegex)) {
+        if (message.match(cbebirrRegex)) {
             transactions = parseCBEMessages(message);
-        }
-        else if (lowerCaseMessage.includes("telebirr")) {
-            // This will now use the updated parser
+        } else if (message.match(telebirrRegex)) { // Check against the original message
             transactions = parseTelebirrMessage(message);
         } else {
             return res.status(400).json({ error: "Unsupported transaction type" });
@@ -108,20 +109,43 @@ exports.parseTransaction = async (req, res) => {
             return res.status(400).json({ error: "No transaction found in message" });
         }
         
-        // ... (The rest of your code for saving to the database is correct)
+        const transactionToSave = transactions[0];
+
+        const existingTransaction = await Transaction.findOne({ transactionNumber: transactionToSave.transactionNumber });
+        if (existingTransaction) {
+            console.log(`Transaction ${transactionToSave.transactionNumber} already exists. Skipping.`);
+            return res.status(409).json({ error: "Transaction already exists." });
+        }
+
+        const newTransaction = new Transaction({
+            amount: transactionToSave.amount,
+            transactionNumber: transactionToSave.transactionNumber,
+            method: "depositpend",
+            type: transactionToSave.type
+        });
         
+        await newTransaction.save();
+        
+        console.log("Transaction saved as pending:", newTransaction.transactionNumber);
+        
+        return res.status(200).json({
+            message: "Transaction received and saved as pending. Please confirm your deposit.",
+            transactionNumber: newTransaction.transactionNumber,
+        });
+
     } catch (err) {
+        if (err.code === 11000) {
+            console.log(`Duplicate transaction encountered: ${err.message}`);
+            return res.status(409).json({ error: "Transaction already exists." });
+        }
         console.error("Server error:", err);
-        res.status(500).json({ error: "Server error" });
+        return res.status(500).json({ error: "Server error" });
     }
 };
 // Add this constant at the top of your file for easy modification
  // 10% bonus
 // Add this constant at the top of your file for easy modification
-const REFERRAL_BONUS_PERCENTAGE = 0.10; // 10% bonus
-const isAmountMismatch = (dbAmount, requestAmount) => {
-  return parseFloat(dbAmount) !== parseFloat(requestAmount);
-};
+
 
 exports.depositAmount = async (req, res) => {
     try {
