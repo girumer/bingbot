@@ -305,36 +305,61 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
 
   // --- DISCONNECT ---
 // --- DISCONNECT ---
+// --- DISCONNECT ---
 socket.on("disconnect", () => {
-    // ✅ CHANGED: Use socket.id directly as the key
-    for (const roomId in rooms) {
-      const room = rooms[roomId];
-      if (!room || !room.players[socket.id]) continue;
+  // First, find the clientId associated with this socket.
+  const clientId = socketIdToClientId.get(socket.id);
+  if (!clientId) {
+    console.log(`Disconnected socket ${socket.id}, but no clientId was found. Already cleaned up?`);
+    return;
+  }
 
-      if (room.playerCartelas[socket.id]) {
-        const disconnectedCartelas = room.playerCartelas[socket.id];
-        room.selectedIndexes = room.selectedIndexes.filter(
-          (index) => !disconnectedCartelas.includes(index)
-        );
-        delete room.playerCartelas[socket.id];
-      }
+  // Then, find which room this player belongs to and clean up their data.
+  for (const roomId in rooms) {
+    const room = rooms[roomId];
+    if (!room) continue;
 
-      delete room.players[socket.id];
+    // Check if the disconnected client exists in this room's players list.
+    if (room.players[clientId]) {
+      console.log(`Disconnecting player ${clientId} from room ${roomId}.`);
 
-      const activePlayers = Object.values(room.playerCartelas).filter(
-        (arr) => arr.length > 0
-      ).length;
+      // 1. Remove their cartelas from the global selectedIndexes list
+      if (room.playerCartelas[clientId] && room.playerCartelas[clientId].length > 0) {
+        const disconnectedCartelas = room.playerCartelas[clientId];
+        room.selectedIndexes = room.selectedIndexes.filter(
+          (index) => !disconnectedCartelas.includes(index)
+        );
+      }
 
-      if (activePlayers === 0) {
-        console.log(`Last player left room ${roomId}. Resetting game state.`);
-        resetRoom(roomId);
-      } else {
-        io.to(roomId).emit("updateSelectedCartelas", { selectedIndexes: room.selectedIndexes });
-        io.to(roomId).emit("playerCount", { totalPlayers: activePlayers });
-      }
-      console.log(`Cleaned up player ${socket.id} from room ${roomId}.`);
-    }
-  });
+      // 2. Unconditionally delete the player's data from the room.
+      delete room.playerCartelas[clientId];
+      delete room.players[clientId];
+
+      // 3. Update the total player count in the room.
+      const totalPlayersInRoom = Object.keys(room.players).length;
+      io.to(roomId).emit("playerCount", { totalPlayers: totalPlayersInRoom });
+
+      // 4. Check if we should reset the room.
+      // This happens if there are no more active players with cartelas.
+      const playersWithCartela = Object.values(room.playerCartelas).filter(
+        (arr) => arr.length > 0
+      ).length;
+
+      if (playersWithCartela === 0 && room.activeGame !== true) {
+        console.log(`Last active player left room ${roomId}. Resetting game state.`);
+        resetRoom(roomId);
+      } else {
+        // If the game is not reset, just update the selected cartelas for remaining players.
+        io.to(roomId).emit("updateSelectedCartelas", { selectedIndexes: room.selectedIndexes });
+      }
+
+      // 5. Clean up the global maps
+      socketIdToClientId.delete(socket.id);
+      clientIdToSocketId.delete(clientId);
+      break; // Exit the loop once the player is found and cleaned up
+    }
+  }
+});
 });
 function resetRoom(roomId) {
   const room = rooms[roomId];
