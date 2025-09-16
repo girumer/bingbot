@@ -24,16 +24,19 @@ const parseTelebirrMessage = (message) => {
         const sender = amountMatch[2].trim();
         const transactionNumber = txNumberMatch[1];
         
-        transactions.push({
-            transactionNumber: transactionNumber, // This is now case-sensitive
-            amount: amount,
-            sender: sender,
-            timestamp: new Date()
+        transactions.push({ 
+            type: "telebirr", 
+            amount, 
+            transactionNumber, 
+            phoneNumber: undefined, // Consistent with CBE messages
         });
     }
     
     return transactions;
 };
+
+
+
 
 // Utility function to parse CBE messages (you can expand if needed)
 // utils/messageParsers.js
