@@ -310,19 +310,30 @@ socket.on("disconnect", () => {
   // First, find the clientId associated with this socket.
   const clientId = socketIdToClientId.get(socket.id);
   if (!clientId) {
-    console.log(`Disconnected socket ${socket.id}, but no clientId was found. Already cleaned up?`);
+    console.log(`Disconnected socket ${socket.id}, but no clientId was found.`);
     return;
   }
 
   // Then, find which room this player belongs to and clean up their data.
   for (const roomId in rooms) {
     const room = rooms[roomId];
-    if (!room) continue;
+    if (!room || !room.players[clientId]) continue;
 
-    // Check if the disconnected client exists in this room's players list.
-    if (room.players[clientId]) {
-      console.log(`Disconnecting player ${clientId} from room ${roomId}.`);
+    console.log(`Disconnecting player ${clientId} from room ${roomId}.`);
 
+    // ✅ NEW LOGIC: Check if an active game is in progress
+    if (room.activeGame === true) {
+      console.log(`Player ${clientId} disconnected from an active game. Their cartelas will be preserved.`);
+      // Do not delete their cartelas or player data. The player might rejoin.
+      // Just remove their socket from the room.
+      
+      // Clean up the global maps for the disconnected socket
+      socketIdToClientId.delete(socket.id);
+      clientIdToSocketId.delete(clientId);
+      break; // Exit the loop
+    } else {
+      // The game is not active, so we can safely delete their data.
+      console.log(`Player ${clientId} disconnected before game started. Deleting their data.`);
       // 1. Remove their cartelas from the global selectedIndexes list
       if (room.playerCartelas[clientId] && room.playerCartelas[clientId].length > 0) {
         const disconnectedCartelas = room.playerCartelas[clientId];
@@ -330,7 +341,6 @@ socket.on("disconnect", () => {
           (index) => !disconnectedCartelas.includes(index)
         );
       }
-
       // 2. Unconditionally delete the player's data from the room.
       delete room.playerCartelas[clientId];
       delete room.players[clientId];
@@ -338,18 +348,16 @@ socket.on("disconnect", () => {
       // 3. Update the total player count in the room.
       const totalPlayersInRoom = Object.keys(room.players).length;
       io.to(roomId).emit("playerCount", { totalPlayers: totalPlayersInRoom });
-
+      
       // 4. Check if we should reset the room.
-      // This happens if there are no more active players with cartelas.
       const playersWithCartela = Object.values(room.playerCartelas).filter(
         (arr) => arr.length > 0
       ).length;
 
-      if (playersWithCartela === 0 && room.activeGame !== true) {
+      if (playersWithCartela === 0) {
         console.log(`Last active player left room ${roomId}. Resetting game state.`);
         resetRoom(roomId);
       } else {
-        // If the game is not reset, just update the selected cartelas for remaining players.
         io.to(roomId).emit("updateSelectedCartelas", { selectedIndexes: room.selectedIndexes });
       }
 
