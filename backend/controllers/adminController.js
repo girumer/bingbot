@@ -127,7 +127,52 @@ exports.registerUser = async (req, res) => {
   }
 };
 
+exports.broadcastToAllCustomers = async (req, res) => {
+    try {
+        const allUsers = await BingoBord.find({}, 'telegramId');
 
+        // The URL of the image you want to send
+        const photoUrl = 'YOUR_IMAGE_URL_HERE'; // ❌ IMPORTANT: Replace this with your actual image URL
+
+        // The text message will now be the caption for the photo
+        const message = `ውድ የአደይ ቢንጎ ደንበኞች በቴሌ ብርም ሆነ በሲቢ ብር ገንዘብ ስትልኩ የሚከተለውን መመርያ ይከተሉ
+Account: 0983994214
+1. ከላይ ባለው ቁጥር TeleBirr or CBEBirr በመጠቀም   ብር ያስገቡ
+2. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልክት(sms) ከ TeleBirr or CBEBirr ይደርሳችኋል
+3. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) የደረሳችሁን ትራንዛክሸን ቁጥር  ብቻ ኮፒ አርጋችሁ ወደዚህ ቦት ላኩ(copy) በማረግ ወደዚህ ቦት ይላኩ
+⚠️ አስፈላጊ ማሳሰቢያ:
+•1. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን መላክ ያረጋግጡ
+•2. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
+•     ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
+•     ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ
+እገዛ ከፈለጉ በሚከተለው ቴሌግራም ቻናል ያናግሩን @Adeyebingosupport?`;
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const user of allUsers) {
+            if (user.telegramId) {
+                try {
+                    await bot.sendPhoto(user.telegramId, photoUrl, { caption: message });
+                    successCount++;
+                } catch (error) {
+                    console.error(`Failed to send photo to user ${user.telegramId}:`, error.message);
+                    failCount++;
+                }
+            }
+        }
+
+        console.log(`Broadcast completed. Messages and photos sent to ${successCount} users, failed for ${failCount} users.`);
+
+        return res.status(200).json({
+            message: `Broadcast initiated. Messages and photos sent to ${successCount} users, failed for ${failCount}.`
+        });
+
+    } catch (err) {
+        console.error("Broadcast failed:", err);
+        return res.status(500).json({ error: "Failed to broadcast message." });
+    }
+};
 // Register user (admin can choose role)
 
 // Delete user by ID

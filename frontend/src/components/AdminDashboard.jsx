@@ -218,6 +218,14 @@ const handleLogout = () => {
   localStorage.removeItem("admintoken"); // remove admin token
   navigate("/Logins"); // redirect to login page
 };
+const handlebrodcstat=async ()=>{
+   const { data } = await axios.post(
+      `${BACKEND_URL}/admin/brodcast`,
+      {},
+      { headers: authHeader }
+    );
+
+}
   if (loading) return <div className="admin-container">Loading…</div>;
   if (errMsg) return <div className="admin-container" style={{ color: "red" }}>{errMsg}</div>;
 
@@ -227,6 +235,7 @@ const handleLogout = () => {
 <div className="admin-header">
   <h1>Admin Dashboard</h1>
   <button className="logout-btn" onClick={handleLogout}>Logout</button>
+    <button className="logout-btn" onClick={handlebrodcstat}>brodcast</button>
 </div>
       {/* Summary */}
       <section className="summary-grid">
