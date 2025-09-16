@@ -496,54 +496,7 @@ function startNumberGenerator(roomId) {
 
 // A central function to handle the countdown before a game starts
 // Corrected startCountdown function
-function startCountdown(roomId, seconds) {
-    const room = rooms[roomId];
-    if (!room) return;
-    
-    let timeLeft = seconds;
-    if (room.timerInterval) return;
-    
-    room.timerInterval = setInterval(async () => {
-        timeLeft -= 1;
-        room.timer = timeLeft;
-        // CHANGE THIS LINE: Emit with a new event name
-        io.to(roomId).emit("countdownTick", timeLeft);
-        
-        if (timeLeft <= 0) {
-            clearInterval(room.timerInterval);
-            room.timerInterval = null;
-            
-            const playersWithCartela = Object.values(room.playerCartelas).filter(
-                (arr) => arr.length > 0
-            ).length;
 
-            if (playersWithCartela < 2) {
-                console.log(`Countdown finished but not enough players in room ${roomId}. Resetting.`);
-                resetRoom(roomId);
-                return;
-            }
-            
-            room.gameId = generateGameId();
-            room.activeGame = true;
-            
-            io.to(roomId).emit("activeGameStatus", { activeGame: true, gameId: room.gameId });
-
-            const totalCartelas = Object.values(room.playerCartelas).reduce(
-                (sum, arr) => sum + arr.length,
-                0
-            );
-            room.totalAward = totalCartelas * Number(roomId) * 0.8;
-            io.to(roomId).emit("gameStarted", {
-                totalAward: room.totalAward,
-                totalPlayers: Object.keys(room.players).length,
-                gameId: room.gameId,
-            });
-            console.log("Game started with ID: ", room.gameId);
-            
-            startNumberGenerator(roomId);
-        }
-    }, 1000);
-}
 
 // --- WIN LOGIC ---
 function findWinningPattern(cartelaData, calledNumbers) {
