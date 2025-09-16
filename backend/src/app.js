@@ -379,7 +379,7 @@ function startNumberGenerator(roomId) {
   
   // Create an array with all 75 numbers
   const numbers = Array.from({ length: 75 }, (_, i) => i + 1);
-  
+   console.log(`[Room ${roomId}] Shuffled numbers:`, numbers);
   // Fisher-Yates shuffle algorithm to randomize the array
   for (let i = numbers.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
