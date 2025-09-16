@@ -305,86 +305,120 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
 
   // --- DISCONNECT ---
 // --- DISCONNECT ---
+// --- DISCONNECT ---
 socket.on("disconnect", () => {
-    // Get the clientId for the disconnecting socket
     const clientId = socketIdToClientId.get(socket.id);
-    if (!clientId) {
-        console.log(`Socket ID ${socket.id} not found in map.`);
-        return; // Ignore if client ID is not found
-    }
+    if (!clientId) return;
 
-    // Clean up the global maps
+    // Clean up maps
     socketIdToClientId.delete(socket.id);
     clientIdToSocketId.delete(clientId);
 
-    // Clean up from rooms based on clientId
     for (const roomId in rooms) {
         const room = rooms[roomId];
-        if (!room) continue;
+        if (!room || !room.players[clientId]) continue;
 
-        // Check if the player exists in this room
-        if (room.players[clientId]) {
-            // Delete player's cartelas and player data to prevent memory leak
-            if (room.playerCartelas[clientId]) {
-                const disconnectedCartelas = room.playerCartelas[clientId];
-                
-                // Clean up selectedIndexes array
-                room.selectedIndexes = room.selectedIndexes.filter(
-                    (index) => !disconnectedCartelas.includes(index)
-                );
-                
-                // Delete the player's cartelas from the room object
-                delete room.playerCartelas[clientId];
-            }
-            
-            // Delete the player from the players list
-            delete room.players[clientId];
+        // Clean up player data
+        delete room.playerCartelas[clientId];
+        delete room.players[clientId];
 
-            // Emit updates to the room
-            io.to(roomId).emit("updateSelectedCartelas", {
-                selectedIndexes: room.selectedIndexes,
-            });
-            const activePlayers = Object.values(room.playerCartelas).filter(
-                (arr) => arr.length > 0
-            ).length;
-            io.to(roomId).emit("playerCount", { totalPlayers: activePlayers });
-            
-            // Log the cleanup
-            console.log(`Cleaned up player ${clientId} from room ${roomId}.`);
+        // Check if the room is now empty of players with cartelas
+        const playersWithCartela = Object.values(room.playerCartelas).filter(
+            (arr) => arr.length > 0
+        ).length;
+
+        // If the room is empty, stop the game and reset it
+        if (playersWithCartela === 0) {
+            console.log(`Last player left room ${roomId}. Resetting game state.`);
+            resetRoom(roomId);
+        } else {
+            // Otherwise, just emit the player count update
+            io.to(roomId).emit("playerCount", { totalPlayers: playersWithCartela });
+            io.to(roomId).emit("updateSelectedCartelas", { selectedIndexes: room.selectedIndexes });
         }
     }
-});
-});
 
-// ================= GAME FUNCTIONS =================
-function startNumberGenerator(roomId) {
-  const room = rooms[roomId];
-  if (!room) return;
-  const playersWithCartela = Object.values(room.playerCartelas).filter(
-    (arr) => arr.length > 0
-  ).length;
-  if (playersWithCartela < 1) return;
-  if (!Array.isArray(room.calledNumbers)) room.calledNumbers = [];
-  const numbers = Array.from({ length: 75 }, (_, i) => i + 1);
-  for (let i = numbers.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
-  }
-  let index = 0;
-  room.numberInterval = setInterval(() => {
-    if (!rooms[roomId]) return;
-    if (index >= numbers.length) {
-      clearInterval(room.numberInterval);
-      room.numberInterval = null;
-      return;
+    console.log(`Cleaned up player ${clientId} from all rooms.`);
+});
+});
+// NEW: A central function to reset a room's state and clear all intervals
+function resetRoom(roomId) {
+    const room = rooms[roomId];
+    if (!room) return;
+    
+    // Clear the countdown interval
+    if (room.timerInterval) {
+        clearInterval(room.timerInterval);
+        room.timerInterval = null;
     }
-    const nextNumber = numbers[index++];
-    if (!room.calledNumbers.includes(nextNumber))
-      room.calledNumbers.push(nextNumber);
-    io.to(roomId).emit("numberCalled", nextNumber);
-    io.to(roomId).emit("currentCalledNumbers", room.calledNumbers.slice(-5).reverse());
-    checkWinners(roomId, nextNumber);
-  }, 4000);
+    // Clear the number generator interval
+    if (room.numberInterval) {
+        clearInterval(room.numberInterval);
+        room.numberInterval = null;
+    }
+    
+    // Reset all room variables to their initial state
+    room.activeGame = false;
+    room.selectedIndexes = [];
+    room.playerCartelas = {};
+    room.calledNumbers = [];
+    room.alreadyWon = [];
+    room.totalAward = 0;
+    room.gameId = null;
+    
+    io.to(roomId).emit("roomAvailable");
+    io.to(roomId).emit("resetRoom");
+    console.log(`Room ${roomId} has been successfully reset.`);
+}
+// ================= GAME FUNCTIONS =================
+function startCountdown(roomId, seconds) {
+    const room = rooms[roomId];
+    if (!room) return;
+    
+    let timeLeft = seconds;
+    // Check if a countdown is already running
+    if (room.timerInterval) return;
+    
+    // Use a specific variable for the countdown interval
+    room.timerInterval = setInterval(async () => {
+        timeLeft -= 1;
+        room.timer = timeLeft;
+        io.to(roomId).emit("startCountdown", timeLeft);
+        
+        if (timeLeft <= 0) {
+            clearInterval(room.timerInterval);
+            room.timerInterval = null;
+            
+            const playersWithCartela = Object.values(room.playerCartelas).filter(
+                (arr) => arr.length > 0
+            ).length;
+
+            if (playersWithCartela < 2) {
+                console.log(`Countdown finished but not enough players in room ${roomId}. Resetting.`);
+                // If not enough players, reset the room to prevent it from getting stuck
+                resetRoom(roomId);
+                return;
+            }
+            
+            room.gameId = generateGameId();
+            room.activeGame = true;
+            
+            io.to(roomId).emit("activeGameStatus", { activeGame: true, gameId: room.gameId });
+
+            const totalCartelas = Object.values(room.playerCartelas).reduce(
+                (sum, arr) => sum + arr.length,
+                0
+            );
+            room.totalAward = totalCartelas * Number(roomId) * 0.8;
+            io.to(roomId).emit("gameStarted", {
+                totalAward: room.totalAward,
+                totalPlayers: Object.keys(room.players).length,
+                gameId: room.gameId,
+            });
+            console.log("Game started with ID: ", room.gameId);
+            startNumberGenerator(roomId);
+        }
+    }, 1000);
 }
 function generateGameId() {
   let newGameId;
@@ -403,6 +437,48 @@ function generateGameId() {
     }
   }
   return newGameId;
+}
+function startNumberGenerator(roomId) {
+    const room = rooms[roomId];
+    if (!room) return;
+    
+    if (!Array.isArray(room.calledNumbers)) room.calledNumbers = [];
+    
+    const numbers = Array.from({ length: 75 }, (_, i) => i + 1);
+    for (let i = numbers.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [numbers[i], numbers[j]] = [numbers[i], numbers[j]];
+    }
+    
+    let index = 0;
+    // Store the interval in a specific variable
+    room.numberInterval = setInterval(() => {
+        if (!rooms[roomId]) {
+            clearInterval(room.numberInterval);
+            return;
+        }
+        
+        const nextNumber = numbers[index++];
+        room.calledNumbers.push(nextNumber);
+        
+        io.to(roomId).emit("numberCalled", nextNumber);
+        io.to(roomId).emit("currentCalledNumbers", room.calledNumbers.slice(-5).reverse());
+        
+        checkWinners(roomId, nextNumber);
+
+        if (index >= numbers.length) {
+            clearInterval(room.numberInterval);
+            room.numberInterval = null;
+            
+            setTimeout(() => {
+                if (rooms[roomId] && rooms[roomId].alreadyWon.length === 0) {
+                    console.log(`No winner in room ${roomId}. Resetting game state.`);
+                    // Call the new reset function here
+                    resetRoom(roomId);
+                }
+            }, 4000);
+        }
+    }, 4000);
 }
 function startCountdown(roomId, seconds) {
   if (!rooms[roomId]) return;
@@ -501,77 +577,70 @@ async function saveGameHistory(username, roomId, stake, outcome,  gameId ) {
 }
 
 async function checkWinners(roomId, calledNumber) {
-  const room = rooms[roomId];
-  if (!room) return;
-  const winners = [];
-  for (const clientId in room.playerCartelas) {
-    const cartelas = room.playerCartelas[clientId];
-    if (!cartelas || cartelas.length === 0) continue;
-
-    // ✅ CORRECT: Get username directly from the players object using clientId
-    const username = room.players[clientId];
-    if (!username) continue;
-    
-    for (const cartelaIndex of cartelas) {
-      if (!cartela[cartelaIndex]) continue;
-      const key = clientId + "-" + cartelaIndex;
-      if (room.alreadyWon.includes(key)) continue;
-      const pattern = findWinningPattern(
-        cartela[cartelaIndex].cart,
-        room.calledNumbers
-      );
-      if (pattern) {
-        winners.push({ clientId, cartelaIndex, pattern, winnerName: username });
-        room.alreadyWon.push(key);
-      }
-    }
-  }
-
-  if (winners.length > 0) {
-    if (room.numberInterval) {
-      clearInterval(room.numberInterval);
-      room.numberInterval = null;
-    }
-    const awardPerWinner = Math.floor(room.totalAward / winners.length);
-
-    for (const winner of winners) {
-      const user = await BingoBord.findOne({ username: winner.winnerName });
-      if (user) {
-        user.Wallet += awardPerWinner;
-        user.coins += 1;
-        await user.save();
-        await saveGameHistory(winner.winnerName, roomId, awardPerWinner, "win", room.gameId);
-      }
-    }
+    const room = rooms[roomId];
+    if (!room) return;
+    const winners = [];
     
     for (const clientId in room.playerCartelas) {
-      const cartelas = room.playerCartelas[clientId];
-      if (!cartelas || cartelas.length === 0) continue;
-      
-      const username = room.players[clientId];
-      if (!username) continue;
-      
-      if (!winners.some((w) => w.winnerName === username)) {
-        await saveGameHistory(username, roomId, Number(roomId), "loss", room.gameId);
-      }
+        const cartelas = room.playerCartelas[clientId];
+        if (!cartelas || cartelas.length === 0) continue;
+        
+        const username = room.players[clientId];
+        if (!username) continue;
+        
+        for (const cartelaIndex of cartelas) {
+            if (!cartela[cartelaIndex]) continue;
+            const key = clientId + "-" + cartelaIndex;
+            if (room.alreadyWon.includes(key)) continue;
+            const pattern = findWinningPattern(
+                cartela[cartelaIndex].cart,
+                room.calledNumbers
+            );
+            if (pattern) {
+                winners.push({ clientId, cartelaIndex, pattern, winnerName: username });
+                room.alreadyWon.push(key);
+            }
+        }
     }
 
-    io.to(roomId).emit("winningPattern", winners);
+    if (winners.length > 0) {
+        // Clear the interval as soon as a winner is found
+        if (room.numberInterval) {
+            clearInterval(room.numberInterval);
+            room.numberInterval = null;
+        }
+        
+        const awardPerWinner = Math.floor(room.totalAward / winners.length);
 
-    setTimeout(() => {
-      if (rooms[roomId]) {
-        const room = rooms[roomId];
-        room.activeGame = false;
-        room.selectedIndexes = [];
-        room.playerCartelas = {};
-        room.calledNumbers = [];
-        room.alreadyWon = [];
-        room.totalAward = 0;
-        io.to(roomId).emit("roomAvailable");
-        io.to(roomId).emit("resetRoom");
-      }
-    }, 4000);
-  }
+        for (const winner of winners) {
+            const user = await BingoBord.findOne({ username: winner.winnerName });
+            if (user) {
+                user.Wallet += awardPerWinner;
+                user.coins += 1;
+                await user.save();
+                await saveGameHistory(winner.winnerName, roomId, awardPerWinner, "win", room.gameId);
+            }
+        }
+        
+        for (const clientId in room.playerCartelas) {
+            const cartelas = room.playerCartelas[clientId];
+            if (!cartelas || cartelas.length === 0) continue;
+            
+            const username = room.players[clientId];
+            if (!username) continue;
+            
+            if (!winners.some((w) => w.winnerName === username)) {
+                await saveGameHistory(username, roomId, Number(roomId), "loss", room.gameId);
+            }
+        }
+
+        io.to(roomId).emit("winningPattern", winners);
+
+        // Call the new reset function after a small delay
+        setTimeout(() => {
+            resetRoom(roomId);
+        }, 4000);
+    }
 }
 
  

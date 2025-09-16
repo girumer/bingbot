@@ -190,24 +190,24 @@ const usernameFromState = location.state?.username;
 };
   // ✅ Corrected code in BingoBoard.js
 // ✅ Corrected reset handler in BingoBoard.js
+// In your BingoBoard.js file
 useEffect(() => {
-  const handleReset = () => {
-    // Create query string with all necessary parameters
-    const queryString = new URLSearchParams({
-      username,
-      telegramId,
-      roomId: String(roomId),
-      stake: String(stake || 0),
-    }).toString();
-    
-    // Navigate with both state and query parameters
-    navigate(`/CartelaSelction?${queryString}`, {
-      state: { username, telegramId, roomId, stake }
-    });
-  };
+    const handleReset = () => {
+        console.log("BingoBoard: Received resetRoom signal from backend!");
+        // The rest of your navigation logic here
+        const queryString = new URLSearchParams({
+            username,
+            telegramId,
+            roomId: String(roomId),
+            stake: String(stake || 0),
+        }).toString();
+        navigate(`/CartelaSelction?${queryString}`, {
+            state: { username, telegramId, roomId, stake }
+        });
+    };
 
-  socket.on("resetRoom", handleReset);
-  return () => socket.off("resetRoom", handleReset);
+    socket.on("resetRoom", handleReset);
+    return () => socket.off("resetRoom", handleReset);
 }, [navigate, username, roomId, stake, telegramId]);
 useEffect(() => {
     if (!username || !telegramId) {
