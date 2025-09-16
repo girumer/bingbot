@@ -323,60 +323,44 @@ useEffect(() => {
       </div>
 
       {/* MIDDLE NUMBERS GRID */}
-      <div className="numbers-grid-wrapper">
-
-        <div className="toggle-container">
-    <span className="toggle-label">AUTO SELECT</span>
-    <label className="toggle-switch">
-      <input
-        type="checkbox"
-        checked={highlightCartelas}
-        onChange={() => setHighlightCartelas(!highlightCartelas)}
-      />
-      <span className="toggle-slider"></span>
-    </label>
-    <div className="stat-button1" onClick={refreshpg}>REFRESH</div>
+      
+// In your BingoBoard component, replace the entire `numbers-grid-wrapper` div with this:
+<div className="numbers-grid-wrapper">
+    <div className="toggle-container">
+        <span className="toggle-label">AUTO SELECT</span>
+        <label className="toggle-switch">
+            <input
+                type="checkbox"
+                checked={highlightCartelas}
+                onChange={() => setHighlightCartelas(!highlightCartelas)}
+            />
+            <span className="toggle-slider"></span>
+        </label>
+        <div className="stat-button1" onClick={refreshpg}>REFRESH</div>
     </div>
     
-    
-        {lastNumber !== null && (
-          <div className="last-called-number">
-             <span 
-      className="last-called-letter" 
-      data-letter={getBingoLetter(lastNumber)}
-    >
-      {getBingoLetter(lastNumber)}-
-    </span>
+    {/* This section displays the most recently called number */}
+    {lastNumber !== null && (
+        <div className="last-called-number">
+            <span className="last-called-letter" data-letter={getBingoLetter(lastNumber)}>
+                {getBingoLetter(lastNumber)}-
+            </span>
             {lastNumber}
-            </div>
-        )}
-
-        <div className="last-five-display">
-          {allCalledNumbers.slice(-5).map((num, idx) => (
-            <div key={idx} className={`last-five-number ${getBingoLetter(num).toLowerCase()}`}>
-              <span className="last-five-letter">{getBingoLetter(num)}-</span>
-              {num}
-            </div>
-          ))}
         </div>
+    )}
 
-        {letters.map((letter, rowIndex) => (
-          <div key={letter} className="number-row">
-            <div className="letter-button">{letter}</div>
-            {numberColumns[rowIndex].map((num) => (
-              <button
-                key={num}
-                className={`number-button ${highlightedNumbers.includes(num) ? "called" : ""}`}
-                disabled
-              >
-                {num}
-              </button>
+    {/* This is the new part that displays the numbers in the random order they were called */}
+    <div className="called-numbers-log">
+        <h3 className="log-title">All Called Numbers</h3>
+        <div className="log-list">
+            {allCalledNumbers.map((num, idx) => (
+                <div key={idx} className={`log-number ${getBingoLetter(num).toLowerCase()}`}>
+                    {getBingoLetter(num)}-{num}
+                </div>
             ))}
-          </div>
-        ))}
-        
-      </div>
-
+        </div>
+    </div>
+</div>
       
       {/* BOTTOM PANELS */}
       <div className="bottom-panels">
