@@ -369,29 +369,51 @@ function resetRoom(roomId) {
 function startNumberGenerator(roomId) {
   const room = rooms[roomId];
   if (!room) return;
+  
   const playersWithCartela = Object.values(room.playerCartelas).filter(
     (arr) => arr.length > 0
   ).length;
+  
   if (playersWithCartela < 1) return;
   if (!Array.isArray(room.calledNumbers)) room.calledNumbers = [];
+  
+  // Create an array with all 75 numbers
   const numbers = Array.from({ length: 75 }, (_, i) => i + 1);
+  
+  // Fisher-Yates shuffle algorithm to randomize the array
   for (let i = numbers.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
   }
-  let index = 0;
+  
+  // Use the shuffled array directly
   room.numberInterval = setInterval(() => {
-    if (!rooms[roomId]) return;
-    if (index >= numbers.length) {
+    if (!rooms[roomId]) {
       clearInterval(room.numberInterval);
-      room.numberInterval = null;
       return;
     }
-    const nextNumber = numbers[index++];
-    if (!room.calledNumbers.includes(nextNumber))
-      room.calledNumbers.push(nextNumber);
+    
+    // If all numbers have been called, end the game
+    if (room.calledNumbers.length >= 75) {
+      clearInterval(room.numberInterval);
+      room.numberInterval = null;
+      
+      // Check if there are any winners with the final numbers
+      checkWinners(roomId, room.calledNumbers.slice(-1)[0]);
+      return;
+    }
+    
+    // Get the next number from the shuffled array
+    const nextNumber = numbers[room.calledNumbers.length];
+    
+    // Add to called numbers
+    room.calledNumbers.push(nextNumber);
+    
+    // Emit to all clients
     io.to(roomId).emit("numberCalled", nextNumber);
     io.to(roomId).emit("currentCalledNumbers", room.calledNumbers.slice(-5).reverse());
+    
+    // Check for winners
     checkWinners(roomId, nextNumber);
   }, 4000);
 }
