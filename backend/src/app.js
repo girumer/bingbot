@@ -441,45 +441,53 @@ function generateGameId() {
 function startNumberGenerator(roomId) {
     const room = rooms[roomId];
     if (!room) return;
-    
-    if (!Array.isArray(room.calledNumbers)) room.calledNumbers = [];
-    
-    const numbers = Array.from({ length: 75 }, (_, i) => i + 1);
-    for (let i = numbers.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [numbers[i], numbers[j]] = [numbers[i], numbers[j]];
+
+    if (room.numberInterval) {
+        clearInterval(room.numberInterval);
     }
+
+    room.calledNumbers = [];
+    room.alreadyWon = [];
+    room.gameActive = true;
     
+    // Announce the start of a new game
+    io.to(roomId).emit('gameStarted', {
+        totalAward: room.totalAward,
+        totalPlayers: room.playerIds.length,
+        gameId: room.gameId,
+    });
+    
+    // Shuffle the numbers
+    const numbers = Array.from({ length: 75 }, (_, i) => i + 1).sort(() => Math.random() - 0.5);
     let index = 0;
-    // Store the interval in a specific variable
+
     room.numberInterval = setInterval(() => {
-        if (!rooms[roomId]) {
+        if (!rooms[roomId] || !room.gameActive) {
+            // Stop the interval if the room is gone or the game is no longer active
             clearInterval(room.numberInterval);
+            room.numberInterval = null;
             return;
         }
-        
-        const nextNumber = numbers[index++];
-        room.calledNumbers.push(nextNumber);
-        
-        io.to(roomId).emit("numberCalled", nextNumber);
-        io.to(roomId).emit("currentCalledNumbers", room.calledNumbers.slice(-5).reverse());
-        
-        checkWinners(roomId, nextNumber);
 
         if (index >= numbers.length) {
             clearInterval(room.numberInterval);
             room.numberInterval = null;
-            
-            setTimeout(() => {
-                if (rooms[roomId] && rooms[roomId].alreadyWon.length === 0) {
-                    console.log(`No winner in room ${roomId}. Resetting game state.`);
-                    // Call the new reset function here
-                    resetRoom(roomId);
-                }
-            }, 4000);
+            console.log(`All 75 numbers called in room ${roomId}. No winner found.`);
+            resetRoom(roomId); // Reset the room if all numbers are called with no winner
+            return;
         }
-    }, 4000);
+
+        const nextNumber = numbers[index++];
+        room.calledNumbers.push(nextNumber);
+
+        io.to(roomId).emit("numberCalled", nextNumber);
+
+        // Check for winners after each number is called
+        checkWinners(roomId, nextNumber);
+
+    }, 4000); // Calls a number every 4 seconds
 }
+
 function startCountdown(roomId, seconds) {
   if (!rooms[roomId]) return;
   let timeLeft = seconds;
