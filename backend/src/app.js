@@ -446,13 +446,7 @@ function shuffleArray(array) {
   return array;
 }
 // This is the Fisher-Yates shuffle algorithm.
-function shuffleArray(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
+
 
 // A central function to handle the actual number generation
 function startNumberGenerator(roomId) {
@@ -502,18 +496,19 @@ function startNumberGenerator(roomId) {
 }
 
 // A central function to handle the countdown before a game starts
+// Corrected startCountdown function
 function startCountdown(roomId, seconds) {
     const room = rooms[roomId];
     if (!room) return;
     
     let timeLeft = seconds;
-    // Use a specific variable for the countdown interval
-    if (room.timerInterval) return; // Prevent multiple countdowns
+    if (room.timerInterval) return;
     
     room.timerInterval = setInterval(async () => {
         timeLeft -= 1;
         room.timer = timeLeft;
-        io.to(roomId).emit("startCountdown", timeLeft);
+        // CHANGE THIS LINE: Emit with a new event name
+        io.to(roomId).emit("countdownTick", timeLeft);
         
         if (timeLeft <= 0) {
             clearInterval(room.timerInterval);
@@ -546,10 +541,9 @@ function startCountdown(roomId, seconds) {
             });
             console.log("Game started with ID: ", room.gameId);
             
-            // This is the correct place to call the number generator
             startNumberGenerator(roomId);
         }
-    }, 1000); // This should be a 1-second interval, not 4 seconds
+    }, 1000);
 }
 
 // --- WIN LOGIC ---
