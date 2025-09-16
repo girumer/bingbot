@@ -131,10 +131,7 @@ exports.broadcastToAllCustomers = async (req, res) => {
     try {
         const allUsers = await BingoBord.find({}, 'telegramId');
 
-        // The URL of the image you want to send
-        const photoUrl = 'YOUR_IMAGE_URL_HERE'; // ❌ IMPORTANT: Replace this with your actual image URL
-
-        // The text message will now be the caption for the photo
+        // The text message to broadcast
         const message = `ውድ የአደይ ቢንጎ ደንበኞች በቴሌ ብርም ሆነ በሲቢ ብር ገንዘብ ስትልኩ የሚከተለውን መመርያ ይከተሉ
 Account: 0983994214
 1. ከላይ ባለው ቁጥር TeleBirr or CBEBirr በመጠቀም   ብር ያስገቡ
@@ -153,19 +150,20 @@ Account: 0983994214
         for (const user of allUsers) {
             if (user.telegramId) {
                 try {
-                    await bot.sendPhoto(user.telegramId, photoUrl, { caption: message });
+                    // ✅ UPDATED: Now using bot.sendMessage()
+                    await bot.sendMessage(user.telegramId, message);
                     successCount++;
                 } catch (error) {
-                    console.error(`Failed to send photo to user ${user.telegramId}:`, error.message);
+                    console.error(`Failed to send message to user ${user.telegramId}:`, error.message);
                     failCount++;
                 }
             }
         }
 
-        console.log(`Broadcast completed. Messages and photos sent to ${successCount} users, failed for ${failCount} users.`);
+        console.log(`Broadcast completed. Messages sent to ${successCount} users, failed for ${failCount} users.`);
 
         return res.status(200).json({
-            message: `Broadcast initiated. Messages and photos sent to ${successCount} users, failed for ${failCount}.`
+            message: `Broadcast initiated. Messages sent to ${successCount} users, failed for ${failCount}.`
         });
 
     } catch (err) {
