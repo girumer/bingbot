@@ -383,8 +383,7 @@ function startCountdown(roomId, seconds) {
     room.timerInterval = setInterval(async () => {
         timeLeft -= 1;
         room.timer = timeLeft;
-        io.to(roomId).emit("startCountdown", timeLeft);
-        
+       io.to(roomId).emit("countdownTick", timeLeft);
         if (timeLeft <= 0) {
             clearInterval(room.timerInterval);
             room.timerInterval = null;
