@@ -438,98 +438,118 @@ function generateGameId() {
   }
   return newGameId;
 }
-function startNumberGenerator(roomId) {
-    const room = rooms[roomId];
-    if (!room) return;
-
-    if (room.numberInterval) {
-        clearInterval(room.numberInterval);
-    }
-
-    room.calledNumbers = [];
-    room.alreadyWon = [];
-    room.gameActive = true;
-    
-    // Announce the start of a new game
-    io.to(roomId).emit('gameStarted', {
-        totalAward: room.totalAward,
-        totalPlayers: room.playerIds.length,
-        gameId: room.gameId,
-    });
-    
-    // Shuffle the numbers
-    const numbers = Array.from({ length: 75 }, (_, i) => i + 1).sort(() => Math.random() - 0.5);
-    let index = 0;
-
-    room.numberInterval = setInterval(() => {
-        if (!rooms[roomId] || !room.gameActive) {
-            // Stop the interval if the room is gone or the game is no longer active
-            clearInterval(room.numberInterval);
-            room.numberInterval = null;
-            return;
-        }
-
-        if (index >= numbers.length) {
-            clearInterval(room.numberInterval);
-            room.numberInterval = null;
-            console.log(`All 75 numbers called in room ${roomId}. No winner found.`);
-            resetRoom(roomId); // Reset the room if all numbers are called with no winner
-            return;
-        }
-
-        const nextNumber = numbers[index++];
-        room.calledNumbers.push(nextNumber);
-
-        io.to(roomId).emit("numberCalled", nextNumber);
-
-        // Check for winners after each number is called
-        checkWinners(roomId, nextNumber);
-
-    }, 4000); // Calls a number every 4 seconds
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+// This is the Fisher-Yates shuffle algorithm.
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
 }
 
-function startCountdown(roomId, seconds) {
-  if (!rooms[roomId]) return;
-  let timeLeft = seconds;
-  if (rooms[roomId].timer) return;
-  rooms[roomId].timer = timeLeft;
-  rooms[roomId].numberInterval = setInterval(async () => {
-    timeLeft -= 1;
-    rooms[roomId].timer = timeLeft;
-    io.to(roomId).emit("startCountdown", timeLeft);
-    if (timeLeft <= 0) {
-      clearInterval(rooms[roomId].numberInterval);
-      rooms[roomId].timer = null;
-      const room = rooms[roomId];
-      
-      // ✅ Corrected loop to send myCartelas
-      for (const clientId in room.playerCartelas) {
-        const socketId = clientIdToSocketId.get(clientId);
-        if (socketId) {
-            const myCartelas = room.playerCartelas[clientId] || [];
-            if (myCartelas.length > 0) {
-                io.to(socketId).emit("myCartelas", myCartelas);
-            }
-        }
-      }
-        room.gameId =generateGameId();
-      room.activeGame = true;
-      io.to(roomId).emit("activeGameStatus", { activeGame: true ,gameId: room.gameId  });
+// A central function to handle the actual number generation
+function startNumberGenerator(roomId) {
+  const room = rooms[roomId];
+  if (!room) return;
 
-      const totalCartelas = Object.values(room.playerCartelas).reduce(
-        (sum, arr) => sum + arr.length,
-        0
-      );
-      room.totalAward = totalCartelas * Number(roomId) * 0.8;
-      io.to(roomId).emit("gameStarted", {
-        totalAward: room.totalAward,
-        totalPlayers: Object.keys(room.players).length,
-         gameId: room.gameId ,
-      });
-    console.log("game id is ",room.gameId);
-      startNumberGenerator(roomId);
+  if (room.numberInterval) {
+    clearInterval(room.numberInterval);
+    room.numberInterval = null;
+  }
+
+  // Clear previous game state
+  room.calledNumbers = [];
+  room.alreadyWon = [];
+  room.gameActive = true;
+  
+  // Create and shuffle the numbers using the reliable Fisher-Yates method
+  const numbers = Array.from({ length: 75 }, (_, i) => i + 1);
+  const shuffledNumbers = shuffleArray(numbers);
+  
+  let index = 0;
+
+  room.numberInterval = setInterval(() => {
+    if (!rooms[roomId] || !room.gameActive) {
+      clearInterval(room.numberInterval);
+      room.numberInterval = null;
+      return;
     }
-  }, 1000);
+
+    if (index >= shuffledNumbers.length) {
+      clearInterval(room.numberInterval);
+      room.numberInterval = null;
+      console.log(`All 75 numbers called in room ${roomId}. No winner found.`);
+      resetRoom(roomId);
+      return;
+    }
+
+    const nextNumber = shuffledNumbers[index++];
+    room.calledNumbers.push(nextNumber);
+
+    // This is the correct number being called
+    io.to(roomId).emit("numberCalled", nextNumber);
+    
+    // Check for winners
+    checkWinners(roomId, nextNumber);
+  }, 4000); // Calls a number every 4 seconds
+}
+
+// A central function to handle the countdown before a game starts
+function startCountdown(roomId, seconds) {
+    const room = rooms[roomId];
+    if (!room) return;
+    
+    let timeLeft = seconds;
+    // Use a specific variable for the countdown interval
+    if (room.timerInterval) return; // Prevent multiple countdowns
+    
+    room.timerInterval = setInterval(async () => {
+        timeLeft -= 1;
+        room.timer = timeLeft;
+        io.to(roomId).emit("startCountdown", timeLeft);
+        
+        if (timeLeft <= 0) {
+            clearInterval(room.timerInterval);
+            room.timerInterval = null;
+            
+            const playersWithCartela = Object.values(room.playerCartelas).filter(
+                (arr) => arr.length > 0
+            ).length;
+
+            if (playersWithCartela < 2) {
+                console.log(`Countdown finished but not enough players in room ${roomId}. Resetting.`);
+                resetRoom(roomId);
+                return;
+            }
+            
+            room.gameId = generateGameId();
+            room.activeGame = true;
+            
+            io.to(roomId).emit("activeGameStatus", { activeGame: true, gameId: room.gameId });
+
+            const totalCartelas = Object.values(room.playerCartelas).reduce(
+                (sum, arr) => sum + arr.length,
+                0
+            );
+            room.totalAward = totalCartelas * Number(roomId) * 0.8;
+            io.to(roomId).emit("gameStarted", {
+                totalAward: room.totalAward,
+                totalPlayers: Object.keys(room.players).length,
+                gameId: room.gameId,
+            });
+            console.log("Game started with ID: ", room.gameId);
+            
+            // This is the correct place to call the number generator
+            startNumberGenerator(roomId);
+        }
+    }, 1000); // This should be a 1-second interval, not 4 seconds
 }
 
 // --- WIN LOGIC ---
