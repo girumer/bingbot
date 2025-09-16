@@ -313,8 +313,24 @@ const [otherUsersCartelas, setOtherUsersCartelas] = useState([]); // Cartelas se
     initializeGame();
 
 
-
-
+const handleGameState = (state) => {
+  if (state.timer != null) setTimer(state.timer);
+  if (state.activeGame != null) setActiveGame(state.activeGame);
+  
+  // Directly use myCartelas from the server to set myConfirmedCartelas
+  setMyConfirmedCartelas(state.myCartelas || []);
+  
+  // ✅ NEW LOGIC: Only show other users' cartelas if a game is NOT active
+  if (state.activeGame) {
+    setOtherUsersCartelas([]);
+  } else {
+    // Calculate other users' cartelas by filtering out my own from the full list
+    const otherCartelas = (state.selectedIndexes || []).filter(
+      (index) => !state.myCartelas.includes(index)
+    );
+    setOtherUsersCartelas(otherCartelas);
+  }
+};
     socket.on("currentGameState", handleGameState);
 
 
