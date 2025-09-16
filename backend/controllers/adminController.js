@@ -132,17 +132,8 @@ exports.broadcastToAllCustomers = async (req, res) => {
         const allUsers = await BingoBord.find({}, 'telegramId');
 
         // The text message to broadcast
-        const message = `ውድ የአደይ ቢንጎ ደንበኞች በቴሌ ብርም ሆነ በሲቢ ብር ገንዘብ ስትልኩ የሚከተለውን መመርያ ይከተሉ
-Account: 0983994214
-1. ከላይ ባለው ቁጥር TeleBirr or CBEBirr በመጠቀም   ብር ያስገቡ
-2. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልክት(sms) ከ TeleBirr or CBEBirr ይደርሳችኋል
-3. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) የደረሳችሁን ትራንዛክሸን ቁጥር  ብቻ ኮፒ አርጋችሁ ወደዚህ ቦት ላኩ(copy) በማረግ ወደዚህ ቦት ይላኩ
-⚠️ አስፈላጊ ማሳሰቢያ:
-•1. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን መላክ ያረጋግጡ
-•2. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
-•     ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
-•     ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ
-እገዛ ከፈለጉ በሚከተለው ቴሌግራም ቻናል ያናግሩን @Adeyebingosupport?`;
+        const message = `ሪፈራል ሊንክ ሲጠቀሙ በናንተ ሪፈራል የገባው ሰው ከሚያስቀምጠው10% 
+        ዲፖዚት ለናንተ ተጨማሪ ይሆናል ይህ ቀጣይነት ያለው እንጂ የአንድ ግዜ አደለም`;
 
         let successCount = 0;
         let failCount = 0;

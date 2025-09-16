@@ -251,7 +251,12 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
       if (!rooms[rId].playerCartelas[clientId])
         rooms[rId].playerCartelas[clientId] = [];
       const userCartelas = rooms[rId].playerCartelas[clientId];
-
+        if (rooms.activeGame || (rooms.timer !== null && room.timer <= 3)) {
+        socket.emit("cartelaRejected", {
+            message: "The game is about to start or is already active. Cartela selection is closed."
+        });
+        return;
+    }
       // Limit per user to 4 cartelas
       if (userCartelas.length >= 4) {
         socket.emit("cartelaRejected", { message: "You can only select up to 4 cartelas" });
@@ -306,68 +311,48 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
   // --- DISCONNECT ---
 // --- DISCONNECT ---
 // --- DISCONNECT ---
+// --- DISCONNECT ---
 socket.on("disconnect", () => {
-  // First, find the clientId associated with this socket.
-  const clientId = socketIdToClientId.get(socket.id);
-  if (!clientId) {
-    console.log(`Disconnected socket ${socket.id}, but no clientId was found.`);
-    return;
-  }
+    const clientId = socketIdToClientId.get(socket.id);
+    if (!clientId) {
+        console.log(`Disconnected socket ${socket.id}, but no clientId was found.`);
+        return;
+    }
 
-  // Then, find which room this player belongs to and clean up their data.
-  for (const roomId in rooms) {
-    const room = rooms[roomId];
-    if (!room || !room.players[clientId]) continue;
+    for (const roomId in rooms) {
+        const room = rooms[roomId];
+        if (!room || !room.players[clientId]) continue;
 
-    console.log(`Disconnecting player ${clientId} from room ${roomId}.`);
+        console.log(`Disconnecting player ${clientId} from room ${roomId}.`);
 
-    // ✅ NEW LOGIC: Check if an active game is in progress
-    if (room.activeGame === true) {
-      console.log(`Player ${clientId} disconnected from an active game. Their cartelas will be preserved.`);
-      // Do not delete their cartelas or player data. The player might rejoin.
-      // Just remove their socket from the room.
-      
-      // Clean up the global maps for the disconnected socket
-      socketIdToClientId.delete(socket.id);
-      clientIdToSocketId.delete(clientId);
-      break; // Exit the loop
-    } else {
-      // The game is not active, so we can safely delete their data.
-      console.log(`Player ${clientId} disconnected before game started. Deleting their data.`);
-      // 1. Remove their cartelas from the global selectedIndexes list
-      if (room.playerCartelas[clientId] && room.playerCartelas[clientId].length > 0) {
-        const disconnectedCartelas = room.playerCartelas[clientId];
-        room.selectedIndexes = room.selectedIndexes.filter(
-          (index) => !disconnectedCartelas.includes(index)
-        );
-      }
-      // 2. Unconditionally delete the player's data from the room.
-      delete room.playerCartelas[clientId];
-      delete room.players[clientId];
+        // Clean up the global maps for the disconnected socket
+        socketIdToClientId.delete(socket.id);
+        clientIdToSocketId.delete(clientId);
+        
+        // Remove this player's data from the room
+        delete room.playerCartelas[clientId];
+        delete room.players[clientId];
 
-      // 3. Update the total player count in the room.
-      const totalPlayersInRoom = Object.keys(room.players).length;
-      io.to(roomId).emit("playerCount", { totalPlayers: totalPlayersInRoom });
-      
-      // 4. Check if we should reset the room.
-      const playersWithCartela = Object.values(room.playerCartelas).filter(
-        (arr) => arr.length > 0
-      ).length;
+        // Check if there are any players left with cartelas
+        const playersWithCartela = Object.values(room.playerCartelas).filter(
+            (arr) => arr.length > 0
+        ).length;
 
-      if (playersWithCartela === 0) {
-        console.log(`Last active player left room ${roomId}. Resetting game state.`);
-        resetRoom(roomId);
-      } else {
-        io.to(roomId).emit("updateSelectedCartelas", { selectedIndexes: room.selectedIndexes });
-      }
+        // IF THIS WAS THE LAST PLAYER, WE MUST RESET THE ROOM
+        if (playersWithCartela === 0) {
+            console.log(`Last active player left room ${roomId}. Resetting game state.`);
+            resetRoom(roomId);
+        } else {
+            // Otherwise, just update the player count
+            const totalPlayersInRoom = Object.keys(room.players).length;
+            io.to(roomId).emit("playerCount", { totalPlayers: totalPlayersInRoom });
+            io.to(roomId).emit("updateSelectedCartelas", { selectedIndexes: room.selectedIndexes });
+        }
 
-      // 5. Clean up the global maps
-      socketIdToClientId.delete(socket.id);
-      clientIdToSocketId.delete(clientId);
-      break; // Exit the loop once the player is found and cleaned up
-    }
-  }
+        break; // Exit the loop once the player is found and cleaned up
+    }
 });
+
 });
 function resetRoom(roomId) {
   const room = rooms[roomId];
@@ -420,21 +405,28 @@ function startNumberGenerator(roomId) {
   }
   
   // Use the shuffled array directly
-  room.numberInterval = setInterval(() => {
-    if (!rooms[roomId]) {
-      clearInterval(room.numberInterval);
-      return;
-    }
+   room.numberInterval = setInterval(() => {
+ if (!rooms[roomId]) {
+ clearInterval(room.numberInterval);
+ return;
+ }
+
     
     // If all numbers have been called, end the game
-    if (room.calledNumbers.length >= 75) {
-      clearInterval(room.numberInterval);
-      room.numberInterval = null;
-      
-      // Check if there are any winners with the final numbers
-      checkWinners(roomId, room.calledNumbers.slice(-1)[0]);
-      return;
-    }
+   if (room.calledNumbers.length >= 75) {
+ clearInterval(room.numberInterval);
+ room.numberInterval = null;
+
+ // After all numbers, check for winners one last time
+ checkWinners(roomId, room.calledNumbers.slice(-1)[0]);
+
+ // ✅ NEW: If no winner was found by checkWinners, reset the room manually
+ if (room.alreadyWon.length === 0) {
+ console.log(`No winner in room ${roomId} after all numbers. Resetting room.`);
+ resetRoom(roomId);
+ }
+ return;
+ }
     
     // Get the next number from the shuffled array
     const nextNumber = numbers[room.calledNumbers.length];
