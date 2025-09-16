@@ -314,19 +314,7 @@ const [otherUsersCartelas, setOtherUsersCartelas] = useState([]); // Cartelas se
 
 
 
-      const handleGameState = (state) => {
-  // Separate current user's cartelas from other users'
-  const allSelected = Array.from(new Set(state.selectedIndexes || []));
-  const myCartelas = allSelected.filter(index => myConfirmedCartelas.includes(index));
-  const otherCartelas = allSelected.filter(index => !myConfirmedCartelas.includes(index));
-  
-  setOtherUsersCartelas(otherCartelas);
-  setSelectedCartelas((prev) =>
-    prev.filter((idx) => !allSelected.includes(idx))
-  );
-  if (state.timer != null) setTimer(state.timer);
-  if (state.activeGame != null) setActiveGame(state.activeGame);
-};
+
     socket.on("currentGameState", handleGameState);
 
 
@@ -456,10 +444,17 @@ const [otherUsersCartelas, setOtherUsersCartelas] = useState([]); // Cartelas se
    
 
 const onUpdateSelectedCartelas = ({ selectedIndexes }) => {
-  // Update other users' cartelas when new ones are selected
-  const newOtherCartelas = selectedIndexes.filter(index => !myConfirmedCartelas.includes(index));
-  setOtherUsersCartelas(prev => Array.from(new Set([...prev, ...newOtherCartelas])));
-  setSelectedCartelas((prev) => prev.filter((idx) => !selectedIndexes.includes(idx)));
+  // ✅ NEW LOGIC: Only show other users' cartelas if the game is NOT active
+  if (activeGame) {
+    setOtherUsersCartelas([]);
+  } else {
+    // Filter the full list of selected cartelas to find what other users have
+    const newOtherCartelas = selectedIndexes.filter(
+      (index) => !myConfirmedCartelas.includes(index)
+    );
+    // Update the state
+    setOtherUsersCartelas(newOtherCartelas);
+  }
 };
 
    
