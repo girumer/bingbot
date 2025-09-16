@@ -251,7 +251,7 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
       if (!rooms[rId].playerCartelas[clientId])
         rooms[rId].playerCartelas[clientId] = [];
       const userCartelas = rooms[rId].playerCartelas[clientId];
-        if (rooms.activeGame || (rooms.timer !== null && room.timer <= 3)) {
+        if (rooms.activeGame || (rooms.timer !== null && rooms.timer <= 3)) {
         socket.emit("cartelaRejected", {
             message: "The game is about to start or is already active. Cartela selection is closed."
         });

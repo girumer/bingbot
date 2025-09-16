@@ -5,35 +5,36 @@ const Depoc=require('../Models/DepositSchema');
  
 // Utility function to parse Telebirr messages
 // Corrected parseTelebirrMessage function
-const parseTelebirrMessage = (message) => {
+function parseTelebirrMessage(message) {
     const transactions = [];
-    // This regex looks for "received ETB [amount] from [sender]..."
-    const amountAndSenderRegex = /received ETB\s*([\d,\.]+)\s*from\s*([a-zA-Z\s]+?)\s*\(\d{12}\)/i;
     
-    // This regex looks for "Your transaction number is [transaction number]..."
-    // It captures the transaction number exactly as it is, without changing case.
-    const txNumberRegex = /Your transaction number is\s*([a-zA-Z0-9]+)/;
-    
-    const amountMatch = message.match(amountAndSenderRegex);
-    const txNumberMatch = message.match(txNumberRegex);
-    
-    // Ensure both patterns are found before proceeding
-    if (amountMatch && txNumberMatch) {
-        // Extracting data from the matches
-        const amount = parseFloat(amountMatch[1].replace(/,/g, ''));
-        const sender = amountMatch[2].trim();
-        const transactionNumber = txNumberMatch[1];
+    // ✅ Removed the lowerCaseMessage line. We will work with the original message.
+
+    // Regex to find the amount. This works.
+    const amountMatches = [...message.matchAll(/ETB\s*([\d,.]+(?:\.\d{2})?)/gi)];
+
+    // FIX: This regex is now applied to the original message.
+    // It looks for "transaction number" or "transaction no"
+    // and the pattern now includes both lowercase and uppercase letters ([a-zA-Z0-9]+).
+    const transMatches = [...message.matchAll(/(?:transaction number is|transaction no is)\s*([a-zA-Z0-9]+)/gi)];
+
+    for (let i = 0; i < Math.min(amountMatches.length, transMatches.length); i++) {
+        const amount = parseFloat(amountMatches[i][1].replace(/,/g, ""));
         
+        // This will now get the correct case from the original message.
+        const transactionNumber = transMatches[i][1].trim(); 
+
         transactions.push({ 
             type: "telebirr", 
             amount, 
             transactionNumber, 
-            phoneNumber: undefined, // Consistent with CBE messages
+            phoneNumber: undefined,
         });
     }
-    
+
     return transactions;
-};
+}
+
 
 
 
@@ -47,20 +48,22 @@ const parseTelebirrMessage = (message) => {
 // In your utils/messageParsers.js file or where the function is located
 function parseCBEMessages(message) {
     const transactions = [];
-    const lowerCaseMessage = message.toLowerCase();
     
+    // ✅ Removed the lowerCaseMessage line. We will work with the original message.
+
     // Regex to find the amount and currency.
     const amountMatches = [...message.matchAll(/([\d,]+\.\d+)\s*(?:br\.|ብር)/gi)];
 
-    // Corrected regex for CBE that handles the multiple Amharic characters
-    const transMatches = [...lowerCaseMessage.matchAll(/(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|by receipt number)\s*([a-zA-Z0-9]+)/gi)];
+    // ✅ FIX: This regex is now applied to the original message.
+    // The pattern already correctly handles both upper and lowercase ([a-zA-Z0-9]+).
+    const transMatches = [...message.matchAll(/(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|by receipt number)\s*([a-zA-Z0-9]+)/gi)];
 
-    // This loop ensures that we only process a transaction if both parts are found
     for (let i = 0; i < Math.min(amountMatches.length, transMatches.length); i++) {
         const amount = parseFloat(amountMatches[i][1].replace(/,/g, ""));
-        const transactionNumber = transMatches[i][1].trim();
         
-        // Push the new transaction object to the transactions array
+        // This will now get the correct case from the original message.
+        const transactionNumber = transMatches[i][1].trim(); 
+        
         transactions.push({ 
             type: "cbebirr", 
             amount, 
@@ -69,10 +72,8 @@ function parseCBEMessages(message) {
         });
     }
 
-    // This is the crucial part: The function must return the array
     return transactions;
 }
-
 // Ensure these parser functions are defined or imported at the top of your file
 // function parseTelebirrMessage(message) { ... }
 // function parseCBEMessages(message) { ... }
