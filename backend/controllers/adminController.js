@@ -127,7 +127,7 @@ exports.registerUser = async (req, res) => {
   }
 };
 
- exports.broadcastToAllCustomers = async (req, res) => {
+/*  exports.broadcastToAllCustomers = async (req, res) => {
     try {
         const allUsers = await BingoBord.find({}, 'telegramId');
 
@@ -164,7 +164,7 @@ exports.registerUser = async (req, res) => {
         console.error("Broadcast failed:", err);
         return res.status(500).json({ error: "Failed to broadcast message." });
     }
-}; 
+};  */
 // Register user (admin can choose role)
 
 // Delete user by ID
