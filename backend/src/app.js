@@ -134,9 +134,26 @@ const router = express.Router();
 const rooms = {}; // rooms = { roomId: { players, selectedIndexes, playerCartelas, ... } }
 const socketIdToClientId = new Map();
 const clientIdToSocketId = new Map();
-
+setInterval(() => {
+  for (const roomId in rooms) {
+    const room = rooms[roomId];
+    const hasPlayers = Object.keys(room.players).length > 0;
+    
+    if (!hasPlayers) {
+      console.log(`Cleaning up empty room: ${roomId}`);
+      resetRoom(roomId);
+      delete rooms[roomId];
+    } else if (!room.activeGame && (room.timerInterval || room.numberInterval)) {
+      // Only log if we actually clean up something
+      if (room.timerInterval || room.numberInterval) {
+        console.log(`Cleaning up intervals in inactive room: ${roomId}`);
+        resetRoom(roomId);
+      }
+    }
+  }
+}, 300000);
 io.on("connection", (socket) => {
-  console.log("New connection:", socket.id);
+  //console.log("New connection:", socket.id);
 
   // --- JOIN ROOM ---
   socket.on("joinRoom", ({ roomId, username, telegramId, clientId }) => {
@@ -154,7 +171,8 @@ io.on("connection", (socket) => {
         playerCartelas: {},
         timer: null,
         calledNumbers: [],
-        numberInterval: null,
+       timerInterval: null,    // for countdown
+       numberInterval: null,
         alreadyWon: [],
         totalAward: 0,
         gameId: null,
@@ -191,7 +209,7 @@ io.on("connection", (socket) => {
     ).length;
     io.to(rId).emit("playerCount", { totalPlayers: activePlayers });
 
-    console.log(`New connection: ${socket.id}, username=${username}, telegramId=${telegramId}, clientId=${clientId}`);
+   // console.log(`New connection: ${socket.id}, username=${username}, telegramId=${telegramId}, clientId=${clientId}`);
   });
 // --- CHECK PLAYER STATUS ---
 socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
@@ -210,7 +228,7 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
     // Player is already in an active game with selected cartelas.
     const selectedCartelas = room.playerCartelas[clientId];
     socket.emit("playerStatus", { inGame: true, selectedCartelas });
-    console.log(`Player ${clientId} is already in game in room ${roomId}.`);
+   // console.log(`Player ${clientId} is already in game in room ${roomId}.`);
 });
   // --- SELECT CARTELA ---
   socket.on("selectCartela", async ({ roomId, cartelaIndex }) => {
@@ -269,7 +287,7 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
       rooms[rId].selectedIndexes.push(cartelaIndex);
 
       socket.emit("cartelaAccepted", { cartelaIndex, Wallet: user.Wallet });
-      console.log("caretela accepted now");
+     // console.log("caretela accepted now");
       io.to(rId).emit("updateSelectedCartelas", {
         selectedIndexes: rooms[rId].selectedIndexes,
       });
@@ -313,74 +331,73 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
 // --- DISCONNECT ---
 socket.on("disconnect", () => {
     const clientId = socketIdToClientId.get(socket.id);
-    if (!clientId) {
-        console.log(`Disconnected socket ${socket.id}, but no clientId was found.`);
-        return;
-    }
+    if (!clientId) return;
+
+    // Clean up maps
+    socketIdToClientId.delete(socket.id);
+    clientIdToSocketId.delete(clientId);
 
     for (const roomId in rooms) {
-        const room = rooms[roomId];
-        if (!room || !room.players[clientId]) continue;
+      const room = rooms[roomId];
+      if (!room || !room.players[clientId]) continue;
 
-        console.log(`Disconnecting player ${clientId} from room ${roomId}.`);
+      // Remove player from room
+      delete room.playerCartelas[clientId];
+      delete room.players[clientId];
 
-        // Clean up the global maps for the disconnected socket
-        socketIdToClientId.delete(socket.id);
-        clientIdToSocketId.delete(clientId);
-        
-        // Remove this player's data from the room
-        delete room.playerCartelas[clientId];
-        delete room.players[clientId];
+      // Check if room is now empty
+      const playersWithCartela = Object.values(room.playerCartelas).filter(
+        arr => arr.length > 0
+      ).length;
 
-        // Check if there are any players left with cartelas
-        const playersWithCartela = Object.values(room.playerCartelas).filter(
-            (arr) => arr.length > 0
-        ).length;
-
-        // IF THIS WAS THE LAST PLAYER, WE MUST RESET THE ROOM
-        if (playersWithCartela === 0) {
-            console.log(`Last active player left room ${roomId}. Resetting game state.`);
-            resetRoom(roomId);
-        } else {
-            // Otherwise, just update the player count
-            const totalPlayersInRoom = Object.keys(room.players).length;
-            io.to(roomId).emit("playerCount", { totalPlayers: totalPlayersInRoom });
-            io.to(roomId).emit("updateSelectedCartelas", { selectedIndexes: room.selectedIndexes });
-        }
-
-        break; // Exit the loop once the player is found and cleaned up
+      if (playersWithCartela === 0) {
+        resetRoom(roomId);
+        // Note: We don't delete the room here, let the periodic cleanup handle it
+      } else {
+        io.to(roomId).emit("playerCount", { 
+          totalPlayers: Object.keys(room.players).length 
+        });
+      }
+      break;
     }
+  });
 });
 
-});
 function resetRoom(roomId) {
   const room = rooms[roomId];
   if (!room) return;
 
-  // Clear the countdown interval
+  // Clear all intervals
   if (room.timerInterval) {
     clearInterval(room.timerInterval);
     room.timerInterval = null;
   }
-  // Clear the number generator interval
   if (room.numberInterval) {
     clearInterval(room.numberInterval);
     room.numberInterval = null;
   }
 
-  // Reset all room variables to their initial state
+  // Reset room state but keep players
   room.activeGame = false;
   room.selectedIndexes = [];
-  room.playerCartelas = {};
   room.calledNumbers = [];
   room.alreadyWon = [];
   room.totalAward = 0;
   room.gameId = null;
+  room.timer = null;
+
+  // Reset player cartelas but keep players
+  for (const clientId in room.playerCartelas) {
+    room.playerCartelas[clientId] = [];
+  }
 
   io.to(roomId).emit("roomAvailable");
   io.to(roomId).emit("resetRoom");
-  console.log(`Room ${roomId} has been successfully reset.`);
 }
+
+
+
+
 
 // ================= GAME FUNCTIONS =================
 function startNumberGenerator(roomId) {
@@ -396,49 +413,56 @@ function startNumberGenerator(roomId) {
   
   // Create an array with all 75 numbers
   const numbers = Array.from({ length: 75 }, (_, i) => i + 1);
-   console.log(`[Room ${roomId}] Shuffled numbers:`, numbers);
+  console.log(`[Room ${roomId}] Shuffled numbers:`, numbers);
+  
   // Fisher-Yates shuffle algorithm to randomize the array
   for (let i = numbers.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
   }
   
-  // Use the shuffled array directly
-   room.numberInterval = setInterval(() => {
- if (!rooms[roomId]) {
- clearInterval(room.numberInterval);
- return;
- }
+  // Use the shuffled array directly with error handling
+  room.numberInterval = setInterval(() => {
+    try {
+      if (!rooms[roomId]) {
+        clearInterval(room.numberInterval);
+        return;
+      }
 
-    
-    // If all numbers have been called, end the game
-   if (room.calledNumbers.length >= 75) {
- clearInterval(room.numberInterval);
- room.numberInterval = null;
+      // If all numbers have been called, end the game
+      if (room.calledNumbers.length >= 75) {
+        clearInterval(room.numberInterval);
+        room.numberInterval = null;
 
- // After all numbers, check for winners one last time
- checkWinners(roomId, room.calledNumbers.slice(-1)[0]);
+        // After all numbers, check for winners one last time
+        checkWinners(roomId, room.calledNumbers.slice(-1)[0]);
 
- // ✅ NEW: If no winner was found by checkWinners, reset the room manually
- if (room.alreadyWon.length === 0) {
- console.log(`No winner in room ${roomId} after all numbers. Resetting room.`);
- resetRoom(roomId);
- }
- return;
- }
-    
-    // Get the next number from the shuffled array
-    const nextNumber = numbers[room.calledNumbers.length];
-    
-    // Add to called numbers
-    room.calledNumbers.push(nextNumber);
-    
-    // Emit to all clients
-    io.to(roomId).emit("numberCalled", nextNumber);
-    io.to(roomId).emit("currentCalledNumbers", room.calledNumbers.slice(-5).reverse());
-    
-    // Check for winners
-    checkWinners(roomId, nextNumber);
+        // If no winner was found by checkWinners, reset the room manually
+        if (room.alreadyWon.length === 0) {
+          console.log(`No winner in room ${roomId} after all numbers. Resetting room.`);
+          resetRoom(roomId);
+        }
+        return;
+      }
+      
+      // Get the next number from the shuffled array
+      const nextNumber = numbers[room.calledNumbers.length];
+      
+      // Add to called numbers
+      room.calledNumbers.push(nextNumber);
+      
+      // Emit to all clients
+      io.to(roomId).emit("numberCalled", nextNumber);
+      io.to(roomId).emit("currentCalledNumbers", room.calledNumbers.slice(-5).reverse());
+      
+      // Check for winners
+      checkWinners(roomId, nextNumber);
+      
+    } catch (error) {
+      console.error(`Error in number generator for room ${roomId}:`, error);
+      clearInterval(room.numberInterval);
+      room.numberInterval = null;
+    }
   }, 4000);
 }
 function generateGameId() {
@@ -464,12 +488,12 @@ function startCountdown(roomId, seconds) {
   let timeLeft = seconds;
   if (rooms[roomId].timer) return;
   rooms[roomId].timer = timeLeft;
-  rooms[roomId].numberInterval = setInterval(async () => {
+  rooms[roomId].timerInterval = setInterval(async () => {
     timeLeft -= 1;
     rooms[roomId].timer = timeLeft;
     io.to(roomId).emit("startCountdown", timeLeft);
     if (timeLeft <= 0) {
-      clearInterval(rooms[roomId].numberInterval);
+      clearInterval(rooms[roomId].timerInterval);
       rooms[roomId].timer = null;
       const room = rooms[roomId];
       
@@ -614,18 +638,10 @@ async function checkWinners(roomId, calledNumber) {
     io.to(roomId).emit("winningPattern", winners);
 
     setTimeout(() => {
-      if (rooms[roomId]) {
-        const room = rooms[roomId];
-        room.activeGame = false;
-        room.selectedIndexes = [];
-        room.playerCartelas = {};
-        room.calledNumbers = [];
-        room.alreadyWon = [];
-        room.totalAward = 0;
-        io.to(roomId).emit("roomAvailable");
-        io.to(roomId).emit("resetRoom");
-      }
-    }, 4000);
+  if (rooms[roomId]) {
+    resetRoom(roomId);  // Use the consistent reset function
+  }
+}, 4000);
   }
 }
 
