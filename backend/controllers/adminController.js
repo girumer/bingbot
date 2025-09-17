@@ -3,7 +3,7 @@ const  Transaction=require('../Models/Transaction');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { secretkey } = require('../config/jwtconfig');
-//const bot = require("../src/bot");
+const bot = require("../src/bot");
 // Admin login
 exports.adminLogin = async (req, res) => {
   try {
@@ -127,13 +127,16 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-/* exports.broadcastToAllCustomers = async (req, res) => {
+ exports.broadcastToAllCustomers = async (req, res) => {
     try {
         const allUsers = await BingoBord.find({}, 'telegramId');
 
         // The text message to broadcast
-        const message = `ሪፈራል ሊንክ ሲጠቀሙ በናንተ ሪፈራል የገባው ሰው ከሚያስቀምጠው10% 
-        ዲፖዚት ለናንተ ተጨማሪ ይሆናል ይህ ቀጣይነት ያለው እንጂ የአንድ ግዜ አደለም`;
+        const message = `
+ወድ የአደይ ቢንጎ  ቤተሰቦች ዲፓዚት ሲያደርጉ  መጨረሻ ላይ የሚልኩልን ትራንዛክሽን ወይም ደረሰኝ ቁጥሩን 
+ብቻ ነው ለበለጠ መረጃ ከታች ባለው ቻናላችን ያናግሩንበተጨማሪም
+ሪፈራል ሊንክ ሲጠቀሙ በናንተ ሪፈራል የገባው ሰው ከሚያስቀምጠው10% 
+ዲፖዚት ለናንተ ተጨማሪ ይሆናል ይህ ቀጣይነት ያለው እንጂ የአንድ ግዜ አደለም ለእገዛ ${process.env.SUPPORT_USERNAME}`;
 
         let successCount = 0;
         let failCount = 0;
@@ -161,7 +164,7 @@ exports.registerUser = async (req, res) => {
         console.error("Broadcast failed:", err);
         return res.status(500).json({ error: "Failed to broadcast message." });
     }
-}; */
+}; 
 // Register user (admin can choose role)
 
 // Delete user by ID
