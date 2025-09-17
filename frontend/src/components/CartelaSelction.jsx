@@ -248,7 +248,18 @@ const [otherUsersCartelas, setOtherUsersCartelas] = useState([]); // Cartelas se
 
   };
 
-
+useEffect(() => {
+  if (myConfirmedCartelas.length > 0) {
+    localStorage.setItem("myConfirmedCartelas", JSON.stringify(myConfirmedCartelas));
+  }
+}, [myConfirmedCartelas]);
+// Restore confirmed cartelas from localStorage after refresh
+useEffect(() => {
+  const savedCartelas = localStorage.getItem("myConfirmedCartelas");
+  if (savedCartelas) {
+    setMyConfirmedCartelas(JSON.parse(savedCartelas));
+  }
+}, []);
 
   // --- MAIN INITIALIZATION EFFECT ---
 
