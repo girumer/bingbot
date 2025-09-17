@@ -248,6 +248,9 @@ const [otherUsersCartelas, setOtherUsersCartelas] = useState([]); // Cartelas se
 
   };
 
+
+
+
 useEffect(() => {
   if (myConfirmedCartelas.length > 0) {
     localStorage.setItem("myConfirmedCartelas", JSON.stringify(myConfirmedCartelas));
