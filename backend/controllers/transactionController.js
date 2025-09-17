@@ -184,7 +184,7 @@ exports.depositAmount = async (req, res) => {
         }
 
         // Step 2: Perform all necessary checks BEFORE processing the transaction.
-        if (parseFloat(updatedTx.amount) > amount) {
+        if (parseFloat(updatedTx.amount) !== amount) {
             return res.status(400).json({ error: "Amount mismatch. Please check your deposit amount." });
         }
         if (updatedTx.type !== type) {

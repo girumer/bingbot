@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { adminLogin, getAllUsers, getTransactions,registerUser, deleteUser } = require('../controllers/adminController');
+const { adminLogin, getAllUsers,broadcastToAllCustomers, getTransactions,registerUser, deleteUser } = require('../controllers/adminController');
 const { verifyAdmin } = require('../middleware/adminMiddleware'); // optional middleware
 
 // Admin login
