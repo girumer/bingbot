@@ -127,7 +127,7 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-/*   exports.broadcastToAllCustomers = async (req, res) => {
+  exports.broadcastToAllCustomers = async (req, res) => {
     try {
         const allUsers = await BingoBord.find({}, 'telegramId');
 
@@ -135,7 +135,7 @@ exports.registerUser = async (req, res) => {
         const message = `
 ውድ የአደይ ቢንጎ ቤተስቦች ዲፖሲት ብዙዎቻቹ ዲፖዚተት በመታድርጉ ጊዜ ችግር እንድ ጠማቹ ተግንዝበናል ማኑዋሉ ላይ ብሚግባ የትገለጸ ቢሆነም ብድምብ 
 ለማብራራት ሲባል በሚክተለው ግሩፓችንና አጠቃቅሙ 
-ባገባቡ ይሚግልጥ ሙሉ ቪድዮ ከታች ባለው ቴሌግራም ግሩፓቸን ላይ አስቅምጠንሎታል ${process.env.SUPPORT_GROUP}
+ባገባቡ ይሚግልጥ ሙሉ ቪድዮ ከታች ባለው ቴሌግራም ግሩፓቸን ላይ አስቅምጠንሎታል [እዚህ ይጫኑ](${process.env.SUPPORT_GROUP}) ይመለከቱ
 ለበለጠ መረጃ ከታች ባለው ቻናላችን ያናግሩንበተጨማሪም
 ሪፈራል ሊንክ ሲጠቀሙ በናንተ ሪፈራል የገባው ሰው ከሚያስቀምጠው10% 
 ዲፖዚት ለናንተ ተጨማሪ ይሆናል ይህ ቀጣይነት ያለው እንጂ የአንድ ግዜ አደለም ለእገዛ ${process.env.SUPPORT_USERNAME}`;
@@ -166,7 +166,7 @@ exports.registerUser = async (req, res) => {
         console.error("Broadcast failed:", err);
         return res.status(500).json({ error: "Failed to broadcast message." });
     }
-};   */
+};   
 // Register user (admin can choose role)
 
 // Delete user by ID
