@@ -94,9 +94,9 @@ const isWinningCell = (cell, rowIndex, cellIndex, pattern) => {
           })}
         </div>
 
-        <div className="cartela-index">card number {cartelaIndex}</div>
+        <div className="cartela-index">card number {cartelaIndex+1}</div>
 
-        <button className="bingo-button" onClick={() => toast.error("Checking")}>
+        <button className="bingo-button" onClick={() => toast.error("u click wrong pattern")}>
           Bingo
         </button>
       </div>

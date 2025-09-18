@@ -134,24 +134,7 @@ const router = express.Router();
 const rooms = {}; // rooms = { roomId: { players, selectedIndexes, playerCartelas, ... } }
 const socketIdToClientId = new Map();
 const clientIdToSocketId = new Map();
-setInterval(() => {
-  for (const roomId in rooms) {
-    const room = rooms[roomId];
-    const hasPlayers = Object.keys(room.players).length > 0;
-    
-    if (!hasPlayers) {
-      console.log(`Cleaning up empty room: ${roomId}`);
-      resetRoom(roomId);
-      delete rooms[roomId];
-    } else if (!room.activeGame && (room.timerInterval || room.numberInterval)) {
-      // Only log if we actually clean up something
-      if (room.timerInterval || room.numberInterval) {
-        console.log(`Cleaning up intervals in inactive room: ${roomId}`);
-        resetRoom(roomId);
-      }
-    }
-  }
-}, 300000);
+
 io.on("connection", (socket) => {
   //console.log("New connection:", socket.id);
 
@@ -330,37 +313,42 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
 // --- DISCONNECT ---
 // --- DISCONNECT ---
 socket.on("disconnect", () => {
-    const clientId = socketIdToClientId.get(socket.id);
-    if (!clientId) return;
+  const clientId = socketIdToClientId.get(socket.id);
+  if (!clientId) return;
 
-    // Clean up maps
-    socketIdToClientId.delete(socket.id);
-    clientIdToSocketId.delete(clientId);
+  // Clean up maps
+  socketIdToClientId.delete(socket.id);
+  clientIdToSocketId.delete(clientId);
 
-    for (const roomId in rooms) {
-      const room = rooms[roomId];
-      if (!room || !room.players[clientId]) continue;
+  for (const roomId in rooms) {
+    const room = rooms[roomId];
+    if (!room || !room.players[clientId]) continue;
 
-      // Remove player from room
-      delete room.playerCartelas[clientId];
-      delete room.players[clientId];
+    // Remove player from room
+    delete room.playerCartelas[clientId];
+    delete room.players[clientId];
 
-      // Check if room is now empty
-      const playersWithCartela = Object.values(room.playerCartelas).filter(
-        arr => arr.length > 0
-      ).length;
+    // Check if room is now empty
+    const playersWithCartela = Object.values(room.playerCartelas).filter(
+      arr => arr.length > 0
+    ).length;
 
-      if (playersWithCartela === 0) {
+    if (playersWithCartela === 0) {
+      // Room has no players with cartelas - check if completely empty
+      const totalPlayers = Object.keys(room.players).length;
+      if (totalPlayers === 0) {
+        // Room is completely empty - delete it
+        console.log(`Room ${roomId} is empty after disconnect. Deleting room.`);
         resetRoom(roomId);
-        // Note: We don't delete the room here, let the periodic cleanup handle it
+        delete rooms[roomId];
       } else {
-        io.to(roomId).emit("playerCount", { 
-          totalPlayers: Object.keys(room.players).length 
-        });
+        // Room has spectators but no players with cartelas - just reset
+        resetRoom(roomId);
       }
-      break;
     }
-  });
+    break;
+  }
+});
 });
 
 function resetRoom(roomId) {
@@ -638,10 +626,41 @@ async function checkWinners(roomId, calledNumber) {
     io.to(roomId).emit("winningPattern", winners);
 
     setTimeout(() => {
-  if (rooms[roomId]) {
-    resetRoom(roomId);  // Use the consistent reset function
-  }
-}, 4000);
+      if (rooms[roomId]) {
+        const room = rooms[roomId];
+        
+        // ✅ COMPREHENSIVE CLEANUP LOGIC:
+        console.log(`Game ended in room ${roomId}. Checking if room should be cleaned up...`);
+        
+        // Check if room has active players with cartelas
+        const playersWithCartelas = Object.values(room.playerCartelas).filter(
+          arr => arr && arr.length > 0
+        ).length;
+        
+        // Check if room has any players at all
+        const totalPlayers = Object.keys(room.players).length;
+        
+        console.log(`Room ${roomId} status - Players with cartelas: ${playersWithCartelas}, Total players: ${totalPlayers}`);
+        
+        if (playersWithCartelas === 0) {
+          // No players with cartelas left - full cleanup
+          if (totalPlayers === 0) {
+            // Room is completely empty - delete it
+            console.log(`Room ${roomId} is empty. Deleting room.`);
+            resetRoom(roomId);
+            delete rooms[roomId];
+          } else {
+            // Room has players but no cartelas - reset but keep room
+            console.log(`Room ${roomId} has ${totalPlayers} players but no cartelas. Resetting room.`);
+            resetRoom(roomId);
+          }
+        } else {
+          // Room still has players with cartelas - just reset game state
+          console.log(`Room ${roomId} has ${playersWithCartelas} players with cartelas. Keeping room active.`);
+          resetRoom(roomId);
+        }
+      }
+    }, 4000);
   }
 }
 

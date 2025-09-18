@@ -249,7 +249,11 @@ const [otherUsersCartelas, setOtherUsersCartelas] = useState([]); // Cartelas se
   };
 
 
-
+useEffect(() => {
+  if (socket.disconnected) {
+    socket.connect(); // Reconnect if disconnected
+  }
+}, []);
 
 useEffect(() => {
   if (myConfirmedCartelas.length > 0) {
@@ -716,7 +720,7 @@ const refreshpg = () => {
 
           <div className="display-btn">Stake: {stake} ETB</div>
          
-         <div className="display-btn1" onClick={refreshpg}>REFRESH</div>
+        
       
         </div>
 
