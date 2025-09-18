@@ -170,7 +170,7 @@ const extractTransactionDetails = (message) => {
     }
 
     // ----- CBE Birr Regex (Amharic - Unchanged) -----
-    const cbebirrAmRegex = /([\d\.]+)\s*Br\..*በደረሰኝ ቁጥ[ርጠ]\s*([A-Z0-9]+)/i;
+ const cbebirrAmRegex = /([\d\.]+)\s*Br\..*?በደረሰኝ ቁ[ጠጥ]ር\s*([A-Z0-9]+)/i;
     const cbebirrAmMatch = message.match(cbebirrAmRegex);
     if (cbebirrAmMatch) {
         amount = parseFloat(cbebirrAmMatch[1]);
