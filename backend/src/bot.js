@@ -746,30 +746,29 @@ case "room_30":
   // });
   
 case "transactions":
-  try {
-    // Fetch last 10 transactions for the user's phone number
-    const transactions = await Transaction.find({ phoneNumber: user.phoneNumber })
-    
-      .sort({ createdAt: -1 }) // newest first
-      .limit(10);
+  try {
+    // Fetch last 10 transactions for the user's phone number
+    const transactions = await Transaction.find({ phoneNumber: user.phoneNumber })
+      .sort({ createdAt: -1 }) // newest first
+      .limit(10);
 
-    if (!transactions || transactions.length === 0) {
-      bot.sendMessage(chatId, "You have no transaction history yet.");
-      
-      return;
-    }
+    if (!transactions || transactions.length === 0) {
+      bot.sendMessage(chatId, "You have no transaction history yet.");
+      return;
+    }
 
-    let historyText = "📜 Your last 10 transactions:\n";
-    transactions.forEach((t, i) => {
-      historyText += `${i + 1}. via: ${t.type.toUpperCase()},type: ${t.method.toUpperCase()}, Amount: ${t.amount} ብር, Date: ${t.createdAt.toLocaleString()}\n`;
-    });
+    let historyText = "📜 Your last 10 transactions:\n";
+    transactions.forEach((t, i) => {
+      // Corrected line below: t.method and t.type are the correct keys
+      historyText += `${i + 1}. Type: ${t.method.toUpperCase()}, via: ${t.type.toUpperCase()}, Amount: ${t.amount} ብር, Date: ${t.createdAt.toLocaleString()}\n`;
+    });
 
-    bot.sendMessage(chatId, historyText);
-  } catch (err) {
-    console.error(err);
-    bot.sendMessage(chatId, "❌ Failed to fetch transaction history.");
-  }
-  break;
+    bot.sendMessage(chatId, historyText);
+  } catch (err) {
+    console.error(err);
+    bot.sendMessage(chatId, "❌ Failed to fetch transaction history.");
+  }
+  break;
 case "referral":
     // Get the bot's username dynamically from the API.
     const botInfo = await bot.getMe();
