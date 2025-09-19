@@ -233,7 +233,16 @@ exports.depositAmount = async (req, res) => {
 
         // Step 5: Process the transaction and handle referral bonus.
         user.Wallet += finalAmount;
-        
+         const newTransaction = new Transaction({
+           
+            phoneNumber,
+            amount: finalAmount,
+            type: finalType,
+            method: 'deposit', // <-- This is the key change!
+             transactionNumber,
+            status: 'completed',
+        });
+        await newTransaction.save();
         if (user.referredBy ) {
             const referer = await BingoBord.findOne({ telegramId: user.referredBy });
             if (referer) {
