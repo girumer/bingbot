@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 // Inside the component
 
-const LIMIT = 5;
+const LIMIT = 10;
 
 export default function AdminDashboard() {
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";

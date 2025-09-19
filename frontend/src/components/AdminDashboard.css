@@ -27,7 +27,7 @@
   padding: 5px 12px;
   border: none;
   background: #007bff;
-  color: white;
+  color: rgb(14, 14, 14);
   border-radius: 4px;
   cursor: pointer;
 }
@@ -51,7 +51,7 @@
 
 .pagination button:hover:not(:disabled) {
   background: #007bff;
-  color: white;
+  color: rgb(29, 29, 29);
   border-color: #007bff;
 }
 
@@ -63,18 +63,18 @@
 
 .pagination button.active {
   background: #007bff;
-  color: white;
+  color: rgb(22, 21, 21);
   border-color: #007bff;
   font-weight: bold;
 }
 
 .pagination span {
   padding: 6px 10px;
-  color: #666;
+  color: #161515;
 }
 
 .pagination button:disabled {
-  background: #ccc;
+  background: #0c0c0c;
   cursor: not-allowed;
 }
 
