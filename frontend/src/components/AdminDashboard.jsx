@@ -301,14 +301,42 @@ const handlebrodcstat=async ()=>{
         </div>
 
         {/* Pagination */}
-        <div className="pagination">
-          <button disabled={page <= 1} onClick={() => gotoPage(page - 1)}>Prev</button>
-          <span className="current-page">Page {page} / {totalPages}</span>
-          <button disabled={page >= totalPages} onClick={() => gotoPage(page + 1)}>Next</button>
-          {[...Array(totalPages)].map((_, i) => (
-            <button key={i} onClick={() => gotoPage(i + 1)} style={{ fontWeight: page === i + 1 ? "bold" : "normal" }}>{i + 1}</button>
-          ))}
-        </div>
+        {/* Pagination */}
+<div className="pagination">
+  <button disabled={page <= 1} onClick={() => gotoPage(page - 1)}>Prev</button>
+
+  {/* Always show first page */}
+  {page > 3 && (
+    <>
+      <button onClick={() => gotoPage(1)}>1</button>
+      {page > 4 && <span>...</span>}
+    </>
+  )}
+
+  {/* Show nearby pages */}
+  {Array.from({ length: totalPages }, (_, i) => i + 1)
+    .filter(p => p >= page - 2 && p <= page + 2)
+    .map(p => (
+      <button
+        key={p}
+        onClick={() => gotoPage(p)}
+        style={{ fontWeight: page === p ? "bold" : "normal" }}
+      >
+        {p}
+      </button>
+    ))}
+
+  {/* Always show last page */}
+  {page < totalPages - 2 && (
+    <>
+      {page < totalPages - 3 && <span>...</span>}
+      <button onClick={() => gotoPage(totalPages)}>{totalPages}</button>
+    </>
+  )}
+
+  <button disabled={page >= totalPages} onClick={() => gotoPage(page + 1)}>Next</button>
+</div>
+
       </section>
       <section>
   <label htmlFor="method-select"><strong>Show:</strong> </label>
