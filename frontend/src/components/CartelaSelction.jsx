@@ -726,7 +726,11 @@ const refreshpg = () => {
 
        
 
- {timer !== null && <div className="timer-display">Time Remaining: {timer}s</div>}
+ {activeGame ? (
+  <div className="timer-display">Game started – please wait…</div>
+) : (
+  timer !== null && <div className="timer-display">Time Remaining: {timer}s</div>
+)}
 
 
  <div className="Cartelacontainer">
