@@ -506,7 +506,8 @@ const txType = userStates[chatId].method;
         transactionNumber: text,
         phoneNumber: user.phoneNumber,
          amount: depositAmount,
-          type: userStates[chatId].depositMethod
+         method: 'deposit', // <-- This should be the transaction type
+         type: userStates[chatId].depositMethod
 
       });
 
@@ -741,7 +742,7 @@ case "room_30":
   //     ]
   //   }
   // });
-  break;
+  
 case "transactions":
   try {
     // Fetch last 10 transactions for the user's phone number
