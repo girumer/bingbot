@@ -760,7 +760,7 @@ case "transactions":
     let historyText = "📜 Your last 10 transactions:\n";
     transactions.forEach((t, i) => {
       // Corrected line below: t.method and t.type are the correct keys
-      historyText += `${i + 1}. Type: ${t.method.toUpperCase()}, via: ${t.type.toUpperCase()}, Amount: ${t.amount} ብር, Date: ${t.createdAt.toLocaleString()}\n`;
+        historyText += `${i + 1}. Type: ${t.method.toUpperCase()}, via: ${t.type.toUpperCase()}, Amount: ${t.amount} ብር, Date: ${t.createdAt.toLocaleString()}\n`;
     });
 
     bot.sendMessage(chatId, historyText);
