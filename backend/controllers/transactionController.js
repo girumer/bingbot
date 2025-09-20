@@ -243,7 +243,7 @@ exports.depositAmount = async (req, res) => {
             amount: finalAmount,
             type: finalType,
             method: 'deposit', 
-            transactionNumber: finalTxnNumber,
+            transactionNumber,
             status: 'completed',
         });
         await newTransaction.save();
