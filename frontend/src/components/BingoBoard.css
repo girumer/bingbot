@@ -91,7 +91,7 @@ input:checked + .toggle-slider:before {
 .winner-highlight {
   background-color: rgb(31, 12, 201) !important;
   border: 3px solid rgb(20, 12, 17) !important;
-  color: rgb(211, 206, 206);
+  color:white;
   font-weight: bold !important;
   transform: scale(1.1);
 }
