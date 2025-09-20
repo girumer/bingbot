@@ -145,13 +145,19 @@ exports.parseTransaction = async (req, res) => {
 // Add this constant at the top of your file for easy modification
  // 10% bonus
 // Add this constant at the top of your file for easy modification
-
-// ... Your existing dependencies and schema ...
 const extractTransactionDetails = (message) => {
     let transactionNumber, amount, type;
 
     // ----- Telebirr Regex (Simplified) -----
     // Matches messages with 'ETB' and a transaction number, regardless of received/transferred.
+    const telebirrAmRegex = /([\d,]+\.\d+)\s*ብር.*የሂሳብ እንቅስቃሴ ቁጥርዎ\s*([a-zA-Z0-9]+)\s*ነዉ/i;
+    const telebirrAmMatch = message.match(telebirrAmRegex);
+    if (telebirrAmMatch) {
+        amount = parseFloat(telebirrAmMatch[1]);
+        transactionNumber = telebirrAmMatch[2];
+        type = "telebirr";
+        return { transactionNumber, amount, type };
+    }
     const telebirrRegex = /ETB\s*([\d\.]+).*Your transaction number is\s*([A-Z0-9]+)\./i;
     const telebirrMatch = message.match(telebirrRegex);
     if (telebirrMatch) {
@@ -160,14 +166,7 @@ const extractTransactionDetails = (message) => {
         type = "telebirr"; 
         return { transactionNumber, amount, type };
     }
-const telebirrAmRegex = /([\d,]+\.\d+)\s*ብር.*የሂሳብ እንቅስቃሴ ቁጥርዎ\s*([a-zA-Z0-9]+)\s*ነዉ/i;
-    const telebirrAmMatch = message.match(telebirrAmRegex);
-    if (telebirrAmMatch) {
-        amount = parseFloat(telebirrAmMatch[1]);
-        transactionNumber = telebirrAmMatch[2];
-        type = "telebirr"; 
-        return { transactionNumber, amount, type };
-    }
+
     // ----- CBE Birr Regex (English - Unchanged) -----
     const cbebirrEnRegex = /credited with\s*([\d\.]+)\s*Br\..*Txn ID\s*([A-Z0-9]+)\./i;
     const cbebirrEnMatch = message.match(cbebirrEnRegex);
@@ -191,91 +190,93 @@ const telebirrAmRegex = /([\d,]+\.\d+)\s*ብር.*የሂሳብ እንቅስቃሴ
     return { transactionNumber: null, amount: null, type: null };
 };
 
+// ... Your existing dependencies and schema ...
+
 exports.depositAmount = async (req, res) => {
-    try {
-        let { transactionNumber, amount, type, phoneNumber } = req.body;
-        
-        let finalTxnNumber = transactionNumber ? transactionNumber.trim() : null;
-        let finalAmount = parseFloat(amount);
-        // ✅ The type is now used as-is, with no lowercase conversion
-        let finalType = type ? type : null;
+    try {
+        let { transactionNumber, amount, type, phoneNumber } = req.body;
+        
+        let finalTxnNumber = transactionNumber ? transactionNumber.trim() : null;
+        let finalAmount = parseFloat(amount);
+        let finalType = type ? type.toLowerCase() : null;
 
-        // ✅ NEW: Step 1: Check if the user has provided a full message instead of just the transaction number
-        if (finalTxnNumber && finalTxnNumber.includes(' ')) {
-            const extractedDetails = extractTransactionDetails(finalTxnNumber);
-            
-            if (extractedDetails.transactionNumber && !isNaN(extractedDetails.amount) && extractedDetails.type) {
-                finalTxnNumber = extractedDetails.transactionNumber;
-                finalAmount = extractedDetails.amount;
-                finalType = extractedDetails.type;
-            } else {
-                return res.status(400).json({ error: "Could not extract transaction details from the message. Please ensure the message contains a valid amount and transaction number." });
-            }
-        }
+        // Step 1: Handle if the user provides a full message string.
+        if (finalTxnNumber && finalTxnNumber.includes(' ')) {
+            const extractedDetails = extractTransactionDetails(finalTxnNumber);
+            
+            if (extractedDetails.transactionNumber && !isNaN(extractedDetails.amount) && extractedDetails.type) {
+                finalTxnNumber = extractedDetails.transactionNumber;
+                finalAmount = extractedDetails.amount;
+                finalType = extractedDetails.type;
+            } else {
+                return res.status(400).json({ error: "Could not extract transaction details from the message. Please ensure the message contains a valid amount and transaction number." });
+            }
+        }
 
-        // Step 2: Validate the required fields.
-        if (!finalTxnNumber || !phoneNumber || isNaN(finalAmount) || finalAmount <= 0 || !finalType) {
-            return res.status(400).json({ error: "Invalid or missing parameters. Please provide the transaction ID, amount, and type." });
-        }
+        // Step 2: Validate the required fields.
+        if (!finalTxnNumber || !phoneNumber || isNaN(finalAmount) || finalAmount <= 0 || !finalType) {
+            return res.status(400).json({ error: "Invalid or missing parameters. Please provide the transaction ID, amount, and type." });
+        }
 
-        // Step 3: Find the user.
-        const user = await BingoBord.findOne({ phoneNumber });
-        if (!user) {
-            return res.status(404).json({ error: "User not found. Please register or provide a valid phone number." });
-        }
-        
-        // Step 4: Find the PENDING transaction using the provided transactionNumber.
-        const updatedTx = await Transaction.findOne({
-            transactionNumber: finalTxnNumber,
-            method: "depositpend",
-            amount: finalAmount, 
-            type: finalType      
-        });
-        
-        if (!updatedTx) {
-            return res.status(400).json({ error: "Invalid, already-claimed, or mismatching transaction details. Please check your inputs and try again." });
-        }
+        // Step 3: Find the user.
+        const user = await BingoBord.findOne({ phoneNumber });
+        if (!user) {
+            return res.status(404).json({ error: "User not found. Please register or provide a valid phone number." });
+        }
+        
+        // Step 4: Find the PENDING transaction using the provided transactionNumber.
+        // This is where the core security check happens. It ensures a pending deposit exists for this transaction ID.
+        const updatedTx = await Transaction.findOne({
+            transactionNumber: finalTxnNumber,
+            method: "depositpend",
+            amount: finalAmount, // Verify the amount to prevent fraud
+            type: finalType      // Verify the type to prevent fraud
+        });
+        
+        if (!updatedTx) {
+            return res.status(400).json({ error: "Invalid, already-claimed, or mismatching transaction details. Please check your inputs and try again." });
+        }
 
-        // Step 5: Process the transaction and handle referral bonus.
-        user.Wallet += finalAmount;
-        const newTransaction = new Transaction({
-            phoneNumber,
-            amount: finalAmount,
-            type: finalType,
-            method: 'deposit', 
-            transactionNumber,
-            status: 'completed',
-        });
-        await newTransaction.save();
-        
-        if (user.referredBy) {
-            const referer = await BingoBord.findOne({ telegramId: user.referredBy });
-            if (referer) {
-                const bonusAmount = finalAmount * 0.05;
-                referer.Wallet += bonusAmount;
-                await referer.save();
-                user.referralBonusPaid = true;
-                console.log(`Referral bonus of ${bonusAmount} ETB paid to user ${referer.telegramId}`);
-            }
-        }
-        
-        await user.save();
-        await Transaction.deleteOne({ transactionNumber: finalTxnNumber });
-        
-        console.log(`User wallet updated. New balance: ${user.Wallet}`);
-        
-        res.json({
-            message: `Deposit of ${finalAmount} ETB confirmed successfully! Your new wallet balance is ${user.Wallet}.`,
-            wallet: user.Wallet,
-        });
+        // The rest of the code is secure because it's based on a pending transaction created by your admin.
 
-    } catch (err) {
-        console.error("Deposit confirmation error:", err);
-        res.status(500).json({ error: "An unexpected error occurred. Please check your inputs and try again." });
-    }
+        // Step 5: Process the transaction and handle referral bonus.
+        user.Wallet += finalAmount;
+         const newTransaction = new Transaction({
+           
+            phoneNumber,
+            amount: finalAmount,
+            type: finalType,
+            method: 'deposit', // <-- This is the key change!
+             transactionNumber,
+            status: 'completed',
+        });
+        await newTransaction.save();
+        if (user.referredBy ) {
+            const referer = await BingoBord.findOne({ telegramId: user.referredBy });
+            if (referer) {
+                const bonusAmount = finalAmount * 0.05;
+                referer.Wallet += bonusAmount;
+                await referer.save();
+                user.referralBonusPaid = true;
+                console.log(`Referral bonus of ${bonusAmount} ETB paid to user ${referer.telegramId}`);
+            }
+        }
+        
+        await user.save();
+        await Transaction.deleteOne({ transactionNumber: finalTxnNumber });
+        
+        console.log(`User wallet updated. New balance: ${user.Wallet}`);
+        
+        res.json({
+            message: `Deposit of ${finalAmount} ETB confirmed successfully! Your new wallet balance is ${user.Wallet}.`,
+            wallet: user.Wallet,
+        });
+
+    } catch (err) {
+        console.error("Deposit confirmation error:", err);
+        res.status(500).json({ error: "An unexpected error occurred. Please check your inputs and try again." });
+    }
 };
-
-
 
 // Get all pending transactions
 exports.getPendingTransactions = async (req, res) => {
