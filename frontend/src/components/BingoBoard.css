@@ -566,7 +566,7 @@ input:checked + .toggle-slider:before {
 
   .cartela-cell.clicked {
     background: #90ee90;
-    border-color: #d7cd48;
+    border-color: #040e79;
     color: white;
   }
 
