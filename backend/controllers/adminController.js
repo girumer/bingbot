@@ -127,20 +127,20 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-/*    exports.broadcastToAllCustomers = async (req, res) => {
+    exports.broadcastToAllCustomers = async (req, res) => {
     try {
         const allUsers = await BingoBord.find({}, 'telegramId');
 
         // The text message to broadcast
         const message = `
- ውድ የአደይ ቢነጎ ቤተሰቦች ዊዝድሮዋል ስታደርጉ ችግር ላጋጠማችሁ 
-ሙሉ አጠቃቀሙን የገልፅ መመርያ ቪድዮ ስላስቅመጥንላቸሁ በሚከትለው ግሩፕ ገበታቸሁ መመለከት ተቸላላቸሁ 
+ሪፈራል ሊንክ ለጓደኛዎ ያጋሩ :: 
+አንድ ሰው ሲመዘገብ  እናንተ ያስገባቺሁት ሰው 
+ ብር ትርፍ ለድርጅቱ ቢያስገባ 10% ብሩ ወደ አካዉንታችሁ ይገባል::  
+ይህ ገቢ የአንድ ጊዜ አይደለም, ሰውየው በተጫወተ ቁጥር ገቢ ይሆናል 
+ለዲፖዚት እና ዊዝድሮዋል መመርያ
  [እዚህ ይጫኑ](${process.env.SUPPORT_GROUP}) 
 ለበለጠ መረጃ ከታች ባለው ቻናላችን ያናግሩን በተጨማሪም
-ሪፈራል ሊንክ ሲጠቀሙ በናንተ ሪፈራል የገባው ሰው ከሚያስቀምጠው 10% 
-ዲፖዚት ለናንተ ተጨማሪ ይሆናል ይህ ቀጣይነት ያልው ነው  እንጂ የአንድ ግዜ አደለም።
-ሲጫውቱ እስከ 4 ካርቴላ መምርጥ እንድሚችሉ አይዘንጋ 
- ለእገዛ ${process.env.SUPPORT_USERNAME}`;
+ለእገዛ [እዚህ ይጫኑ](${process.env.SUPPORT_USERNAME})`;
 
         let successCount = 0;
         let failCount = 0;
@@ -168,7 +168,7 @@ exports.registerUser = async (req, res) => {
         console.error("Broadcast failed:", err);
         return res.status(500).json({ error: "Failed to broadcast message." });
     }
-};  */  
+};   
 // Register user (admin can choose role)
 
 // Delete user by ID

@@ -85,12 +85,12 @@ input:checked + .toggle-slider:before {
   
 }
 .cartela-cell.highlighted {
-  background-color: rgb(25, 227, 79);
+  background-color: rgb(8, 8, 104);
   color: black;
 }
 .winner-highlight {
-  background-color: rgb(40, 199, 104) !important;
-  border: 3px solid red !important;
+  background-color: rgb(31, 12, 201) !important;
+  border: 3px solid rgb(20, 12, 17) !important;
   color: black;
   font-weight: bold !important;
   transform: scale(1.1);
