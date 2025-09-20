@@ -299,7 +299,7 @@ input:checked + .toggle-slider:before {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  background: rgb(225, 133, 133);
+  background: rgb(239, 239, 238);
   padding: 4px;
   box-sizing: border-box;
 }
@@ -532,11 +532,11 @@ input:checked + .toggle-slider:before {
     color: white;
   }
 
-  .cartela-header-cell.b { background: yellow; color: black; }
-  .cartela-header-cell.i { background: green; color: white; }
-  .cartela-header-cell.n { background: red; color: white; }
-  .cartela-header-cell.g { background: blue; color: white; }
-  .cartela-header-cell.o { background: brown; color: white; }
+  .cartela-header-cell.b { background: #4a71f3; }
+.cartela-header-cell.i { background: #180381; }
+.cartela-header-cell.n { background: #650396; }
+.cartela-header-cell.g { background: #3e7c58; }
+.cartela-header-cell.o { background: #ce4b1f; }
 
   /* Rows inside cartela */
   .cartela-rows-container {
@@ -561,12 +561,12 @@ input:checked + .toggle-slider:before {
     align-items: center;
     border: 1px solid #170202;
     border-radius: 2px;
-    background: #a69f9f;
+    background: white;
   }
 
   .cartela-cell.clicked {
     background: #90ee90;
-    border-color: #32cd32;
+    border-color: #d7cd48;
     color: white;
   }
 
