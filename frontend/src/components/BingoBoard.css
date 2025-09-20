@@ -403,11 +403,12 @@ input:checked + .toggle-slider:before {
   border-radius: 2px;
 }
 
-.cartela-header-cell.b { background: rgb(60, 104, 247); color: black; }
-.cartela-header-cell.i { background: green; color: white; }
-.cartela-header-cell.n { background: red; color: white; }
-.cartela-header-cell.g { background: blue; color: white; }
-.cartela-header-cell.o { background: brown; color: white; }
+.cartela-header-cell.b { background: #4a71f3; }
+.cartela-header-cell.i { background: #180381; }
+.cartela-header-cell.n { background: #650396; }
+.cartela-header-cell.g { background: #3e7c58; }
+.cartela-header-cell.o { background: #ce4b1f; }
+
 
 .cartela-rows-container {
   flex: 1;
@@ -507,7 +508,7 @@ input:checked + .toggle-slider:before {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  background: rgb(154, 144, 144);
+  background: rgb(240, 236, 248);
   padding: 4px;
   box-sizing: border-box;
 }
