@@ -4,7 +4,7 @@
     width: 100%;
     padding: 5px;
     box-sizing: border-box;
-    background-color: #060e62;
+    background-color: #080505;
 }
 /* Top display buttons */
 .wallet-stake-display {
@@ -57,7 +57,7 @@
 .cartela {
   padding: 0.8rem;
   border-radius: 6px;
-  border: 1px solid #ccc;
+  border: 1px solid #121111;
   font-weight: bold;
   transition: 0.2s;
 }
