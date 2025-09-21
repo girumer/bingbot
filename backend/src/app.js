@@ -279,7 +279,7 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
         (arr) => arr.length > 0
       ).length;
       if (!rooms[rId].timer && playersWithCartela >= 2) {
-        startCountdown(rId, 30);
+        startCountdown(rId, 35);
       }
     } catch (err) {
       console.error("Error selecting cartela:", err);
