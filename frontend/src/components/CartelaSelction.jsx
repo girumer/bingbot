@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 
 import "./CartelaSelction.css";
-
+import { motion } from "framer-motion";
 import cartela from "./cartela.json";
 
 import { useNavigate, useSearchParams,useOutletContext } from "react-router-dom";
@@ -727,9 +727,14 @@ const refreshpg = () => {
        
 
  {activeGame ? (
-  <div className="timer-display">Game started – please wait…</div>
+   <div className="timer-display">
+  Game started – please wait…
+</div>
 ) : (
-  timer !== null && <div className="timer-display">Time Remaining: {timer}s</div>
+ timer !== null && 
+  <div className="timer-display">
+    Time Remaining: {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}
+  </div>
 )}
 
 
