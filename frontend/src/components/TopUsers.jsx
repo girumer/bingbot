@@ -3,7 +3,7 @@ import axios from "axios";
 
 const TopUsers = () => {
   const [topUsers, setTopUsers] = useState([]);
-
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
   useEffect(() => {
     const fetchTopUsers = async () => {
       try {
