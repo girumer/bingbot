@@ -20,6 +20,7 @@ import { ToastContainer } from "react-toastify";
 import AdminDashboard from './components/AdminDashboard';
 import AdminSignup from './components/AdminSignup';
 import WalletPage from './components/WalletPage';
+import TopUsers from './components/TopUsers';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AdminPasswordReset from './components/AdminPasswordReset';
 
@@ -76,7 +77,7 @@ function App() {
             <Route  path="/deposit" element={<DepositPage/>}/>
           <Route path="/AdminDashboard" element={<AdminDashboard />} />
          
-          
+          <Route path="/TopUsers"  element={<TopUsers/>}/>
          <Route path="/CartelaSelction" element={<CartelaSelction/>}/>
            <Route path="/BingoBoard" element={<BingoBoard/>}/>
           </Route>

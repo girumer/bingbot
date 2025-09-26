@@ -31,7 +31,7 @@ const mainMenu = {
       [
         { text: "💰 Balance", callback_data: "balance" },
         { text: "🎮 Play Bingo", callback_data: "play" },
-       
+         { text: "🎮 Play Bingo", callback_data: "play" },
       ],
       [ { text: "📥 Deposit", callback_data: "deposit" },
       { text: "💳 Transactions", callback_data: "transactions" },
@@ -43,6 +43,7 @@ const mainMenu = {
       ],
       [
         { text: "🔗 Referral Link", callback_data: "referral" },
+         { text: "🎮 Leaders board", callback_data: "top" },
       ]
     ]
   }
@@ -800,7 +801,21 @@ case "referral":
         }
     );
     break;
- 
+ case "top":
+        const topUsersUrl = `${process.env.FRONTEND_URL}/TopUsers`;
+        
+        bot.sendMessage(chatId, `🏆 *View the Leaders Board!*`, {
+            parse_mode: "Markdown",
+            reply_markup: {
+                inline_keyboard: [
+                    [{
+                        text: "📊 View Leaderboard",
+                        web_app: { url: topUsersUrl }
+                    }]
+                ]
+            }
+        });
+        break;
     
     default:
       bot.sendMessage(chatId, "Unknown action occured.");

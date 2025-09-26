@@ -13,7 +13,7 @@ const bcrypt = require('bcryptjs');
 const { deductWallet } = require('../controllers/walletController');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('../routes/authRoutes');
-
+const leaderboardRoutes = require("../routes/leaderboardRoutes");
 
 const adminsRoutes = require("../routes/admins");
 const userRoutes = require('../routes/userRoutes');
@@ -702,6 +702,7 @@ async function checkWinners(roomId, calledNumber) {
   app.get('/api/test-endpoint', (req, res) => {
   res.json({ message: "API is working!" });
 });
+app.use("/api", leaderboardRoutes);
   app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 
