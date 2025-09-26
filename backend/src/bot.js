@@ -31,7 +31,7 @@ const mainMenu = {
       [
         { text: "💰 Balance", callback_data: "balance" },
         { text: "🎮 Play Bingo", callback_data: "play" },
-         { text: "🎮 Play Bingo", callback_data: "play" },
+        
       ],
       [ { text: "📥 Deposit", callback_data: "deposit" },
       { text: "💳 Transactions", callback_data: "transactions" },
@@ -43,7 +43,7 @@ const mainMenu = {
       ],
       [
         { text: "🔗 Referral Link", callback_data: "referral" },
-         { text: "🎮 Leaders board", callback_data: "top" },
+         { text: "🏆 Leaders board", callback_data: "top" },
       ]
     ]
   }
