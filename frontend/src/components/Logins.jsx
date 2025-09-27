@@ -66,7 +66,7 @@ console.log(dataa);
       <div className="login-container">
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+         
             <input
               type="text"
               id="username"
@@ -78,7 +78,7 @@ console.log(dataa);
           </div>
 
           <div className="form-group">
-            <label htmlFor="phoneNumber">Phone Number</label>
+            
             <input
               type="text"
               id="phoneNumber"
@@ -99,12 +99,7 @@ console.log(dataa);
         </form>
         <div style={{ marginTop: '10px', textAlign: 'center' }}>
   <span>Don't have an account? </span>
-  <button
-    style={{ color: 'blue', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-    onClick={() => navigate('/Signups')}
-  >
-    Sign Up
-  </button>
+ 
 </div>
         {message && <p className="message">{message}</p>}
       </div>
