@@ -67,26 +67,12 @@ console.log(dataa);
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="form-group">
          
-            <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleInputChange}
-              required
-            />
+           
           </div>
 
           <div className="form-group">
             
-            <input
-              type="text"
-              id="phoneNumber"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleInputChange}
-              required
-            />
+           
           </div>
 
           {isLoading ? (
