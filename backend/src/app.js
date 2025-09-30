@@ -130,7 +130,99 @@ const router = express.Router();
 
 
 
+// =========================================================================
+// !!! CRITICAL: Add the necessary modules/dependencies here if not globally available !!!
+// Assuming BingoBord model and cartela data ('cart') are available globally/imported.
 
+// Define the players you want to inject
+const forcedPlayersData = [
+    { username: 'xaka', clientId: 'client-xaka-bot' },
+    { username: 'elfo', clientId: 'client-elfo-bot' },
+    { username: 'alif', clientId: 'client-alif-bot' },
+    { username: 'martinaly', clientId: 'client-martinaly-bot' }
+];
+const NUM_CARTELAS_PER_PLAYER = 4;
+
+/**
+ * Inserts predefined players into a room, assigns random cartelas,
+ * deducts their stake, and updates the room state to force the countdown.
+ * @param {string} rId - The room ID (also the stake amount).
+ * @param {string} initiatorClientId - The clientId of the player who triggered this action.
+ */
+async function injectAndSelectForForcedPlayers(rId, initiatorClientId) {
+    const room = rooms[rId];
+    const stake = Number(rId);
+
+    // Only inject if the game is not already running or in countdown
+    if (room.activeGame || room.timer !== null) return;
+    
+    console.log(`[INJECT] Starting injection for Room ${rId}...`);
+
+    for (const player of forcedPlayersData) {
+        // Skip the injection if the player is the one who initiated the action
+        if (player.clientId === initiatorClientId) continue; 
+        
+        // 1. Check if player is already in the room or has cartelas (to prevent double-processing)
+        if (room.players[player.clientId] && room.playerCartelas[player.clientId].length > 0) {
+            continue;
+        }
+
+        try {
+            const user = await BingoBord.findOne({ username: player.username });
+
+            if (!user) {
+                console.error(`[INJECT ERROR] User ${player.username} not found in DB.`);
+                continue;
+            }
+            if (user.Wallet < stake * NUM_CARTELAS_PER_PLAYER) {
+                 console.error(`[INJECT ERROR] User ${player.username} has insufficient wallet.`);
+                continue;
+            }
+            
+            // 2. Add player to room (simulating 'joinRoom')
+            room.players[player.clientId] = player.username;
+            room.playerCartelas[player.clientId] = [];
+
+            // 3. Select 4 random cartelas and update DB
+            for (let i = 0; i < NUM_CARTELAS_PER_PLAYER; i++) {
+                let cartelaIndex;
+                // Generate a random, unique cartela index (1 to 75)
+                do {
+                    cartelaIndex = Math.floor(Math.random() * 75) + 1;
+                } while (room.selectedIndexes.includes(cartelaIndex));
+
+                // Deduct funds and save
+                user.Wallet -= stake;
+                
+                // Update Room State
+                room.playerCartelas[player.clientId].push(cartelaIndex);
+                room.selectedIndexes.push(cartelaIndex);
+            }
+            await user.save();
+            console.log(`[INJECT SUCCESS] ${player.username} assigned 4 cartelas and wallet deducted.`);
+
+        } catch (error) {
+            console.error(`[INJECT FAILED] Error processing ${player.username}:`, error);
+        }
+    }
+    
+    // 4. Update all connected clients about the new total cartelas
+    const totalCartelas = room.selectedIndexes.length;
+    io.to(rId).emit("updateSelectedCartelas", {
+        selectedIndexes: room.selectedIndexes,
+    });
+    
+    // 5. Check if the game can now start
+    const playersWithCartela = Object.values(room.playerCartelas).filter(
+      (arr) => arr.length > 0
+    ).length;
+    
+    if (!room.timer && playersWithCartela >= 2) {
+      console.log(`[INJECT TRIGGER] ${playersWithCartela} total players now. Starting 45s countdown.`);
+      startCountdown(rId, 45);
+    }
+}
+// =========================================================================
 const rooms = {}; // rooms = { roomId: { players, selectedIndexes, playerCartelas, ... } }
 const socketIdToClientId = new Map();
 const clientIdToSocketId = new Map();
@@ -274,13 +366,18 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
       io.to(rId).emit("updateSelectedCartelas", {
         selectedIndexes: rooms[rId].selectedIndexes,
       });
-
-      const playersWithCartela = Object.values(rooms[rId].playerCartelas).filter(
+if (userCartelas.length === 1) { 
+        // This will inject the 4 players and then automatically check and start the countdown
+        // inside the injector function itself.
+        injectAndSelectForForcedPlayers(rId, clientId);
+     }
+  /*     const playersWithCartela = Object.values(rooms[rId].playerCartelas).filter(
         (arr) => arr.length > 0
       ).length;
       if (!rooms[rId].timer && playersWithCartela >= 2) {
+         //injectAndSelectForForcedPlayers(rId, clientId);
         startCountdown(rId, 45);
-      }
+      } */
     } catch (err) {
       console.error("Error selecting cartela:", err);
       socket.emit("cartelaRejected", { message: "Server error" });
@@ -506,7 +603,8 @@ function startCountdown(roomId, seconds) {
       room.totalAward = totalCartelas * Number(roomId) * 0.8;
       io.to(roomId).emit("gameStarted", {
         totalAward: room.totalAward,
-        totalPlayers: Object.keys(room.players).length,
+        //totalPlayers: Object.keys(room.players).length,
+        totalPlayers: totalCartelas,
          gameId: room.gameId ,
       });
     console.log("game id is ",room.gameId);
