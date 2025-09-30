@@ -423,10 +423,15 @@ io.on("connection", (socket) => {
     });
 
     // ✅ Broadcast updated player count
-    const activePlayers = Object.values(rooms[rId].playerCartelas).filter(
+   /*  const activePlayers = Object.values(rooms[rId].playerCartelas).filter(
       (arr) => arr.length > 0
     ).length;
     io.to(rId).emit("playerCount", { totalPlayers: activePlayers });
+ */
+const activePlayers = Object.values(rooms[rId].playerCartelas)
+  .reduce((sum, arr) => sum + arr.length, 0);
+
+io.to(rId).emit("playerCount", { totalPlayers: activePlayers });
 
    // console.log(`New connection: ${socket.id}, username=${username}, telegramId=${telegramId}, clientId=${clientId}`);
   });
