@@ -210,6 +210,7 @@ async function injectAndSelectForForcedPlayers(rId, initiatorClientId) {
     const totalCartelas = room.selectedIndexes.length;
     io.to(rId).emit("updateSelectedCartelas", {
         selectedIndexes: room.selectedIndexes,
+        totalPlayers: room.selectedIndexes.length
     });
     
     // 5. Check if the game can now start
@@ -222,6 +223,69 @@ async function injectAndSelectForForcedPlayers(rId, initiatorClientId) {
       startCountdown(rId, 45);
     }
 }
+async function processNextBotCartelaSequential(rId, player) {
+    const room = rooms[rId];
+    const stake = Number(rId);
+    const clientId = player.clientId;
+
+    // 1. Check if bot is already fully injected
+    const currentCartelas = room.playerCartelas[clientId]?.length || 0;
+    if (currentCartelas >= NUM_CARTELAS_PER_PLAYER) {
+        return 'COMPLETE';
+    }
+
+    try {
+        const user = await BingoBord.findOne({ username: player.username });
+
+        if (!user) {
+            console.error(`[INJECT ERROR] User ${player.username} not found in DB.`);
+            return 'ERROR';
+        }
+
+        // 2. Initial Setup (if first cartela) & Funds Check
+        if (!(room.players[clientId])) {
+            // Add bot to room state if they are not already there
+            room.players[clientId] = player.username;
+            room.playerCartelas[clientId] = room.playerCartelas[clientId] || [];
+        }
+
+        if (user.Wallet < stake) {
+            console.error(`[INJECT ERROR] User ${player.username} has insufficient wallet (${user.Wallet}) for 1 ticket.`);
+            // Mark bot as skipped if funds are insufficient for the current ticket
+            return 'SKIPPED'; 
+        }
+
+        // 3. Select one unique cartela
+        let cartelaIndex;
+        // Generate a random, unique cartela index (1 to 75)
+        do {
+            cartelaIndex = Math.floor(Math.random() * 75) + 1;
+        } while (room.selectedIndexes.includes(cartelaIndex));
+
+        // Deduct funds and save
+        user.Wallet -= stake;
+        await user.save();
+
+        // Update Room State
+        room.playerCartelas[clientId].push(cartelaIndex);
+        room.selectedIndexes.push(cartelaIndex);
+        
+        console.log(`[INJECT SUCCESS] ${player.username} selected cartela #${cartelaIndex} (Total: ${room.playerCartelas[clientId].length}/${NUM_CARTELAS_PER_PLAYER}).`);
+
+        // 4. Broadcast Update (Total cartelas/tickets)
+        const totalCartelas = room.selectedIndexes.length;
+        io.to(rId).emit("updateSelectedCartelas", {
+            selectedIndexes: room.selectedIndexes,
+        });
+        io.to(rId).emit("playerCount", { totalPlayers: totalCartelas });
+        
+        return 'SUCCESS';
+
+    } catch (error) {
+        console.error(`[INJECT FAILED] Error processing ${player.username}:`, error);
+        return 'ERROR';
+    }
+}
 function startInjectionMonitor(rId, initiatorClientId) {
     const room = rooms[rId];
     if (!room) return;
@@ -232,29 +296,63 @@ function startInjectionMonitor(rId, initiatorClientId) {
     // Clear any existing monitor to prevent duplicates
     if (room.injectInterval) clearInterval(room.injectInterval);
 
-    console.log(`[INJECT MONITOR] Starting 1s monitor for room ${rId}.`);
+    console.log(`[INJECT MONITOR] Starting 1s sequential cartela injection for room ${rId}.`);
+    
+    // Bots must exclude the initiating player, in case the initiator is one of the bot IDs.
+    const activeBots = forcedPlayersData.filter(player => player.clientId !== initiatorClientId);
+    let currentBotIndex = 0; // Tracks which bot in the cycle is next (0, 1, 2, 3, 0, 1, 2, 3...)
 
     room.injectInterval = setInterval(async () => {
-        // Stop if the room state changes (game started, timer running)
-        if (rooms[rId] && (rooms[rId].activeGame || rooms[rId].timer !== null)) {
+        // --- 1. Cleanup Check ---
+        if (!rooms[rId] || rooms[rId].activeGame || rooms[rId].timer !== null) {
             clearInterval(room.injectInterval);
             rooms[rId].injectInterval = null;
-            console.log(`[INJECT MONITOR] Cleared monitor for room ${rId} (Game started/counting down).`);
+            console.log(`[INJECT MONITOR] Cleared monitor for room ${rId} (Game started/counting down or room closed).`);
+            return;
+        }
+        
+        // --- 2. Check Completion (16 cartelas total) ---
+        const totalCartelas = room.selectedIndexes.length;
+        // The total number of cartelas for the bots + the user's initial cartela (1)
+        const maxTotalCartelas = (activeBots.length * NUM_CARTELAS_PER_PLAYER) + 1; 
+
+        if (totalCartelas >= maxTotalCartelas) {
+             // All cartelas selected. Start countdown if game hasn't started.
+            const playersWithCartela = Object.values(room.playerCartelas).filter(
+                (arr) => arr.length > 0
+            ).length;
+            
+            if (!room.timer && playersWithCartela >= 2) {
+                console.log(`[INJECT TRIGGER] All cartelas selected (${totalCartelas}). Starting 45s countdown.`);
+                startCountdown(rId, 45);
+            }
+            clearInterval(room.injectInterval);
+            rooms[rId].injectInterval = null;
+            console.log(`[INJECT MONITOR] Cleared monitor for room ${rId} (All cartelas selected).`);
             return;
         }
 
-        // ⚠️ CRITICAL STEP: Run the injector every second.
-        // The injector handles all internal checks (already in, funds, etc.)
-        await injectAndSelectForForcedPlayers(rId, initiatorClientId); 
-
-        // After injection, check if all bots are now present (total 4 injected + 1 initiator = 5)
-        const injectedCount = forcedPlayersData.filter(player => room.playerCartelas[player.clientId] && room.playerCartelas[player.clientId].length > 0).length;
+        // --- 3. Sequential Injection Logic ---
+        // Cycle through the bots (0, 1, 2, 3)
+        const botToInject = activeBots[currentBotIndex];
         
-        if (injectedCount === forcedPlayersData.length) {
-            // Once all bots are present and have cartelas, the injector would have started the countdown.
-            clearInterval(room.injectInterval);
-            rooms[rId].injectInterval = null;
-            console.log(`[INJECT MONITOR] Cleared monitor for room ${rId} (All bots injected).`);
+        if (botToInject) {
+            const botCartelaCount = room.playerCartelas[botToInject.clientId]?.length || 0;
+
+            // Only attempt injection if the bot hasn't reached its limit
+            if (botCartelaCount < NUM_CARTELAS_PER_PLAYER) {
+                const result = await processNextBotCartelaSequential(rId, botToInject);
+                
+                // If the ticket was successfully purchased or failed/skipped, move to the next bot
+                if (result === 'SUCCESS' || result === 'SKIPPED' || result === 'ERROR') {
+                    currentBotIndex = (currentBotIndex + 1) % activeBots.length;
+                }
+                // Note: If result is 'COMPLETE' (which shouldn't happen here but for safety),
+                // we still move to the next bot.
+            } else {
+                 // This bot is full (4 cartelas), skip them and check the next one immediately in the next cycle.
+                 currentBotIndex = (currentBotIndex + 1) % activeBots.length;
+            }
         }
         
     }, 1000);
@@ -520,10 +618,6 @@ function resetRoom(roomId) {
   io.to(roomId).emit("roomAvailable");
   io.to(roomId).emit("resetRoom");
 }
-
-
-
-
 
 // ================= GAME FUNCTIONS =================
 function startNumberGenerator(roomId) {
