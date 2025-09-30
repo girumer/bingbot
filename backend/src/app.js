@@ -222,6 +222,43 @@ async function injectAndSelectForForcedPlayers(rId, initiatorClientId) {
       startCountdown(rId, 45);
     }
 }
+function startInjectionMonitor(rId, initiatorClientId) {
+    const room = rooms[rId];
+    if (!room) return;
+
+    // Check if the game is already starting or running
+    if (room.activeGame || room.timer !== null) return;
+    
+    // Clear any existing monitor to prevent duplicates
+    if (room.injectInterval) clearInterval(room.injectInterval);
+
+    console.log(`[INJECT MONITOR] Starting 1s monitor for room ${rId}.`);
+
+    room.injectInterval = setInterval(async () => {
+        // Stop if the room state changes (game started, timer running)
+        if (rooms[rId] && (rooms[rId].activeGame || rooms[rId].timer !== null)) {
+            clearInterval(room.injectInterval);
+            rooms[rId].injectInterval = null;
+            console.log(`[INJECT MONITOR] Cleared monitor for room ${rId} (Game started/counting down).`);
+            return;
+        }
+
+        // ⚠️ CRITICAL STEP: Run the injector every second.
+        // The injector handles all internal checks (already in, funds, etc.)
+        await injectAndSelectForForcedPlayers(rId, initiatorClientId); 
+
+        // After injection, check if all bots are now present (total 4 injected + 1 initiator = 5)
+        const injectedCount = forcedPlayersData.filter(player => room.playerCartelas[player.clientId] && room.playerCartelas[player.clientId].length > 0).length;
+        
+        if (injectedCount === forcedPlayersData.length) {
+            // Once all bots are present and have cartelas, the injector would have started the countdown.
+            clearInterval(room.injectInterval);
+            rooms[rId].injectInterval = null;
+            console.log(`[INJECT MONITOR] Cleared monitor for room ${rId} (All bots injected).`);
+        }
+        
+    }, 1000);
+}
 // =========================================================================
 const rooms = {}; // rooms = { roomId: { players, selectedIndexes, playerCartelas, ... } }
 const socketIdToClientId = new Map();
@@ -248,6 +285,7 @@ io.on("connection", (socket) => {
         calledNumbers: [],
        timerInterval: null,    // for countdown
        numberInterval: null,
+       injectInterval: null,
         alreadyWon: [],
         totalAward: 0,
         gameId: null,
@@ -273,7 +311,7 @@ io.on("connection", (socket) => {
       lastNumber: rooms[rId].calledNumbers.slice(-1)[0] || null,
       timer: rooms[rId].timer,
       totalAward: rooms[rId].totalAward,
-      totalPlayers: Object.keys(rooms[rId].players).length,
+      totalPlayers: totalCartelas,
       activeGame: rooms[rId].activeGame || false,
        gameId: rooms[rId].gameId || null
     });
@@ -369,7 +407,7 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
 if (userCartelas.length === 1) { 
         // This will inject the 4 players and then automatically check and start the countdown
         // inside the injector function itself.
-        injectAndSelectForForcedPlayers(rId, clientId);
+       startInjectionMonitor(rId, clientId);
      }
   /*     const playersWithCartela = Object.values(rooms[rId].playerCartelas).filter(
         (arr) => arr.length > 0
