@@ -314,7 +314,7 @@ io.on("connection", (socket) => {
       totalPlayers: Object.values(rooms[rId].playerCartelas).reduce(
     (sum, arr) => sum + arr.length,
     0
-  ),,
+  ),
       activeGame: rooms[rId].activeGame || false,
        gameId: rooms[rId].gameId || null
     });
