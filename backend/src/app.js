@@ -311,7 +311,10 @@ io.on("connection", (socket) => {
       lastNumber: rooms[rId].calledNumbers.slice(-1)[0] || null,
       timer: rooms[rId].timer,
       totalAward: rooms[rId].totalAward,
-      totalPlayers: totalCartelas,
+      totalPlayers: Object.values(rooms[rId].playerCartelas).reduce(
+    (sum, arr) => sum + arr.length,
+    0
+  ),,
       activeGame: rooms[rId].activeGame || false,
        gameId: rooms[rId].gameId || null
     });
