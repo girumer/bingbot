@@ -360,7 +360,7 @@ function startInjectionMonitor(rId, initiatorClientId) {
             }
         }
         
-    }, 1000);
+    }, 2000);
 }
 // =========================================================================
 const rooms = {}; // rooms = { roomId: { players, selectedIndexes, playerCartelas, ... } }
