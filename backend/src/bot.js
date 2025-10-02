@@ -446,6 +446,7 @@ if (step === "depositAmount") {
 // ...
 if (step === "withdrawAmount") {
     const amount = parseFloat(text);
+     const MIN_REMAINING_BALANCE = 50; 
     if (isNaN(amount) || amount <= 0) {
       bot.sendMessage(chatId, "⚠️ Please enter a valid withdrawal amount.");
       return;
@@ -475,6 +476,20 @@ if (amount < 50) {
         }
           if (user.Wallet < amount) {
             bot.sendMessage(chatId, `❌ You have insufficient funds. Your current balance is ${user.Wallet} ETB.`);
+            delete userStates[chatId];
+            return;
+        }
+         const maxWithdrawalAmount = user.Wallet - MIN_REMAINING_BALANCE;
+         if (maxWithdrawalAmount < 0) {
+            // User's balance is already below 50 (e.g., balance is 40).
+            bot.sendMessage(chatId, `❌ Your current balance (${user.Wallet} Birr) is less than the required minimum play balance of ${MIN_REMAINING_BALANCE} Birr. You cannot withdraw.`);
+            delete userStates[chatId];
+            return;
+        }
+        
+        if (amount > maxWithdrawalAmount) {
+            // User is requesting too much (e.g., balance 230, requesting 181).
+            bot.sendMessage(chatId, `❌ You must leave at least ${MIN_REMAINING_BALANCE} Birr in your wallet. The maximum amount you can withdraw is **${maxWithdrawalAmount} Birr**.`);
             delete userStates[chatId];
             return;
         }
