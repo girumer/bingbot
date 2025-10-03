@@ -565,7 +565,7 @@ bot.on("contact", async (msg) => {
       telegramId: chatId,
       username: username,
       phoneNumber: contact.phone_number,
-      Wallet: 0,
+      Wallet: 5,
       gameHistory: [],
       // NEW: Add the referrer's ID to the new user's document
       referredBy: state.referrerId || null,
