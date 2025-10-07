@@ -77,15 +77,19 @@ function parseTelebirrMessage(message) {
 function parseCBEMessages(message) {
     const transactions = [];
     
-    // 1. Amount Regex: Looks for '50.00Br.' or similar format (now handles capitalization correctly).
-    // Captures the number only.
-    const amountMatches = [...message.matchAll(/([\d,]+\.\d+)\s*Br\.|ብር/gi)];
-
-    // 2. Transaction ID Regex: Correctly includes 'Txn ID', 'txn id', and Amharic variations.
+    // 1. Corrected Amount Regex: Captures the amount (e.g., '50.00') followed by 'Br.' or 'ብር'.
+    // The amount itself is in capture group [1].
+    const amountMatches = [...message.matchAll(/([\d,]+\.\d+)\s*(?:Br\.|\u1295\u122B|\u1295\u122D)/gi)]; // \u1295\u122B is Br, \u1295\u122D is Birr (Amharic)
+    
+    // 2. Transaction ID Regex (This one looks good)
     const transMatches = [...message.matchAll(/(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|by receipt number|Txn ID)\s*([a-zA-Z0-9]+)/gi)];
 
     // Logic: Assume the FIRST amount is the deposited amount, and the FIRST Txn ID is the one to use.
     if (amountMatches.length > 0 && transMatches.length > 0) {
+        // ... rest of the logic ...
+        // Note: The amount from the message "Dear MUSTEFA, you have sent 50.00Br. to..."
+        // is the money *sent* by the user, which is correct for a deposit to you.
+        
         // Use the FIRST amount matched (50.00)
         const amount = parseFloat(amountMatches[0][1].replace(/,/g, "")); 
         
@@ -113,17 +117,23 @@ function parseCBEMessages(message) {
 exports.parseTransaction = async (req, res) => {
     try {
         console.log('Received request body:', req.body);
-        const { key: message } = req.body;
-        console.log('messsage is:', message);
+      const { key: originalMessage } = req.body;
         
-        if (!message) {
+        
+        if (!originalMessage) {
             return res.status(400).json({ error: "Message is required" });
         }
-
+             let message = originalMessage
+            .replace(/[\u200B-\u200F\uFEFF\u2028\u2029\u00A0\t\r\n]+/g, ' ')
+            .trim();
+            
+        
+        
         let transactions = [];
+       
         const telebirrRegex = /telebirr/i; // New regex for case-insensitive check
 
-        const cbebirrRegex = /(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|by receipt number)\s*([a-zA-Z0-9]+)/i;
+        const cbebirrRegex = /(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|by receipt number|Txn ID)\s*([a-zA-Z0-9]+)/i;
         
         if (message.match(cbebirrRegex)) {
             transactions = parseCBEMessages(message);

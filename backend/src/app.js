@@ -236,7 +236,7 @@ async function injectAndSelectForForcedPlayers(rId, initiatorClientId) {
     
     if (!room.timer && playersWithCartela >= 2) {
       console.log(`[INJECT TRIGGER] ${playersWithCartela} total players now. Starting 45s countdown.`);
-      startCountdown(rId, 45);
+      startCountdown(rId, 60);
     }
 }
 async function processNextBotCartelaSequential(rId, player) {
