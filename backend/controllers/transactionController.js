@@ -113,7 +113,7 @@ function parseCBEMessages(message) {
 // function parseTelebirrMessage(message) { ... }
 // function parseCBEMessages(message) { ... }
 
-exports.parseTransaction = async (req, res) => {
+/* exports.parseTransaction = async (req, res) => {
     try {
         console.log('Received request body:', req.body);
       const { key: originalMessage } = req.body;
@@ -149,6 +149,82 @@ exports.parseTransaction = async (req, res) => {
         const transactionToSave = transactions[0];
 
         const existingTransaction = await Transaction.findOne({ transactionNumber: transactionToSave.transactionNumber });
+        if (existingTransaction) {
+            console.log(`Transaction ${transactionToSave.transactionNumber} already exists. Skipping.`);
+            return res.status(409).json({ error: "Transaction already exists." });
+        }
+
+        const newTransaction = new Transaction({
+            amount: transactionToSave.amount,
+            transactionNumber: transactionToSave.transactionNumber,
+            method: "depositpend",
+            type: transactionToSave.type
+        });
+        
+        await newTransaction.save();
+        
+        console.log("Transaction saved as pending:", newTransaction.transactionNumber);
+        
+        return res.status(200).json({
+            message: "Transaction received and saved as pending. Please confirm your deposit.",
+            transactionNumber: newTransaction.transactionNumber,
+        });
+
+    } catch (err) {
+        if (err.code === 11000) {
+            console.log(`Duplicate transaction encountered: ${err.message}`);
+            return res.status(409).json({ error: "Transaction already exists." });
+        }
+        console.error("Server error:", err);
+        return res.status(500).json({ error: "Server error" });
+    }
+}; */
+exports.parseTransaction = async (req, res) => {
+    try {
+        console.log('Received request body:', req.body);
+        const { key: originalMessage } = req.body;
+        
+        if (!originalMessage) {
+            return res.status(400).json({ error: "Message is required" });
+        }
+        
+        let message = originalMessage
+            .replace(/[\u200B-\u200F\uFEFF\u2028\u2029\u00A0\t\r\n]+/g, ' ')
+            .trim();
+        
+        console.log('Cleaned message:', message);
+        
+        let transactions = [];
+       
+        // Check for CBE first (since that's what you're testing)
+        const cbebirrRegex = /(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|Txn ID)/i;
+        const telebirrRegex = /telebirr/i;
+        
+        if (message.match(cbebirrRegex)) {
+            console.log('Detected CBE transaction');
+            transactions = parseCBEMessages(message);
+        } else if (message.match(telebirrRegex)) {
+            console.log('Detected Telebirr transaction');
+            transactions = parseTelebirrMessage(message);
+        } else {
+            console.log('No supported transaction type detected');
+            return res.status(400).json({ error: "Unsupported transaction type" });
+        }
+
+        console.log('Parsed transactions:', transactions);
+
+        if (transactions.length === 0) {
+            return res.status(400).json({ 
+                error: "No transaction found in message. Please check the format." 
+            });
+        }
+        
+        const transactionToSave = transactions[0];
+
+        const existingTransaction = await Transaction.findOne({ 
+            transactionNumber: transactionToSave.transactionNumber 
+        });
+        
         if (existingTransaction) {
             console.log(`Transaction ${transactionToSave.transactionNumber} already exists. Skipping.`);
             return res.status(409).json({ error: "Transaction already exists." });
