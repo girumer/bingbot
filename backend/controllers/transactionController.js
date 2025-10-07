@@ -183,7 +183,7 @@ exports.parseTransaction = async (req, res) => {
     try {
         console.log('Received request body:', req.body);
         const { key: originalMessage } = req.body;
-        
+        console.log(originalMessage);
         if (!originalMessage) {
             return res.status(400).json({ error: "Message is required" });
         }
