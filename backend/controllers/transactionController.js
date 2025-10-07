@@ -46,7 +46,7 @@ function parseTelebirrMessage(message) {
 
 // In your utils/messageParsers.js file
 // In your utils/messageParsers.js file or where the function is located
-function parseCBEMessages(message) {
+/* function parseCBEMessages(message) {
     const transactions = [];
     
     // ✅ Removed the lowerCaseMessage line. We will work with the original message.
@@ -56,13 +56,41 @@ function parseCBEMessages(message) {
 
     // ✅ FIX: This regex is now applied to the original message.
     // The pattern already correctly handles both upper and lowercase ([a-zA-Z0-9]+).
-    const transMatches = [...message.matchAll(/(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|by receipt number)\s*([a-zA-Z0-9]+)/gi)];
+    const transMatches = [...message.matchAll(/(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|by receipt number|Txn ID)\s*([a-zA-Z0-9]+)/gi)];
 
     for (let i = 0; i < Math.min(amountMatches.length, transMatches.length); i++) {
         const amount = parseFloat(amountMatches[i][1].replace(/,/g, ""));
         
         // This will now get the correct case from the original message.
         const transactionNumber = transMatches[i][1].trim(); 
+        
+        transactions.push({ 
+            type: "cbebirr", 
+            amount, 
+            transactionNumber, 
+            phoneNumber: undefined, 
+        });
+    }
+
+    return transactions;
+} */
+function parseCBEMessages(message) {
+    const transactions = [];
+    
+    // 1. Amount Regex: Looks for '50.00Br.' or similar format (now handles capitalization correctly).
+    // Captures the number only.
+    const amountMatches = [...message.matchAll(/([\d,]+\.\d+)\s*Br\.|ብር/gi)];
+
+    // 2. Transaction ID Regex: Correctly includes 'Txn ID', 'txn id', and Amharic variations.
+    const transMatches = [...message.matchAll(/(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|by receipt number|Txn ID)\s*([a-zA-Z0-9]+)/gi)];
+
+    // Logic: Assume the FIRST amount is the deposited amount, and the FIRST Txn ID is the one to use.
+    if (amountMatches.length > 0 && transMatches.length > 0) {
+        // Use the FIRST amount matched (50.00)
+        const amount = parseFloat(amountMatches[0][1].replace(/,/g, "")); 
+        
+        // Use the FIRST transaction number matched (CJ75VJRYCR)
+        const transactionNumber = transMatches[0][1].trim(); 
         
         transactions.push({ 
             type: "cbebirr", 

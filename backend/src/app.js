@@ -135,13 +135,29 @@ const router = express.Router();
 // Assuming BingoBord model and cartela data ('cart') are available globally/imported.
 
 // Define the players you want to inject
+// Define the players you want to inject
 const forcedPlayersData = [
     { username: 'alemu1', clientId: 'client-xaka-bot' },
     { username: 'dagim', clientId: 'client-elfo-bot' },
     { username: 'alif', clientId: 'client-alif-bot' },
-    { username: 'martinaly', clientId: 'client-martinaly-bot' }
+    { username: 'martinaly', clientId: 'client-martinaly-bot' },
+    
+    // --- NEW PLAYERS ---
+    { username: 'alex', clientId: 'client-alex-bot' },
+    { username: 'mati', clientId: 'client-mati-bot' },
+    { username: 'dave', clientId: 'client-dave-bot' },
+    { username: 'jhon', clientId: 'client-jhon-bot' },
+    { username: 'sami2', clientId: 'client-sami2-bot' },
+    { username: 'mira', clientId: 'client-mira-bot' },
+    { username: 'heni', clientId: 'client-heni-bot' },
+    { username: 'natie', clientId: 'client-natie-bot' },
+    { username: 'andy', clientId: 'client-andy-bot' },
+    { username: 'tariku', clientId: 'client-tariku-bot' },
+    { username: 'cita', clientId: 'client-cita-bot' },
+    { username: 'chkuni', clientId: 'client-chkuni-bot' },
 ];
-const NUM_CARTELAS_PER_PLAYER = 4;
+// Note: clientId must be unique strings for the game logic to work correctly.
+const NUM_CARTELAS_PER_PLAYER = 1;
 
 /**
  * Inserts predefined players into a room, assigns random cartelas,
