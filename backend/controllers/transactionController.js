@@ -76,24 +76,23 @@ function parseTelebirrMessage(message) {
 } */
 function parseCBEMessages(message) {
     const transactions = [];
-    
-    // 1. Corrected Amount Regex: Captures the amount (e.g., '50.00') followed by 'Br.' or 'ብር'.
-    // The amount itself is in capture group [1].
-    const amountMatches = [...message.matchAll(/([\d,]+\.\d+)\s*(?:Br\.|\u1295\u122B|\u1295\u122D)/gi)]; // \u1295\u122B is Br, \u1295\u122D is Birr (Amharic)
-    
-    // 2. Transaction ID Regex (This one looks good)
-    const transMatches = [...message.matchAll(/(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|by receipt number|Txn ID)\s*([a-zA-Z0-9]+)/gi)];
 
-    // Logic: Assume the FIRST amount is the deposited amount, and the FIRST Txn ID is the one to use.
+    // FIX 1: Broader regex for Amount (looks for ETB, Birr, Br, or a number followed by Br.)
+    // It captures: 1) The amount value (e.g., 50.00). 
+    const amountRegex = /([\d,]+\.\d+)\s*(?:ETB|Birr|Br|ብር)/gi;
+    const amountMatches = [...message.matchAll(amountRegex)];
+
+    // FIX 2: Highly reliable regex for CBE Txn ID. 
+    // It looks for "txn id" or the Amharic equivalent, followed by the ID.
+    // The ID itself is often a mix of letters and numbers (e.g., CJ75VJRYCR)
+    const transMatches = [...message.matchAll(/(?:txn id|Txn ID|በደረሰኝ ቁ[ጠጥ]?ር)\s*([a-zA-Z0-9]+)/gi)];
+
+    // Only proceed if both an amount and a transaction ID are found.
     if (amountMatches.length > 0 && transMatches.length > 0) {
-        // ... rest of the logic ...
-        // Note: The amount from the message "Dear MUSTEFA, you have sent 50.00Br. to..."
-        // is the money *sent* by the user, which is correct for a deposit to you.
-        
-        // Use the FIRST amount matched (50.00)
+        // Use the FIRST amount matched
         const amount = parseFloat(amountMatches[0][1].replace(/,/g, "")); 
         
-        // Use the FIRST transaction number matched (CJ75VJRYCR)
+        // Use the FIRST transaction number matched
         const transactionNumber = transMatches[0][1].trim(); 
         
         transactions.push({ 
