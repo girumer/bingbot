@@ -839,4 +839,4 @@ case "referral":
 // TEMPORARY CODE TO GET PHOTO FILE_ID
 
 });
-///module.exports = bot;
+module.exports = bot;
