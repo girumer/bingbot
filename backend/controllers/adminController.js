@@ -127,21 +127,25 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-    exports.broadcastToAllCustomers = async (req, res) => {
+  */
+exports.broadcastToAllCustomers = async (req, res) => {
     try {
+        // Assume BingoBord is a Mongoose model
         const allUsers = await BingoBord.find({}, 'telegramId');
 
-        // The text message to broadcast
-        const message = `
-ዛሬም ያሸነፉ  🔥🔥🔥
-ሲምዘግቡ ነፃ የመጫውቻ ቦነስ  🔥🔥🔥
-በሪፍራል ሊነክ ሲያስመዝግቡ የሚያሰመዝገቡት ስው ከሚያስግባው ዲፖዚት  የማያቋርጥ 10% ኮሚሽን 
+        // The text message to broadcast (using Markdown V2 format for bold/links)
+        // Ensure that process.env.SUPPORT_GROUP and process.env.SUPPORT_USERNAME are defined.
+        // NOTE: Telegram requires specific link formatting for Markdown V2 or HTML.
+        // If 'Markdown' fails, try 'HTML' or 'MarkdownV2'
+        const message = `ዛሬም ያሸነፉ  🔥🔥🔥
+ሲምዘግቡ ነፃ የመጫውቻ ቦነስ  🔥🔥🔥
+በሪፍራል ሊነክ ሲያስመዝግቡ የሚያሰመዝገቡት ስው ከሚያስግባው ዲፖዚት  የማያቋርጥ 10% ኮሚሽን 
 ሲጫውቱ 1 ኮይን ስጦታ🔥🔥🔥
 ሲያሽንፉ ሌላ ተጨማሪ ኮየን🔥🔥🔥
 ኮይኖ 100 ሲድርስ ውደ ዲፖሲት ሚልውጡብት 🔥🔥🔥
 ከ1 በላይ ካርቴላ መምረጥ እንደምትቸሉ ሳይዘነጋ።
 ለዲፖዚት እና ዊዝድሮዋል መመርያ
- [እዚህ ይጫኑ](${process.env.SUPPORT_GROUP}) 
+[እዚህ ይጫኑ](${process.env.SUPPORT_GROUP}) 
 ለበለጠ መረጃ ከታች ባለው ቻናላችን ያናግሩን በተጨማሪም
 ለእገዛ [እዚህ ይጫኑ](${process.env.SUPPORT_USERNAME})`;
 
@@ -151,13 +155,18 @@ exports.registerUser = async (req, res) => {
         for (const user of allUsers) {
             if (user.telegramId) {
                 try {
-                    // ✅ UPDATED: Now using bot.sendMessage()
-                    await bot.sendMessage(user.telegramId, message);
+                    // CRITICAL FIX: Add parse_mode: 'Markdown' so links render correctly.
+                    await bot.sendMessage(user.telegramId, message, {
+                        parse_mode: 'Markdown' 
+                    });
                     successCount++;
                 } catch (error) {
                     console.error(`Failed to send message to user ${user.telegramId}:`, error.message);
                     failCount++;
                 }
+                
+                // IMPORTANT: Add a small delay to avoid hitting Telegram's rate limits.
+                await new Promise(resolve => setTimeout(resolve, 50));
             }
         }
 
@@ -171,7 +180,7 @@ exports.registerUser = async (req, res) => {
         console.error("Broadcast failed:", err);
         return res.status(500).json({ error: "Failed to broadcast message." });
     }
-};     
+};
 // Register user (admin can choose role)
 
 // Delete user by ID
