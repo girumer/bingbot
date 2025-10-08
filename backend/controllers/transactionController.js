@@ -258,12 +258,12 @@ exports.parseTransaction = async (req, res) => {
 // Add this constant at the top of your file for easy modification
  // 10% bonus
 // Add this constant at the top of your file for easy modification
-const extractTransactionDetails = (message) => {
+/* const extractTransactionDetails = (message) => {
     let transactionNumber, amount, type;
 
     // ----- Telebirr Regex (Simplified) -----
     // Matches messages with 'ETB' and a transaction number, regardless of received/transferred.
-    const telebirrAmRegex = /([\d,]+\.\d+)\s*ብር.*የሂሳብ እንቅስቃሴ ቁጥርዎ\s*([a-zA-Z0-9]+)\s*ነዉ/i;
+    const telebirrAmRegex = /sent([\d,]+\.\d+)\s*ብር.*የሂሳብ እንቅስቃሴ ቁጥርዎ\s*([a-zA-Z0-9]+)\s*ነዉ/i;
     const telebirrAmMatch = message.match(telebirrAmRegex);
     if (telebirrAmMatch) {
         amount = parseFloat(telebirrAmMatch[1]);
@@ -300,6 +300,67 @@ const extractTransactionDetails = (message) => {
         return { transactionNumber, amount, type };
     }
 
+    return { transactionNumber: null, amount: null, type: null };
+}; */
+const extractTransactionDetails = (message) => {
+    let transactionNumber, amount, type;
+
+    // --- Telebirr Regex (Amharic - Corrected) ---
+    // Note: Added \s* before 'sent' for safety, though the message structure might vary.
+    // This is for Telebirr deposit notifications in Amharic.
+    const telebirrAmRegex = /\s*sent\s*([\d,]+\.\d+)\s*ብር.*የሂሳብ እንቅስቃሴ ቁጥርዎ\s*([a-zA-Z0-9]+)\s*ነዉ/i;
+    const telebirrAmMatch = message.match(telebirrAmRegex);
+    if (telebirrAmMatch) {
+        amount = parseFloat(telebirrAmMatch[1].replace(/,/g, '')); // Handle comma separators
+        transactionNumber = telebirrAmMatch[2];
+        type = "telebirr";
+        return { transactionNumber, amount, type };
+    }
+    
+    // --- Telebirr Regex (English) ---
+    const telebirrRegex = /ETB\s*([\d\.]+).*Your transaction number is\s*([A-Z0-9]+)\./i;
+    const telebirrMatch = message.match(telebirrRegex);
+    if (telebirrMatch) {
+        amount = parseFloat(telebirrMatch[1]);
+        transactionNumber = telebirrMatch[2];
+        type = "telebirr"; 
+        return { transactionNumber, amount, type };
+    }
+
+    // --- CBE Birr Regex (English - Deposit/Credited) ---
+    // Handles messages where the account is credited (money received).
+    const cbebirrEnRegex = /credited with\s*([\d\.]+)\s*Br\..*Txn ID\s*([A-Z0-9]+)/i;
+    const cbebirrEnMatch = message.match(cbebirrEnRegex);
+    if (cbebirrEnMatch) {
+        amount = parseFloat(cbebirrEnMatch[1]);
+        transactionNumber = cbebirrEnMatch[2];
+        type = "cbebirr";
+        return { transactionNumber, amount, type };
+    }
+
+    // --- NEW & CRITICAL: CBE Birr Regex for "Money Sent" Message ---
+    // This is the format you confirmed: "Dear MUSTEFA, you have sent 10.00Br..."
+    const cbebirrSentRegex = /sent\s*([\d\.]+)\s*Br\..*Txn ID\s*([A-Z0-9]+)/i;
+    const cbebirrSentMatch = message.match(cbebirrSentRegex);
+    
+    if (cbebirrSentMatch) {
+        amount = parseFloat(cbebirrSentMatch[1]);
+        transactionNumber = cbebirrSentMatch[2];
+        type = "cbebirr";
+        return { transactionNumber, amount, type };
+    }
+
+    // --- CBE Birr Regex (Amharic) ---
+    const cbebirrAmRegex = /([\d\.]+)\s*Br\..*?በደረሰኝ ቁ[ጠጥ]ር\s*([A-Z0-9]+)/i;
+    const cbebirrAmMatch = message.match(cbebirrAmRegex);
+    if (cbebirrAmMatch) {
+        amount = parseFloat(cbebirrAmMatch[1]);
+        transactionNumber = cbebirrAmMatch[2];
+        type = "cbebirr";
+        return { transactionNumber, amount, type };
+    }
+
+    // Fallback if no pattern matches
     return { transactionNumber: null, amount: null, type: null };
 };
 
