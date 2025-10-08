@@ -16,7 +16,7 @@ function parseTelebirrMessage(message) {
     // FIX: This regex is now applied to the original message.
     // It looks for "transaction number" or "transaction no"
     // and the pattern now includes both lowercase and uppercase letters ([a-zA-Z0-9]+).
-    const transMatches = [...message.matchAll(/(?:transaction number is|transaction no is)\s*([a-zA-Z0-9]+)/gi)];
+    const transMatches = [...message.matchAll(/(?:transaction number is|transaction no is|የሂሳብ እንቅስቃሴ ቁጥርዎ)\s*([a-zA-Z0-9]+)/gi)];
 
     for (let i = 0; i < Math.min(amountMatches.length, transMatches.length); i++) {
         const amount = parseFloat(amountMatches[i][1].replace(/,/g, ""));
