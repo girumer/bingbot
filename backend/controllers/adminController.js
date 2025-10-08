@@ -127,7 +127,7 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-  */
+
 exports.broadcastToAllCustomers = async (req, res) => {
     try {
         // Assume BingoBord is a Mongoose model
