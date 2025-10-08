@@ -198,7 +198,7 @@ exports.parseTransaction = async (req, res) => {
        
         // Check for CBE first (since that's what you're testing)
         const cbebirrRegex = /(?:በደረሰኝ ቁ[ጠጥ]?ር|txn id|Txn ID)/i;
-        const telebirrRegex = /telebirr/i;
+      const telebirrRegex = /(telebirr|ኢትዮ ቴሌኮም)/i;
         
         if (message.match(cbebirrRegex)) {
             console.log('Detected CBE transaction');
@@ -308,7 +308,7 @@ const extractTransactionDetails = (message) => {
     // --- Telebirr Regex (Amharic - Corrected) ---
     // Note: Added \s* before 'sent' for safety, though the message structure might vary.
     // This is for Telebirr deposit notifications in Amharic.
-    const telebirrAmRegex = /\s*sent\s*([\d,]+\.\d+)\s*ብር.*የሂሳብ እንቅስቃሴ ቁጥርዎ\s*([a-zA-Z0-9]+)\s*ነዉ/i;
+    const telebirrAmRegex = /([\d,]+\.\d+)\s*ብር.*?የሂሳብ እንቅስቃሴ ቁጥርዎ\s*([a-zA-Z0-9]+)/i;
     const telebirrAmMatch = message.match(telebirrAmRegex);
     if (telebirrAmMatch) {
         amount = parseFloat(telebirrAmMatch[1].replace(/,/g, '')); // Handle comma separators
