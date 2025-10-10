@@ -831,6 +831,8 @@ async function checkWinners(roomId, calledNumber) {
   const room = rooms[roomId];
   if (!room) return;
   const winners = [];
+   const stakeAmount = Number(roomId); 
+  const coinBonusForLoser = (stakeAmount * 0.01);
   for (const clientId in room.playerCartelas) {
     const cartelas = room.playerCartelas[clientId];
     if (!cartelas || cartelas.length === 0) continue;
@@ -860,7 +862,7 @@ async function checkWinners(roomId, calledNumber) {
       room.numberInterval = null;
     }
     const awardPerWinner = Math.floor(room.totalAward / winners.length);
-
+const winnerUsernames = new Set();
     for (const winner of winners) {
       const user = await BingoBord.findOne({ username: winner.winnerName });
       if (user) {
@@ -868,20 +870,30 @@ async function checkWinners(roomId, calledNumber) {
         user.coins += 1;
         await user.save();
         await saveGameHistory(winner.winnerName, roomId, awardPerWinner, "win", room.gameId);
+        winnerUsernames.add(winner.winnerName); 
       }
     }
-    
-    for (const clientId in room.playerCartelas) {
-      const cartelas = room.playerCartelas[clientId];
-      if (!cartelas || cartelas.length === 0) continue;
-      
-      const username = room.players[clientId];
-      if (!username) continue;
-      
-      if (!winners.some((w) => w.winnerName === username)) {
-        await saveGameHistory(username, roomId, Number(roomId), "loss", room.gameId);
-      }
-    }
+  
+    for (const clientId in room.players) {
+      const username = room.players[clientId];
+      
+      // Check if the player is NOT in the winnerUsernames set
+      if (!winnerUsernames.has(username)) {
+        const user = await BingoBord.findOne({ username: username });
+        
+        if (user) {
+          // The user is a loser (played but didn't win)
+          // IMPORTANT: We use += for floating point numbers
+          user.coins += coinBonusForLoser; 
+          await user.save();
+
+          // Existing logic to save loss history
+          await saveGameHistory(username, roomId, Number(roomId), "loss", room.gameId);
+          
+          console.log(`Rewarded loser ${username} with ${coinBonusForLoser} coins.`);
+        }
+ }
+ }
 
     io.to(roomId).emit("winningPattern", winners);
 
