@@ -83,7 +83,7 @@ let userStates = {}; // { chatId: { step: "askName" | "askPhone" | "depositAmoun
 // ----------------------
 // Handle Commands (like /balance, /play, etc.)
 // ----------------------
-bot.onText(/\/(balance|play|deposit|history|help|withdraw)/, async (msg, match) => {
+bot.onText(/\/(balance|play|deposit|history|help|withdraw|coins)/, async (msg, match) => {
     const chatId = msg.chat.id;
     const cmd = match[1]; // the command without '/'
   
@@ -99,7 +99,7 @@ bot.onText(/\/(balance|play|deposit|history|help|withdraw)/, async (msg, match) 
         bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} ETB`);
         break;
         case "coins": // <--- NEW CASE
-       bot.sendMessage(chatId, `🪙 Your **Coin** balance: ${user.coins || 0} Coins`);
+       bot.sendMessage(chatId, `🪙 Your **Coin** balance: ${user.coins || 0} Coins`, { parse_mode: 'Markdown' });
         break;
       case "withdraw":
         bot.sendMessage(chatId, "Choose your withdrawal method:", {
