@@ -597,6 +597,7 @@ bot.on('callback_query', async (callbackQuery) => {
   const chatId = callbackQuery.message.chat.id;
   const data = callbackQuery.data;
 
+  const answerQuery = (text, showAlert) => bot.answerCallbackQuery(callbackQuery.id, { text: text, show_alert: showAlert });
   const user = await BingoBord.findOne({ telegramId: chatId });
   if (!user) {
     bot.sendMessage(chatId, "You are not registered. Use /start to register.");
