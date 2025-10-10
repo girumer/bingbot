@@ -99,7 +99,7 @@ bot.onText(/\/(balance|play|deposit|history|help|withdraw)/, async (msg, match) 
         bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} ETB`);
         break;
         case "coins": // <--- NEW CASE
-       bot.sendMessage(chatId, `🪙 Your **Coin** balance: ${user.coins || 0} Coins`, { parse_mode: 'Markdown' });
+       bot.sendMessage(chatId, `🪙 Your **Coin** balance: ${user.coins || 0} Coins`);
         break;
       case "withdraw":
         bot.sendMessage(chatId, "Choose your withdrawal method:", {
