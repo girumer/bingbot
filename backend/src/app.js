@@ -519,8 +519,9 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
         socket.emit("cartelaRejected", { message: "You can only select up to 4 cartelas" });
         return;
       }
-
+        
       user.Wallet -= stake;
+      
       await user.save();
 
       userCartelas.push(cartelaIndex);

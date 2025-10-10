@@ -56,6 +56,7 @@ const commands = [
   { command: "balance", description: "💰 Check your balance" },
   { command: "play", description: "🎮 Play Bingo" },
   { command: "deposit", description: "📥 Deposit funds" },
+  { command: "coins", description: "🪙 Check your Coin balance" },
   { command: "withdraw", description: "📤 Withdraw" },
   { command: "history", description: "📜 game  history" },
   { command: "changeusername", description: "✏️ Change your username" },
@@ -96,6 +97,9 @@ bot.onText(/\/(balance|play|deposit|history|help|withdraw)/, async (msg, match) 
         break;
       case "balance":
         bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} ETB`);
+        break;
+        case "coins": // <--- NEW CASE
+       bot.sendMessage(chatId, `🪙 Your **Coin** balance: ${user.coins || 0} Coins`, { parse_mode: 'Markdown' });
         break;
       case "withdraw":
         bot.sendMessage(chatId, "Choose your withdrawal method:", {
