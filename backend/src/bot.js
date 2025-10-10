@@ -44,6 +44,9 @@ const mainMenu = {
       [
         { text: "🔗 Referral Link", callback_data: "referral" },
          { text: "🏆 Leaders board", callback_data: "top" },
+      ],
+[ 
+          { text: "🪙 Convert Coins", callback_data: "transfer_coins_to_wallet" }, // <-- NEW BUTTON
       ]
     ]
   }
@@ -250,6 +253,47 @@ bot.onText(/\/(|balance|play|deposit|history|help|withdraw)/, async (msg, match)
         }
       });
       break;
+      case "transfer_coins_to_wallet":
+      const coinsToTransfer = user.coins || 0;
+      const minTransfer = 0.01; // Minimum coin amount to initiate transfer
+
+      if (coinsToTransfer < minTransfer) {
+          answerQuery(`❌ You need at least ${minTransfer} coins to transfer.`, true);
+          return;
+      }
+
+      // Round the coin amount to two decimal places to prevent floating point issues
+      const roundedCoins = parseFloat(formatBalance(coinsToTransfer)); 
+
+      try {
+          answerQuery("Processing transfer...", false);
+
+          // Perform atomic Mongoose update
+          await BingoBord.updateOne(
+              { telegramId: chatId },
+              {
+                  $inc: { Wallet: roundedCoins }, // Add rounded coins to Wallet
+                  $set: { coins: 0 } // Reset coins to 0
+              }
+          );
+
+          // Send confirmation message
+          const newWalletBalance = user.Wallet + roundedCoins;
+          
+          bot.sendMessage(chatId, 
+              `🎉 Success! **${formatBalance(roundedCoins)} Coins** converted to Wallet.
+              
+New balances:
+💰 Wallet: **${formatBalance(newWalletBalance)} Birr**
+🪙 Coins: **0.00 Coins**`, 
+              { parse_mode: 'Markdown' }
+          );
+
+      } catch (error) {
+          console.error("Coin Transfer Error:", error);
+          answerQuery("❌ Transfer failed due to a database error.", true);
+      }
+      break;
   case "history":
   if (!user.gameHistory || user.gameHistory.length === 0) {
     bot.sendMessage(chatId, "You have no game history yet.");
