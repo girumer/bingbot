@@ -832,7 +832,7 @@ async function checkWinners(roomId, calledNumber) {
   if (!room) return;
   const winners = [];
    const stakeAmount = Number(roomId); 
-  const coinBonusForLoser = (stakeAmount * 0.01);
+  const coinBonusForLoser = (stakeAmount * 0.1);
   for (const clientId in room.playerCartelas) {
     const cartelas = room.playerCartelas[clientId];
     if (!cartelas || cartelas.length === 0) continue;
