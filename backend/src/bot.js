@@ -253,47 +253,7 @@ bot.onText(/\/(|balance|play|deposit|history|help|withdraw)/, async (msg, match)
         }
       });
       break;
-      case "transfer_coins_to_wallet":
-      const coinsToTransfer = user.coins || 0;
-      const minTransfer = 0.01; // Minimum coin amount to initiate transfer
-
-      if (coinsToTransfer < minTransfer) {
-          answerQuery(`❌ You need at least ${minTransfer} coins to transfer.`, true);
-          return;
-      }
-
-      // Round the coin amount to two decimal places to prevent floating point issues
-      const roundedCoins = parseFloat(formatBalance(coinsToTransfer)); 
-
-      try {
-          answerQuery("Processing transfer...", false);
-
-          // Perform atomic Mongoose update
-          await BingoBord.updateOne(
-              { telegramId: chatId },
-              {
-                  $inc: { Wallet: roundedCoins }, // Add rounded coins to Wallet
-                  $set: { coins: 0 } // Reset coins to 0
-              }
-          );
-
-          // Send confirmation message
-          const newWalletBalance = user.Wallet + roundedCoins;
-          
-          bot.sendMessage(chatId, 
-              `🎉 Success! **${formatBalance(roundedCoins)} Coins** converted to Wallet.
-              
-New balances:
-💰 Wallet: **${formatBalance(newWalletBalance)} Birr**
-🪙 Coins: **0.00 Coins**`, 
-              { parse_mode: 'Markdown' }
-          );
-
-      } catch (error) {
-          console.error("Coin Transfer Error:", error);
-          answerQuery("❌ Transfer failed due to a database error.", true);
-      }
-      break;
+      
   case "history":
   if (!user.gameHistory || user.gameHistory.length === 0) {
     bot.sendMessage(chatId, "You have no game history yet.");
@@ -769,6 +729,57 @@ Account: \`${process.env.CBE_ACCOUNT}\`
     userStates[chatId] = { step: "withdrawAmount", method };
     bot.sendMessage(chatId, `Enter the amount you want to withdraw via ${method.toUpperCase()}:`);
     break;
+      case "transfer_coins_to_wallet":
+      // 'user' is the pre-fetched BingoBord document for the user
+      const coinsToTransfer = user.coins || 0;
+      const minTransfer = 0.01; // Minimum coin amount to initiate transfer
+
+      if (coinsToTransfer < minTransfer) {
+        // answerQuery is a helper to respond to the Telegram callback
+        answerQuery(`❌ You need at least ${minTransfer} coins to transfer.`, true);
+        return;
+      }
+      
+      // Use the actual coins to transfer (rounded to 2 decimal places)
+      const roundedCoins = parseFloat(formatBalance(coinsToTransfer)); 
+
+      try {
+        answerQuery("Processing coin transfer...", false);
+
+        // ATOMIC OPERATION: Check the coin balance is sufficient AND execute the update
+        const updatedUser = await BingoBord.findOneAndUpdate(
+          { telegramId: chatId, coins: { $gte: roundedCoins } }, // Atomic check and target
+          {
+            $inc: { Wallet: roundedCoins, coins: -roundedCoins } // Add to Wallet, Subtract from coins
+          },
+          { new: true } // Return the updated document
+        );
+        
+        if (!updatedUser) {
+          // Failed because the coin balance check in the query failed (race condition or insufficient funds)
+          answerQuery("❌ Transfer failed. Your coin balance might have changed or you have insufficient coins.", true);
+          return;
+        }
+
+        // Get fresh balances from the updated document
+        const newWalletBalance = updatedUser.Wallet;
+        const newCoinBalance = updatedUser.coins; 
+        
+        // Send success message
+        bot.sendMessage(chatId, 
+          `🎉 Success! **${formatBalance(roundedCoins)} Coins** converted to Wallet.
+          
+New balances:
+💰 Wallet: **${formatBalance(newWalletBalance)} Birr**
+🪙 Coins: **${formatBalance(newCoinBalance)} Coins**`, 
+          { parse_mode: 'Markdown' }
+        );
+
+      } catch (error) {
+        console.error("Coin Transfer Error:", error);
+        answerQuery("❌ Transfer failed due to a database error.", true);
+      }
+      break;
 case "room_5":
 case "room_50":
 case "room_100":
