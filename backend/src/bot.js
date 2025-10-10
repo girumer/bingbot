@@ -8,6 +8,10 @@ const axios = require('axios');
 // ----------------------
 // Connect to MongoDB
 // ----------------------
+const formatBalance = (amount) => {
+    // Added || 0 fallback to prevent issues if 'amount' is null, undefined, or empty string
+    return parseFloat(amount || 0).toFixed(2);
+};
 mongoose.connect(process.env.DATABASE_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
