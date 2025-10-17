@@ -137,24 +137,24 @@ const router = express.Router();
 // Define the players you want to inject
 // Define the players you want to inject
 const forcedPlayersData = [
-    { username: 'alemu1', clientId: 'client-xaka-bot' },
-    { username: 'dagim', clientId: 'client-elfo-bot' },
-    { username: 'alif', clientId: 'client-alif-bot' },
-    { username: 'martinaly', clientId: 'client-martinaly-bot' },
+    { username: 'joni', clientId: '200001x' },
+    { username: 'abebayhu', clientId: '200002x' },
+    { username: 'fraole', clientId: '200003x' },
+    { username: 'sisaye', clientId: '200003x' },
     
     // --- NEW PLAYERS ---
-    { username: 'alex', clientId: 'client-alex-bot' },
-    { username: 'mati', clientId: 'client-mati-bot' },
-    { username: 'dave', clientId: 'client-dave-bot' },
-    { username: 'jhon', clientId: 'client-jhon-bot' },
-    { username: 'sami2', clientId: 'client-sami2-bot' },
-    { username: 'mira', clientId: 'client-mira-bot' },
-    { username: 'heni', clientId: 'client-heni-bot' },
-    { username: 'natie', clientId: 'client-natie-bot' },
-    { username: 'andy', clientId: 'client-andy-bot' },
-    { username: 'tariku', clientId: 'client-tariku-bot' },
-    { username: 'cita', clientId: 'client-cita-bot' },
-    { username: 'chkuni', clientId: 'client-chkuni-bot' },
+    { username: 'jemale2', clientId: '200014x' },
+    { username: 'takur', clientId: '200015x' },
+    { username: 'gadese', clientId: '200016x' },
+    { username: 'yosephh', clientId: '200017x' },
+    { username: 'yesake', clientId: '200019x' },
+    { username: 'zeelaleme', clientId: '200020x' },
+    { username: 'keedir', clientId: '200021x' },
+    { username: 'yedneke', clientId: '200017x' },
+    { username: 'semir', clientId: '200018x' },
+    { username: 'aseamawe', clientId: 'client-tariku-bot' },
+    { username: 'derabulbula', clientId: 'client-cita-bot' },
+    { username: 'natiman', clientId: 'client-chkuni-bot' },
 ];
 // Note: clientId must be unique strings for the game logic to work correctly.
 const NUM_CARTELAS_PER_PLAYER = 1;
