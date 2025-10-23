@@ -33,23 +33,26 @@ const mainMenu = {
   reply_markup: {
     inline_keyboard: [
       [
-        { text: "💰 Balance", callback_data: "balance" },
+       { text: "🎰 Spin & Win", callback_data: "spin_game" },
         { text: "🎮 Play Bingo", callback_data: "play" },
         
       ],
-      [ { text: "📥 Deposit", callback_data: "deposit" },
+      [ 
+         { text: "💰 Balance", callback_data: "balance" },
       { text: "💳 Transactions", callback_data: "transactions" },
       ],
       [
+        { text: "📥 Deposit", callback_data: "deposit" },
         { text: "📤 Withdraw", callback_data: "withdraw" },
-        { text: "🎮 Game History", callback_data: "gameHistory" },
-        
+       
       ],
       [
         { text: "🔗 Referral Link", callback_data: "referral" },
-         { text: "🏆 Leaders board", callback_data: "top" },
+         { text: "🎮 Game History", callback_data: "gameHistory" },
+        
       ],
 [ 
+   { text: "🏆 Leaders board", callback_data: "top" },
           { text: "🪙 Convert Coins", callback_data: "transfer_coins_to_wallet" }, // <-- NEW BUTTON
       ]
     ]
@@ -156,6 +159,29 @@ bot.onText(/\/(balance|play|deposit|history|help|withdraw|coins)/, async (msg, m
           }
         });
         break;
+        // Case for when the user selects 'Play Bingo' from the main menu
+// ... existing switch cases ...
+
+    case "spin_game": // From the main menu button
+        // The Spinner game usually uses a fixed stake, but you can offer options too.
+        bot.sendMessage(chatId, "Select your bet amount for Spin & Win:", {
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        // Ensure the web_app URL points to the correct component path: /SpinnerSelection
+                        { text: "Spin 5 ETB", web_app: { url: `${process.env.FRONTEND_URL}/SpinnerSelection?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&stake=5` } },
+                        { text: "Spin 10 ETB", web_app: { url: `${process.env.FRONTEND_URL}/SpinnerSelection?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&stake=10` } },
+                    ],
+                    [
+                        { text: "Spin 20 ETB", web_app: { url: `${process.env.FRONTEND_URL}/SpinnerSelection?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&stake=30` } },
+                        { text: "Spin 50 ETB", web_app: { url: `${process.env.FRONTEND_URL}/SpinnerSelection?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&stake=50` } },
+                    ]
+                ]
+            }
+        });
+        break;
+
+// ... rest of the switch cases ...
       case "help":
         bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history. If you need further assistance, please contact our support team.", {
           reply_markup: {

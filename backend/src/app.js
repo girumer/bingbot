@@ -503,6 +503,9 @@ const clientIdToSocketId = new Map();
  startRoomMonitor();
 io.on("connection", (socket) => {
   //console.log("New connection:", socket.id);
+// Add this block inside your main io.on("connection", (socket) => { ... });
+
+// --- SPINNER GAME HANDLER ---
 
   // --- JOIN ROOM ---
   socket.on("joinRoom", ({ roomId, username, telegramId, clientId }) => {
@@ -950,7 +953,7 @@ async function saveGameHistory(username, roomId, stake, outcome,  gameId ) {
   }
 }
 
-async function checkWinners(roomId, calledNumber) {
+/* async function checkWinners(roomId, calledNumber) {
   const room = rooms[roomId];
   if (!room) return;
   const winners = [];
@@ -1057,8 +1060,94 @@ const winnerUsernames = new Set();
       }
     }, 4000);
   }
-}
+} */
 
+async function checkWinners(roomId, calledNumber) {
+  const room = rooms[roomId];
+  if (!room) return;
+  const winners = [];
+  const stakeAmount = Number(roomId);
+  const coinBonusForLoser = stakeAmount * 0.01;
+
+  for (const clientId in room.playerCartelas) {
+    const cartelas = room.playerCartelas[clientId];
+    if (!cartelas?.length) continue;
+
+    const username = room.players[clientId];
+    if (!username) continue;
+
+    for (const cartelaIndex of cartelas) {
+      if (!cartela[cartelaIndex]) continue;
+      const key = `${clientId}-${cartelaIndex}`;
+      if (room.alreadyWon.includes(key)) continue;
+
+      const pattern = findWinningPattern(cartela[cartelaIndex].cart, room.calledNumbers);
+      if (pattern) {
+        winners.push({ clientId, cartelaIndex, pattern, winnerName: username });
+        room.alreadyWon.push(key);
+      }
+    }
+  }
+
+  if (winners.length > 0) {
+    // 🧹 Stop all intervals
+    clearInterval(room.numberInterval);
+    clearInterval(room.timerInterval);
+    clearInterval(room.injectInterval);
+    room.numberInterval = room.timerInterval = room.injectInterval = null;
+    room.winnerDeclared = true;
+
+    const awardPerWinner = Math.floor(room.totalAward / winners.length);
+
+    // 🏆 Parallelized winner updates
+    const winnerPromises = winners.map(async (winner) => {
+      const user = await BingoBord.findOne({ username: winner.winnerName });
+      if (user) {
+        user.Wallet += awardPerWinner;
+        user.coins += 1;
+        await user.save();
+        await saveGameHistory(winner.winnerName, roomId, awardPerWinner, "win", room.gameId);
+        return winner.winnerName;
+      }
+    });
+
+    const winnerUsernames = new Set(await Promise.all(winnerPromises));
+
+    // 💸 Parallelized loser updates
+    const loserPromises = Object.values(room.players).map(async (username) => {
+      if (!winnerUsernames.has(username)) {
+        const user = await BingoBord.findOne({ username });
+        if (user) {
+          user.coins += coinBonusForLoser;
+          await user.save();
+          await saveGameHistory(username, roomId, stakeAmount, "loss", room.gameId);
+        }
+      }
+    });
+    await Promise.all(loserPromises);
+
+    io.to(roomId).emit("winningPattern", winners);
+
+    // 🧹 Schedule cleanup
+    setTimeout(() => {
+      if (rooms[roomId]) {
+        const playersWithCartelas = Object.values(room.playerCartelas).filter(a => a?.length).length;
+        const totalPlayers = Object.keys(room.players).length;
+
+        if (playersWithCartelas === 0) {
+          if (totalPlayers === 0) {
+            resetRoom(roomId);
+            delete rooms[roomId];
+          } else {
+            resetRoom(roomId);
+          }
+        } else {
+          resetRoom(roomId);
+        }
+      }
+    }, 4000);
+  }
+}
 
 
  
