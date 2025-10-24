@@ -378,7 +378,7 @@ async function processNextBotCartelaSequential(rId, player) {
         
     }, 2000);
 } */
-function startInjectionMonitor(rId, initiatorClientId) {
+/* function startInjectionMonitor(rId, initiatorClientId) {
     const room = rooms[rId];
     if (!room) return;
 
@@ -452,8 +452,86 @@ function startInjectionMonitor(rId, initiatorClientId) {
         }
         
     }, 2000); // Check every 2 seconds
+} */
+function startInjectionMonitor(rId, initiatorClientId) {
+    const room = rooms[rId];
+    if (!room) return;
+
+    if (room.activeGame) return; 
+    
+    // Clear the existing interval/timeout before starting a new one
+    if (room.injectInterval) clearTimeout(room.injectInterval);
+
+    console.log(`[INJECT MONITOR] Starting 2s sequential cartela injection for room ${rId}.`);
+    
+    const activeBots = forcedPlayersData.filter(player => player.clientId !== initiatorClientId);
+    let currentBotIndex = 0;
+    const DELAY_MS = 2000; // 2 seconds
+
+    // Use a self-invoking, named async function for sequential processing
+    const runInjectionCycle = async () => {
+        // --- 1. Cleanup Check ---
+        if (!rooms[rId] || rooms[rId].activeGame) {
+            console.log(`[INJECT MONITOR] Cleared monitor for room ${rId} (Game started or room closed).`);
+            room.injectInterval = null; // Mark as cleared
+            return;
+        }
+        
+        // --- 2. Completion Check (BOTS ONLY) ---
+        const maxBotCartelas = activeBots.length * NUM_CARTELAS_PER_PLAYER; 
+        const currentBotCartelas = activeBots.reduce((sum, bot) => {
+            return sum + (room.playerCartelas[bot.clientId]?.length || 0);
+        }, 0);
+
+        if (currentBotCartelas >= maxBotCartelas) { 
+            console.log(`[INJECT MONITOR] Cleared monitor for room ${rId} (All ${maxBotCartelas} bot cartelas selected).`);
+            room.injectInterval = null;
+            return;
+        }
+
+        // --- 3. Start Countdown Check (No change here) ---
+        // ... (Your existing countdown check logic) ...
+
+        const playersWithCartela = Object.values(room.playerCartelas).filter(
+            (arr) => arr.length > 0
+        ).length;
+        
+        if (!room.timer && playersWithCartela >= 2) {
+            console.log(`[INJECT TRIGGER] ${playersWithCartela} players now have cartelas. Starting 45s countdown.`);
+            startCountdown(rId, 45);
+        }
+
+
+        // --- 4. Sequential Injection Logic ---
+        const botToInject = activeBots[currentBotIndex];
+        
+        if (botToInject) {
+            const botCartelaCount = room.playerCartelas[botToInject.clientId]?.length || 0;
+
+            if (botCartelaCount < NUM_CARTELAS_PER_PLAYER) {
+                // 🚀 AWAIT HERE! Execution pauses until this is complete.
+                await processNextBotCartelaSequential(rId, botToInject); 
+                
+                // Always cycle to the next bot after processing attempt
+                currentBotIndex = (currentBotIndex + 1) % activeBots.length;
+            } else {
+                // This bot is full, skip them and check the next one immediately
+                currentBotIndex = (currentBotIndex + 1) % activeBots.length;
+            }
+        } else {
+            // Should not happen if activeBots is populated, but cycle safely
+            currentBotIndex = (currentBotIndex + 1) % activeBots.length;
+        }
+
+        // 5. Schedule the next run *after* the current task is complete
+        room.injectInterval = setTimeout(runInjectionCycle, DELAY_MS);
+    };
+
+    // Start the cycle
+    room.injectInterval = setTimeout(runInjectionCycle, DELAY_MS);
+    // You should use clearTimeout(room.injectInterval) instead of clearInterval when stopping it.
 }
-function startRoomMonitor() {
+    function startRoomMonitor() {
     // Run this check every 5 seconds
     setInterval(() => {
         // Iterate through all currently existing rooms
@@ -748,7 +826,10 @@ function resetRoom(roomId) {
     clearInterval(room.numberInterval);
     room.numberInterval = null;
   }
-
+if (room.injectInterval) {
+        clearTimeout(room.injectInterval);
+        room.injectInterval = null;
+    }
   // Reset room state but keep players
   room.activeGame = false;
   room.selectedIndexes = [];
@@ -1123,36 +1204,34 @@ async function checkWinners(roomId, calledNumber) {
       );
     }).catch(err => console.error("Error during async updates:", err));
 
-    // 🧹 Cleanup delay as before
-    setTimeout(() => {
-      if (rooms[roomId]) {
-        const room = rooms[roomId];
+    // 🚀 IMMEDIATE CLEANUP - NO TIMEOUT
+    if (rooms[roomId]) {
+      const room = rooms[roomId];
 
-        console.log(`Game ended in room ${roomId}. Checking if room should be cleaned up...`);
+      console.log(`Game ended in room ${roomId}. Checking if room should be cleaned up...`);
 
-        const playersWithCartelas = Object.values(room.playerCartelas).filter(
-          arr => arr && arr.length > 0
-        ).length;
+      const playersWithCartelas = Object.values(room.playerCartelas).filter(
+        arr => arr && arr.length > 0
+      ).length;
 
-        const totalPlayers = Object.keys(room.players).length;
+      const totalPlayers = Object.keys(room.players).length;
 
-        console.log(`Room ${roomId} status - Players with cartelas: ${playersWithCartelas}, Total players: ${totalPlayers}`);
+      console.log(`Room ${roomId} status - Players with cartelas: ${playersWithCartelas}, Total players: ${totalPlayers}`);
 
-        if (playersWithCartelas === 0) {
-          if (totalPlayers === 0) {
-            console.log(`Room ${roomId} is empty. Deleting room.`);
-            resetRoom(roomId);
-            delete rooms[roomId];
-          } else {
-            console.log(`Room ${roomId} has ${totalPlayers} players but no cartelas. Resetting room.`);
-            resetRoom(roomId);
-          }
+      if (playersWithCartelas === 0) {
+        if (totalPlayers === 0) {
+          console.log(`Room ${roomId} is empty. Deleting room.`);
+          resetRoom(roomId);
+          delete rooms[roomId];
         } else {
-          console.log(`Room ${roomId} has ${playersWithCartelas} players with cartelas. Keeping room active.`);
+          console.log(`Room ${roomId} has ${totalPlayers} players but no cartelas. Resetting room.`);
           resetRoom(roomId);
         }
+      } else {
+        console.log(`Room ${roomId} has ${playersWithCartelas} players with cartelas. Keeping room active.`);
+        resetRoom(roomId);
       }
-    }, 1000);
+    }
   }
 }
 
