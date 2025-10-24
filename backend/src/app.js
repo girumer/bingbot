@@ -1099,8 +1099,11 @@ async function checkWinners(roomId, calledNumber) {
     const awardPerWinner = Math.floor(room.totalAward / winners.length);
     const winnerUsernames = new Set();
 
-    // --- FIX: Parallel update for winners ---
-    await Promise.all(winners.map(async (winner) => {
+    // 🚀 Immediately emit the winners — user sees result instantly
+    io.to(roomId).emit("winningPattern", winners);
+
+    // ⚙️ Continue background updates (async, non-blocking)
+    Promise.all(winners.map(async (winner) => {
       const user = await BingoBord.findOne({ username: winner.winnerName });
       if (user) {
         user.Wallet += awardPerWinner;
@@ -1109,26 +1112,24 @@ async function checkWinners(roomId, calledNumber) {
         await saveGameHistory(winner.winnerName, roomId, awardPerWinner, "win", room.gameId);
         winnerUsernames.add(winner.winnerName);
       }
-    }));
+    })).then(async () => {
+      await Promise.all(
+        Object.keys(room.players)
+          .filter(clientId => !winnerUsernames.has(room.players[clientId]))
+          .map(async clientId => {
+            const username = room.players[clientId];
+            const user = await BingoBord.findOne({ username });
+            if (user) {
+              user.coins += coinBonusForLoser;
+              await user.save();
+              await saveGameHistory(username, roomId, Number(roomId), "loss", room.gameId);
+              console.log(`Rewarded loser ${username} with ${coinBonusForLoser} coins.`);
+            }
+          })
+      );
+    }).catch(err => console.error("Error during async updates:", err));
 
-    // --- FIX: Parallel update for losers ---
-    await Promise.all(
-      Object.keys(room.players)
-        .filter(clientId => !winnerUsernames.has(room.players[clientId]))
-        .map(async clientId => {
-          const username = room.players[clientId];
-          const user = await BingoBord.findOne({ username });
-          if (user) {
-            user.coins += coinBonusForLoser;
-            await user.save();
-            await saveGameHistory(username, roomId, Number(roomId), "loss", room.gameId);
-            console.log(`Rewarded loser ${username} with ${coinBonusForLoser} coins.`);
-          }
-        })
-    );
-
-    io.to(roomId).emit("winningPattern", winners);
-
+    // 🧹 Cleanup delay as before
     setTimeout(() => {
       if (rooms[roomId]) {
         const room = rooms[roomId];
