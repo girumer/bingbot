@@ -1065,8 +1065,7 @@ async function checkWinners(roomId, calledNumber) {
   const room = rooms[roomId];
   if (!room) return;
   const winners = [];
-  const stakeAmount = Number(roomId); 
-  const coinBonusForLoser = (stakeAmount * 0.01);
+  const stakeAmount = Number(roomId);
 
   for (const clientId in room.playerCartelas) {
     const cartelas = room.playerCartelas[clientId];
@@ -1113,18 +1112,13 @@ async function checkWinners(roomId, calledNumber) {
         winnerUsernames.add(winner.winnerName);
       }
     })).then(async () => {
+      // Only save game history for losers without coin bonus
       await Promise.all(
         Object.keys(room.players)
           .filter(clientId => !winnerUsernames.has(room.players[clientId]))
           .map(async clientId => {
             const username = room.players[clientId];
-            const user = await BingoBord.findOne({ username });
-            if (user) {
-              user.coins += coinBonusForLoser;
-              await user.save();
-              await saveGameHistory(username, roomId, Number(roomId), "loss", room.gameId);
-              console.log(`Rewarded loser ${username} with ${coinBonusForLoser} coins.`);
-            }
+            await saveGameHistory(username, roomId, Number(roomId), "loss", room.gameId);
           })
       );
     }).catch(err => console.error("Error during async updates:", err));
@@ -1161,7 +1155,6 @@ async function checkWinners(roomId, calledNumber) {
     }, 4000);
   }
 }
-
 
 
  
