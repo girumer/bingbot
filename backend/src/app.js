@@ -953,12 +953,12 @@ async function saveGameHistory(username, roomId, stake, outcome,  gameId ) {
   }
 }
 
-/* async function checkWinners(roomId, calledNumber) {
+ /* async function checkWinners(roomId, calledNumber) {
   const room = rooms[roomId];
   if (!room) return;
   const winners = [];
    const stakeAmount = Number(roomId); 
-  const coinBonusForLoser = (stakeAmount * 0.01);
+ const coinBonusForLoser = (stakeAmount * 0.01);
   for (const clientId in room.playerCartelas) {
     const cartelas = room.playerCartelas[clientId];
     if (!cartelas || cartelas.length === 0) continue;
@@ -1013,11 +1013,10 @@ const winnerUsernames = new Set();
           user.coins += coinBonusForLoser; 
           await user.save();
 
-          // Existing logic to save loss history
-          await saveGameHistory(username, roomId, Number(roomId), "loss", room.gameId);
-          
-          console.log(`Rewarded loser ${username} with ${coinBonusForLoser} coins.`);
-        }
+  // Existing logic to save loss history
+ await saveGameHistory(username, roomId, Number(roomId), "loss", room.gameId); 
+ console.log(`Rewarded loser ${username} with ${coinBonusForLoser} coins.`);
+ }
  }
  }
 
@@ -1060,126 +1059,108 @@ const winnerUsernames = new Set();
       }
     }, 4000);
   }
-} */
+}  */
 
 async function checkWinners(roomId, calledNumber) {
-const room = rooms[roomId];
- if (!room) return;
- const winners = [];
-const stakeAmount = Number(roomId); 
- const coinBonusForLoser = (stakeAmount * 0.01);
- for (const clientId in room.playerCartelas) {
- const cartelas = room.playerCartelas[clientId];
- if (!cartelas || cartelas.length === 0) continue;
+  const room = rooms[roomId];
+  if (!room) return;
+  const winners = [];
+  const stakeAmount = Number(roomId); 
+  const coinBonusForLoser = (stakeAmount * 0.01);
 
- // ✅ CORRECT: Get username directly from the players object using clientId
- const username = room.players[clientId];
- if (!username) continue;
- 
- for (const cartelaIndex of cartelas) {
- // NOTE: cartela is assumed to be a globally accessible array/object containing all cartela data.
- if (!cartela[cartelaIndex]) continue; 
- const key = clientId + "-" + cartelaIndex;
- if (room.alreadyWon.includes(key)) continue;
- const pattern = findWinningPattern(
- cartela[cartelaIndex].cart,
- room.calledNumbers
- );
- if (pattern) {
- winners.push({ clientId, cartelaIndex, pattern, winnerName: username });
- room.alreadyWon.push(key);
- }
- }
- }
+  for (const clientId in room.playerCartelas) {
+    const cartelas = room.playerCartelas[clientId];
+    if (!cartelas || cartelas.length === 0) continue;
 
- if (winners.length > 0) {
- if (room.numberInterval) {
- clearInterval(room.numberInterval);
- room.numberInterval = null;
- }
- const awardPerWinner = Math.floor(room.totalAward / winners.length);
- const winnerUsernames = new Set();
-    
- try {
-        // 1. Collect unique winner names (Must be done before processing losers)
-        for (const winner of winners) {
-            winnerUsernames.add(winner.winnerName);
-        }
-        
-        // 2. Process Winners concurrently and award prizes
-        const winnerUpdates = winners.map(async (winner) => {
- const user = await BingoBord.findOne({ username: winner.winnerName });
-            if (user) {
-                // Award prize
-                user.Wallet += awardPerWinner; 
-                await user.save();
-                
-                // Save win history
-                await saveGameHistory(
-                    winner.winnerName,
-                    roomId,
-                    stakeAmount * room.playerCartelas[winner.clientId].length, // Total stake
-                    `WON (${awardPerWinner})`,
-                    room.gameId
-                );
-            }
-        });
-        
-        // Wait for all winner database updates to complete concurrently
-        await Promise.all(winnerUpdates);
-        
-        // 3. Process Losers concurrently and award bonus (if any)
-        const allClientIds = Object.keys(room.playerCartelas).filter(clientId => room.playerCartelas[clientId].length > 0);
-        
-        // Use Promise.all to handle all loser updates concurrently
-        const loserUpdates = allClientIds
-            .filter(clientId => !winnerUsernames.has(room.players[clientId]))
-            .map(async (clientId) => {
-                const loserName = room.players[clientId];
-                const user = await BingoBord.findOne({ username: loserName });
-                
-                if (user) {
-                    // Award small bonus to losers if coinBonusForLoser is positive
-                    if (coinBonusForLoser > 0) {
-                        user.Wallet += coinBonusForLoser;
-                    }
-                    await user.save();
-                }
-                
-                // Save loss history
-                await saveGameHistory(
-                    loserName,
-                    roomId,
-                    stakeAmount * room.playerCartelas[clientId].length, // Total stake
-                    'LOST',
-                    room.gameId
-                );
-            });
-            
-        // Wait for all loser database updates to complete concurrently
-        await Promise.all(loserUpdates);
+    const username = room.players[clientId];
+    if (!username) continue;
 
-
-        // 4. Announce Winners and Game End
- io.to(roomId).emit("winnerFound", { 
-            winners: Array.from(winnerUsernames), 
-            winningNumber: calledNumber,
-            award: room.totalAward
-        });
-        
-        // 5. Final Game Cleanup
-        // Wait 5 seconds before resetting the room to allow clients to display the winner message.
-        setTimeout(() => {
-            resetRoom(roomId);
-        }, 5000);
-
-    } catch (err) {
-        console.error(`[WINNER PROCESSING CRITICAL ERROR] Room ${roomId} failed to process winners:`, err);
-        // Ensure the game stops even if the database fails
-        resetRoom(roomId);
+    for (const cartelaIndex of cartelas) {
+      if (!cartela[cartelaIndex]) continue;
+      const key = clientId + "-" + cartelaIndex;
+      if (room.alreadyWon.includes(key)) continue;
+      const pattern = findWinningPattern(
+        cartela[cartelaIndex].cart,
+        room.calledNumbers
+      );
+      if (pattern) {
+        winners.push({ clientId, cartelaIndex, pattern, winnerName: username });
+        room.alreadyWon.push(key);
+      }
     }
-  }
+  }
+
+  if (winners.length > 0) {
+    if (room.numberInterval) {
+      clearInterval(room.numberInterval);
+      room.numberInterval = null;
+    }
+
+    const awardPerWinner = Math.floor(room.totalAward / winners.length);
+    const winnerUsernames = new Set();
+
+    // --- FIX: Parallel update for winners ---
+    await Promise.all(winners.map(async (winner) => {
+      const user = await BingoBord.findOne({ username: winner.winnerName });
+      if (user) {
+        user.Wallet += awardPerWinner;
+        user.coins += 1;
+        await user.save();
+        await saveGameHistory(winner.winnerName, roomId, awardPerWinner, "win", room.gameId);
+        winnerUsernames.add(winner.winnerName);
+      }
+    }));
+
+    // --- FIX: Parallel update for losers ---
+    await Promise.all(
+      Object.keys(room.players)
+        .filter(clientId => !winnerUsernames.has(room.players[clientId]))
+        .map(async clientId => {
+          const username = room.players[clientId];
+          const user = await BingoBord.findOne({ username });
+          if (user) {
+            user.coins += coinBonusForLoser;
+            await user.save();
+            await saveGameHistory(username, roomId, Number(roomId), "loss", room.gameId);
+            console.log(`Rewarded loser ${username} with ${coinBonusForLoser} coins.`);
+          }
+        })
+    );
+
+    io.to(roomId).emit("winningPattern", winners);
+
+    setTimeout(() => {
+      if (rooms[roomId]) {
+        const room = rooms[roomId];
+
+        console.log(`Game ended in room ${roomId}. Checking if room should be cleaned up...`);
+
+        const playersWithCartelas = Object.values(room.playerCartelas).filter(
+          arr => arr && arr.length > 0
+        ).length;
+
+        const totalPlayers = Object.keys(room.players).length;
+
+        console.log(`Room ${roomId} status - Players with cartelas: ${playersWithCartelas}, Total players: ${totalPlayers}`);
+
+        if (playersWithCartelas === 0) {
+          if (totalPlayers === 0) {
+            console.log(`Room ${roomId} is empty. Deleting room.`);
+            resetRoom(roomId);
+            delete rooms[roomId];
+          } else {
+            console.log(`Room ${roomId} has ${totalPlayers} players but no cartelas. Resetting room.`);
+            resetRoom(roomId);
+          }
+        } else {
+          console.log(`Room ${roomId} has ${playersWithCartelas} players with cartelas. Keeping room active.`);
+          resetRoom(roomId);
+        }
+      }
+    }, 4000);
+  }
 }
+
 
 
  
