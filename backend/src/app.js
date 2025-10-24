@@ -1180,7 +1180,7 @@ async function checkWinners(roomId, calledNumber) {
     const winnerUsernames = new Set();
 
     // 🚀 Immediately emit the winners — user sees result instantly
-    io.to(roomId).emit("winningPattern", winners);
+    
 
     // ⚙️ Continue background updates (async, non-blocking)
     Promise.all(winners.map(async (winner) => {
@@ -1203,35 +1203,37 @@ async function checkWinners(roomId, calledNumber) {
           })
       );
     }).catch(err => console.error("Error during async updates:", err));
+io.to(roomId).emit("winningPattern", winners);
+    // 🧹 Cleanup delay as before
+    setTimeout(() => {
+      if (rooms[roomId]) {
+        const room = rooms[roomId];
 
-    // 🚀 IMMEDIATE CLEANUP - NO TIMEOUT
-    if (rooms[roomId]) {
-      const room = rooms[roomId];
+        console.log(`Game ended in room ${roomId}. Checking if room should be cleaned up...`);
 
-      console.log(`Game ended in room ${roomId}. Checking if room should be cleaned up...`);
+        const playersWithCartelas = Object.values(room.playerCartelas).filter(
+          arr => arr && arr.length > 0
+        ).length;
 
-      const playersWithCartelas = Object.values(room.playerCartelas).filter(
-        arr => arr && arr.length > 0
-      ).length;
+        const totalPlayers = Object.keys(room.players).length;
 
-      const totalPlayers = Object.keys(room.players).length;
+        console.log(`Room ${roomId} status - Players with cartelas: ${playersWithCartelas}, Total players: ${totalPlayers}`);
 
-      console.log(`Room ${roomId} status - Players with cartelas: ${playersWithCartelas}, Total players: ${totalPlayers}`);
-
-      if (playersWithCartelas === 0) {
-        if (totalPlayers === 0) {
-          console.log(`Room ${roomId} is empty. Deleting room.`);
-          resetRoom(roomId);
-          delete rooms[roomId];
+        if (playersWithCartelas === 0) {
+          if (totalPlayers === 0) {
+            console.log(`Room ${roomId} is empty. Deleting room.`);
+            resetRoom(roomId);
+            delete rooms[roomId];
+          } else {
+            console.log(`Room ${roomId} has ${totalPlayers} players but no cartelas. Resetting room.`);
+            resetRoom(roomId);
+          }
         } else {
-          console.log(`Room ${roomId} has ${totalPlayers} players but no cartelas. Resetting room.`);
+          console.log(`Room ${roomId} has ${playersWithCartelas} players with cartelas. Keeping room active.`);
           resetRoom(roomId);
         }
-      } else {
-        console.log(`Room ${roomId} has ${playersWithCartelas} players with cartelas. Keeping room active.`);
-        resetRoom(roomId);
       }
-    }
+    }, 1000);
   }
 }
 
