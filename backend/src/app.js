@@ -1067,7 +1067,27 @@ async function checkWinners(roomId, calledNumber) {
   const winners = [];
   const stakeAmount = Number(roomId);
 
-  // ... (winner detection logic remains the same) ...
+  for (const clientId in room.playerCartelas) {
+    const cartelas = room.playerCartelas[clientId];
+    if (!cartelas || cartelas.length === 0) continue;
+
+    const username = room.players[clientId];
+    if (!username) continue;
+
+    for (const cartelaIndex of cartelas) {
+      if (!cartela[cartelaIndex]) continue;
+      const key = clientId + "-" + cartelaIndex;
+      if (room.alreadyWon.includes(key)) continue;
+      const pattern = findWinningPattern(
+        cartela[cartelaIndex].cart,
+        room.calledNumbers
+      );
+      if (pattern) {
+        winners.push({ clientId, cartelaIndex, pattern, winnerName: username });
+        room.alreadyWon.push(key);
+      }
+    }
+  }
 
   if (winners.length > 0) {
     if (room.numberInterval) {
@@ -1078,67 +1098,21 @@ async function checkWinners(roomId, calledNumber) {
     const awardPerWinner = Math.floor(room.totalAward / winners.length);
     const winnerUsernames = new Set();
 
-    // 🚀 Immediately emit winners
+    // 🚀 Immediately emit the winners — user sees result instantly
     io.to(roomId).emit("winningPattern", winners);
 
-    // ⚡ IMMEDIATE ROOM RESET - No delay
-    resetRoomImmediately(roomId);
-    
-    // 🔄 Background processing without blocking
-    processGameResultsInBackground(roomId, winners, awardPerWinner, winnerUsernames);
-  }
-}
-
-function resetRoomImmediately(roomId) {
-  const room = rooms[roomId];
-  if (!room) return;
-
-  // Clear intervals immediately
-  if (room.timerInterval) clearInterval(room.timerInterval);
-  if (room.numberInterval) clearInterval(room.numberInterval);
-  if (room.injectInterval) clearInterval(room.injectInterval);
-
-  // Reset game state but keep players
-  room.activeGame = false;
-  room.selectedIndexes = [];
-  room.calledNumbers = [];
-  room.alreadyWon = [];
-  room.totalAward = 0;
-  room.gameId = null;
-  room.timer = null;
-  room.timerInterval = null;
-  room.numberInterval = null;
-  room.injectInterval = null;
-
-  // Reset player cartelas but keep players in room
-  for (const clientId in room.playerCartelas) {
-    room.playerCartelas[clientId] = [];
-  }
-
-  // Notify clients immediately
-  io.to(roomId).emit("roomAvailable");
-  io.to(roomId).emit("resetRoom");
-  
-  console.log(`Room ${roomId} reset immediately after game end`);
-}
-
-async function processGameResultsInBackground(roomId, winners, awardPerWinner, winnerUsernames) {
-  try {
-    // Process winners
-    await Promise.all(winners.map(async (winner) => {
+    // ⚙️ Continue background updates (async, non-blocking)
+    Promise.all(winners.map(async (winner) => {
       const user = await BingoBord.findOne({ username: winner.winnerName });
       if (user) {
         user.Wallet += awardPerWinner;
         user.coins += 1;
         await user.save();
-        await saveGameHistory(winner.winnerName, roomId, awardPerWinner, "win", rooms[roomId]?.gameId);
+        await saveGameHistory(winner.winnerName, roomId, awardPerWinner, "win", room.gameId);
         winnerUsernames.add(winner.winnerName);
       }
-    }));
-
-    // Process losers
-    const room = rooms[roomId];
-    if (room) {
+    })).then(async () => {
+      // Only save game history for losers without coin bonus
       await Promise.all(
         Object.keys(room.players)
           .filter(clientId => !winnerUsernames.has(room.players[clientId]))
@@ -1147,9 +1121,38 @@ async function processGameResultsInBackground(roomId, winners, awardPerWinner, w
             await saveGameHistory(username, roomId, Number(roomId), "loss", room.gameId);
           })
       );
-    }
-  } catch (err) {
-    console.error("Background processing error:", err);
+    }).catch(err => console.error("Error during async updates:", err));
+
+    // 🧹 Cleanup delay as before
+    setTimeout(() => {
+      if (rooms[roomId]) {
+        const room = rooms[roomId];
+
+        console.log(`Game ended in room ${roomId}. Checking if room should be cleaned up...`);
+
+        const playersWithCartelas = Object.values(room.playerCartelas).filter(
+          arr => arr && arr.length > 0
+        ).length;
+
+        const totalPlayers = Object.keys(room.players).length;
+
+        console.log(`Room ${roomId} status - Players with cartelas: ${playersWithCartelas}, Total players: ${totalPlayers}`);
+
+        if (playersWithCartelas === 0) {
+          if (totalPlayers === 0) {
+            console.log(`Room ${roomId} is empty. Deleting room.`);
+            resetRoom(roomId);
+            delete rooms[roomId];
+          } else {
+            console.log(`Room ${roomId} has ${totalPlayers} players but no cartelas. Resetting room.`);
+            resetRoom(roomId);
+          }
+        } else {
+          console.log(`Room ${roomId} has ${playersWithCartelas} players with cartelas. Keeping room active.`);
+          resetRoom(roomId);
+        }
+      }
+    }, 1000);
   }
 }
 
