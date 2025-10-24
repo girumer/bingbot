@@ -4,7 +4,7 @@
     width: 100%;
     padding: 5px;
     box-sizing: border-box;
-    background-color: #080505;
+    background-color: #12024cdb;
 }
 /* Top display buttons */
 .wallet-stake-display {
@@ -169,7 +169,7 @@
     height: 0;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 5px solid #333;
+    border-top: 5px solid #12024cdb;
     transition: transform 0.2s;
 }
 

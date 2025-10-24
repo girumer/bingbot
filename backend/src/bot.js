@@ -33,7 +33,7 @@ const mainMenu = {
   reply_markup: {
     inline_keyboard: [
       [
-       { text: "🎰 Spin & Win", callback_data: "spin_game" },
+      
         { text: "🎮 Play Bingo", callback_data: "play" },
         
       ],
@@ -162,24 +162,7 @@ bot.onText(/\/(balance|play|deposit|history|help|withdraw|coins)/, async (msg, m
         // Case for when the user selects 'Play Bingo' from the main menu
 // ... existing switch cases ...
 
-    case "spin_game": // From the main menu button
-        // The Spinner game usually uses a fixed stake, but you can offer options too.
-        bot.sendMessage(chatId, "Select your bet amount for Spin & Win:", {
-            reply_markup: {
-                inline_keyboard: [
-                    [
-                        // Ensure the web_app URL points to the correct component path: /SpinnerSelection
-                        { text: "Spin 5 ETB", web_app: { url: `${process.env.FRONTEND_URL}/SpinnerSelection?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&stake=5` } },
-                        { text: "Spin 10 ETB", web_app: { url: `${process.env.FRONTEND_URL}/SpinnerSelection?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&stake=10` } },
-                    ],
-                    [
-                        { text: "Spin 20 ETB", web_app: { url: `${process.env.FRONTEND_URL}/SpinnerSelection?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&stake=30` } },
-                        { text: "Spin 50 ETB", web_app: { url: `${process.env.FRONTEND_URL}/SpinnerSelection?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&stake=50` } },
-                    ]
-                ]
-            }
-        });
-        break;
+ 
 
 // ... rest of the switch cases ...
       case "help":

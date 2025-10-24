@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 
 mongoose.connect(process.env.DATABASE_URL, {
   connectTimeoutMS: 30000, // 30 seconds
+    maxPoolSize: 20,  
 })
 .then(() => console.log("MongoDB connected"))
 .catch((e) => console.log(e));
