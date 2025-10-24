@@ -1233,7 +1233,7 @@ io.to(roomId).emit("winningPattern", winners);
           resetRoom(roomId);
         }
       }
-    }, 1000);
+    }, 3000);
   }
 }
 
