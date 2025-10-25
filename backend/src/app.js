@@ -1382,35 +1382,37 @@ async function checkWinners(roomId, calledNumber) {
 
     // ✅ Emit winners immediately
     io.to(roomId).emit("winningPattern", winners);
+ setTimeout(() => {
+      if (rooms[roomId]) {
+        resetRoom(roomId);
+      }
+    }, 4000);
    // io.to(roomId).emit("roomAvailable");
 //io.to(roomId).emit("resetRoom");
     // ✅ Update winners in parallel
    
-     await Promise.all(winners.map(async (winner) => {
-      const user = await BingoBord.findOne({ username: winner.winnerName });
-      if (user) {
-        user.Wallet += awardPerWinner;
-        user.coins += 1;
-        await user.save();
-        await saveGameHistory(winner.winnerName, roomId, awardPerWinner, "win", room.gameId);
-        winnerUsernames.add(winner.winnerName);
-      }
-    }));
+    (async () => {
+  await Promise.all(winners.map(async (winner) => {
+    const user = await BingoBord.findOne({ username: winner.winnerName });
+    if (user) {
+      user.Wallet += awardPerWinner;
+      user.coins += 1;
+      await user.save();
+      await saveGameHistory(winner.winnerName, roomId, awardPerWinner, "win", room.gameId);
+      winnerUsernames.add(winner.winnerName);
+    }
+  }));
 
-    // ✅ Save loss history only (no coin bonus)
-    await Promise.all(Object.entries(room.players).map(async ([clientId, username]) => {
-      if (!winnerUsernames.has(username)) {
-        const user = await BingoBord.findOne({ username });
-        if (user) {
-          await saveGameHistory(username, roomId, stakeAmount, "loss", room.gameId);
-        }
+  await Promise.all(Object.entries(room.players).map(async ([clientId, username]) => {
+    if (!winnerUsernames.has(username)) {
+      const user = await BingoBord.findOne({ username });
+      if (user) {
+        await saveGameHistory(username, roomId, stakeAmount, "loss", room.gameId);
       }
-    }));
-      setTimeout(() => {
-      if (rooms[roomId]) {
-        resetRoom(roomId);
-      }
-    }, 1000);
+    }
+  }));
+})();
+
   }
    
 
