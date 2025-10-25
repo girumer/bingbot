@@ -1382,8 +1382,8 @@ async function checkWinners(roomId, calledNumber) {
 
     // ✅ Emit winners immediately
     io.to(roomId).emit("winningPattern", winners);
-    io.to(roomId).emit("roomAvailable");
-
+   // io.to(roomId).emit("roomAvailable");
+io.to(roomId).emit("resetRoom");
     // ✅ Update winners in parallel
     await Promise.all(winners.map(async (winner) => {
       const user = await BingoBord.findOne({ username: winner.winnerName });
