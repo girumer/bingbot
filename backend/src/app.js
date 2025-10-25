@@ -1073,9 +1073,9 @@ async function saveGameHistory(username, roomId, stake, outcome,  gameId ) {
     // ✅ Emit winners immediately
     io.to(roomId).emit("winningPattern", winners);
  setTimeout(() => {
-      if (rooms[roomId]) {
+      
         resetRoom(roomId);
-      }
+      
     }, 4000);
    // io.to(roomId).emit("roomAvailable");
 //io.to(roomId).emit("resetRoom");
