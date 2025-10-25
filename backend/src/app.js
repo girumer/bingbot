@@ -1450,7 +1450,7 @@ async function checkWinners(roomId, calledNumber) {
 }
 
  app.get('/', (req, res) => {
-  res.json({ message: 'Hello, world! ass i know ' }); // Sends a JSON response
+  res.json({ message: 'Hello, world! ass i know u and me' }); // Sends a JSON response
 });
   const verfyuser = async (req, res, next) => {
     const accesstoken = req.cookies.accesstoken;
