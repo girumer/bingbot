@@ -714,7 +714,7 @@ const refreshpg = () => {
 
         <div className="wallet-stake-display">
 
-          <div className="display-btn">Wallet: {wallet} ETB</div>
+          <div className="display-btn">Wallet:{Math.floor(wallet)} ETB</div>
 
           <div className="display-btn">Active Game: {activeGame ? "1" : "0"}</div>
 
