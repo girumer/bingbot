@@ -1390,8 +1390,7 @@ async function checkWinners(roomId, calledNumber) {
         resetRoom(roomId);
       }
     }, 4000);
-  }
-    await Promise.all(winners.map(async (winner) => {
+     await Promise.all(winners.map(async (winner) => {
       const user = await BingoBord.findOne({ username: winner.winnerName });
       if (user) {
         user.Wallet += awardPerWinner;
@@ -1411,6 +1410,8 @@ async function checkWinners(roomId, calledNumber) {
         }
       }
     }));
+  }
+   
 
     // ✅ Delay backend reset only
    
