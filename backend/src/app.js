@@ -1390,28 +1390,57 @@ async function checkWinners(roomId, calledNumber) {
    // io.to(roomId).emit("roomAvailable");
 //io.to(roomId).emit("resetRoom");
     // ✅ Update winners in parallel
-   
-    (async () => {
+   (async () => {
+  // Update winners
   await Promise.all(winners.map(async (winner) => {
     const user = await BingoBord.findOne({ username: winner.winnerName });
     if (user) {
       user.Wallet += awardPerWinner;
       user.coins += 1;
       await user.save();
-      await saveGameHistory(winner.winnerName, roomId, awardPerWinner, "win", room.gameId);
+
+      // ✅ Faster history save using $push
+      await BingoBord.updateOne(
+        { username: winner.winnerName },
+        {
+          $push: {
+            gameHistory: {
+              roomId: Number(roomId),
+              stake: Number(awardPerWinner),
+              outcome: "win",
+              timestamp: new Date(),
+              gameId: room.gameId,
+            }
+          }
+        }
+      );
+
       winnerUsernames.add(winner.winnerName);
     }
   }));
 
+  // Update losers
   await Promise.all(Object.entries(room.players).map(async ([clientId, username]) => {
     if (!winnerUsernames.has(username)) {
-      const user = await BingoBord.findOne({ username });
-      if (user) {
-        await saveGameHistory(username, roomId, stakeAmount, "loss", room.gameId);
-      }
+      // ✅ Direct history push without loading full user
+      await BingoBord.updateOne(
+        { username },
+        {
+          $push: {
+            gameHistory: {
+              roomId: Number(roomId),
+              stake: Number(stakeAmount),
+              outcome: "loss",
+              timestamp: new Date(),
+              gameId: room.gameId,
+            }
+          }
+        }
+      );
     }
   }));
 })();
+
 
   }
    
