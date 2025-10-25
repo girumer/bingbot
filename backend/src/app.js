@@ -1385,11 +1385,7 @@ async function checkWinners(roomId, calledNumber) {
    // io.to(roomId).emit("roomAvailable");
 //io.to(roomId).emit("resetRoom");
     // ✅ Update winners in parallel
-     setTimeout(() => {
-      if (rooms[roomId]) {
-        resetRoom(roomId);
-      }
-    }, 4000);
+   
      await Promise.all(winners.map(async (winner) => {
       const user = await BingoBord.findOne({ username: winner.winnerName });
       if (user) {
@@ -1410,6 +1406,11 @@ async function checkWinners(roomId, calledNumber) {
         }
       }
     }));
+      setTimeout(() => {
+      if (rooms[roomId]) {
+        resetRoom(roomId);
+      }
+    }, 1000);
   }
    
 
