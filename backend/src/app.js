@@ -542,6 +542,7 @@ function startInjectionMonitor(rId, initiatorClientId) {
             // 1. Check if the game is already in progress or starting
             if (room.activeGame || room.timer !== null) {
                 // Game is running or counting down, no action needed
+                console.log("roonm  is active");
                 continue;
             }
 
@@ -558,6 +559,7 @@ function startInjectionMonitor(rId, initiatorClientId) {
                 // Check if the bot injection monitor is already running.
                 if (room.injectInterval) {
                     // Bot injection is already in progress, just let it run.
+                    console.log("cartela injected");
                     continue;
                 }
                 
@@ -580,7 +582,7 @@ const socketIdToClientId = new Map();
 const clientIdToSocketId = new Map();
 
 io.on("connection", (socket) => {
-  //console.log("New connection:", socket.id);
+  console.log("New connection:", socket.id);
 // Add this block inside your main io.on("connection", (socket) => { ... });
 
 // --- SPINNER GAME HANDLER ---
@@ -1034,7 +1036,7 @@ async function saveGameHistory(username, roomId, stake, outcome,  gameId ) {
   }
 }
 
- async function checkWinners(roomId, calledNumber) {
+/*  async function checkWinners(roomId, calledNumber) {
   const room = rooms[roomId];
   if (!room) return;
 
@@ -1137,7 +1139,7 @@ async function saveGameHistory(username, roomId, stake, outcome,  gameId ) {
 
     // ✅ Delay backend reset only
    
-}
+} */
 
  app.get('/', (req, res) => {
   res.json({ message: 'Hello, world! ass i know u and me' }); // Sends a JSON response
