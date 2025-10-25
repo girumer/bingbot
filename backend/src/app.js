@@ -1142,7 +1142,7 @@ const winnerUsernames = new Set();
   }
 }  */
 
-async function checkWinners(roomId, calledNumber) {
+/* async function checkWinners(roomId, calledNumber) {
   const room = rooms[roomId];
   if (!room) return;
   const winners = [];
@@ -1235,10 +1235,116 @@ io.to(roomId).emit("winningPattern", winners);
       }
     }, 3000);
   }
+} */
+
+ async function checkWinners(roomId, calledNumber) {
+  const room = rooms[roomId];
+  if (!room) return;
+  const winners = [];
+   const stakeAmount = Number(roomId); 
+  //const coinBonusForLoser = (stakeAmount * 0.01);
+  for (const clientId in room.playerCartelas) {
+    const cartelas = room.playerCartelas[clientId];
+    if (!cartelas || cartelas.length === 0) continue;
+
+    // ✅ CORRECT: Get username directly from the players object using clientId
+    const username = room.players[clientId];
+    if (!username) continue;
+    
+    for (const cartelaIndex of cartelas) {
+      if (!cartela[cartelaIndex]) continue;
+      const key = clientId + "-" + cartelaIndex;
+      if (room.alreadyWon.includes(key)) continue;
+      const pattern = findWinningPattern(
+        cartela[cartelaIndex].cart,
+        room.calledNumbers
+      );
+      if (pattern) {
+        winners.push({ clientId, cartelaIndex, pattern, winnerName: username });
+        room.alreadyWon.push(key);
+      }
+    }
+  }
+
+  if (winners.length > 0) {
+    if (room.numberInterval) {
+      clearInterval(room.numberInterval);
+      room.numberInterval = null;
+    }
+    const awardPerWinner = Math.floor(room.totalAward / winners.length);
+const winnerUsernames = new Set();
+    for (const winner of winners) {
+      const user = await BingoBord.findOne({ username: winner.winnerName });
+      if (user) {
+        user.Wallet += awardPerWinner;
+        user.coins += 1;
+        await user.save();
+        await saveGameHistory(winner.winnerName, roomId, awardPerWinner, "win", room.gameId);
+        winnerUsernames.add(winner.winnerName); 
+      }
+    }
+  
+    for (const clientId in room.players) {
+      const username = room.players[clientId];
+      
+      // Check if the player is NOT in the winnerUsernames set
+      if (!winnerUsernames.has(username)) {
+        const user = await BingoBord.findOne({ username: username });
+        
+        if (user) {
+          // The user is a loser (played but didn't win)
+          // IMPORTANT: We use += for floating point numbers
+          
+
+          // Existing logic to save loss history
+          await saveGameHistory(username, roomId, Number(roomId), "loss", room.gameId);
+          
+          
+        }
+ }
+ }
+
+    io.to(roomId).emit("winningPattern", winners);
+
+    setTimeout(() => {
+      if (rooms[roomId]) {
+        const room = rooms[roomId];
+        
+        // ✅ COMPREHENSIVE CLEANUP LOGIC:
+        console.log(`Game ended in room ${roomId}. Checking if room should be cleaned up...`);
+        
+        // Check if room has active players with cartelas
+        const playersWithCartelas = Object.values(room.playerCartelas).filter(
+          arr => arr && arr.length > 0
+        ).length;
+        
+        // Check if room has any players at all
+        const totalPlayers = Object.keys(room.players).length;
+        
+        console.log(`Room ${roomId} status - Players with cartelas: ${playersWithCartelas}, Total players: ${totalPlayers}`);
+        
+        if (playersWithCartelas === 0) {
+          // No players with cartelas left - full cleanup
+          if (totalPlayers === 0) {
+            // Room is completely empty - delete it
+            console.log(`Room ${roomId} is empty. Deleting room.`);
+            resetRoom(roomId);
+            delete rooms[roomId];
+          } else {
+            // Room has players but no cartelas - reset but keep room
+            console.log(`Room ${roomId} has ${totalPlayers} players but no cartelas. Resetting room.`);
+            resetRoom(roomId);
+          }
+        } else {
+          // Room still has players with cartelas - just reset game state
+          console.log(`Room ${roomId} has ${playersWithCartelas} players with cartelas. Keeping room active.`);
+          resetRoom(roomId);
+        }
+      }
+    }, 4000);
+  }
 }
 
-
- 
  app.get('/', (req, res) => {
   res.json({ message: 'Hello, world! ass i know ' }); // Sends a JSON response
 });
