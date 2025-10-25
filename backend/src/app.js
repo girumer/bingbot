@@ -239,7 +239,7 @@ const NUM_CARTELAS_PER_PLAYER = 1;
       startCountdown(rId, 60);
     }
 } */
-async function processNextBotCartelaSequential(rId, player) {
+/* async function processNextBotCartelaSequential(rId, player) {
     const room = rooms[rId];
     const stake = Number(rId);
     const clientId = player.clientId;
@@ -298,6 +298,81 @@ async function processNextBotCartelaSequential(rId, player) {
         return 'SUCCESS';
 
     } catch (error) {
+        console.error(`[INJECT FAILED] Error processing ${player.username}:`, error);
+        return 'ERROR';
+    }
+} */
+async function processNextBotCartelaSequential(rId, player) {
+    const room = rooms[rId];
+    const stake = Number(rId);
+    const clientId = player.clientId;
+
+    // 1. Check if bot is already fully injected
+    const currentCartelas = room.playerCartelas[clientId]?.length || 0;
+    if (currentCartelas >= NUM_CARTELAS_PER_PLAYER) {
+        return 'COMPLETE';
+    }
+
+    // --- CRITICAL FIX: Use try/catch over the entire async block ---
+    try {
+        const user = await BingoBord.findOne({ username: player.username });
+
+        if (!user) {
+            console.error(`[INJECT ERROR] User ${player.username} not found in DB.`);
+            return 'ERROR';
+        }
+
+        // 2. Initial Setup (if first cartela) & Funds Check
+        if (!(room.players[clientId])) {
+            room.players[clientId] = player.username;
+            room.playerCartelas[clientId] = room.playerCartelas[clientId] || [];
+        }
+
+        if (user.Wallet < stake) {
+            console.error(`[INJECT ERROR] User ${player.username} has insufficient wallet (${user.Wallet}) for 1 ticket.`);
+            return 'SKIPPED'; 
+        }
+
+        // 3. Select one unique cartela
+        let cartelaIndex;
+        // Generate a random, unique cartela index (1 to 75)
+        do {
+            cartelaIndex = Math.floor(Math.random() * 75) + 1;
+        } while (room.selectedIndexes.includes(cartelaIndex));
+
+        // --- THE FIX: Use updateOne to bypass full document validation ---
+        // This atomically decrements the wallet directly in the database.
+        const updateResult = await BingoBord.updateOne(
+            { _id: user._id, Wallet: { $gte: stake } }, // Find by ID AND ensure funds are still sufficient
+            { $inc: { Wallet: -stake } }              // Decrement the Wallet
+        );
+
+        if (updateResult.modifiedCount === 0) {
+            // This happens if the user's wallet was just updated below the stake by another concurrent process
+            console.error(`[INJECT FAILED] ${player.username}: Concurrency error or insufficient funds on final check.`);
+            return 'SKIPPED'; 
+        }
+        
+        // Update the local user object for correct logging/future checks
+        user.Wallet -= stake; 
+
+        // Update Room State (after successful DB deduction)
+        room.playerCartelas[clientId].push(cartelaIndex);
+        room.selectedIndexes.push(cartelaIndex);
+        
+        console.log(`[INJECT SUCCESS] ${player.username} selected cartela #${cartelaIndex} (Total: ${room.playerCartelas[clientId].length}/${NUM_CARTELAS_PER_PLAYER}).`);
+
+        // 4. Broadcast Update
+        const totalCartelas = room.selectedIndexes.length;
+        io.to(rId).emit("updateSelectedCartelas", {
+            selectedIndexes: room.selectedIndexes,
+        });
+        io.to(rId).emit("playerCount", { totalPlayers: totalCartelas });
+        
+        return 'SUCCESS';
+
+    } catch (error) {
+        // Log the full stack trace for any other unexpected errors
         console.error(`[INJECT FAILED] Error processing ${player.username}:`, error);
         return 'ERROR';
     }
