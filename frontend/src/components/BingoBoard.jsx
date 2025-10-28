@@ -362,7 +362,7 @@ useEffect(() => {
 
         {letters.map((letter, rowIndex) => (
           <div key={letter} className="number-row">
-            <div className="letter-button">{letter}</div>
+          
             {numberColumns[rowIndex].map((num) => (
               <button
                 key={num}
@@ -381,6 +381,8 @@ useEffect(() => {
       {/* BOTTOM PANELS */}
       <div className="bottom-panels">
         <div className="bottom-left">
+          <div className={`cartelas-container-horizontal ${myCartelas.length === 1 ? "single-cartela" : ""}`}>
+<div className="cartelas-container-horizontal">
           <MyCartelasSection
             myCartelas={myCartelas}
             selectedIndexes={selectedIndexes}
@@ -390,8 +392,10 @@ useEffect(() => {
              highlightCartelas={highlightCartelas}  // ✅ pass toggle
              allCalledNumbers={allCalledNumbers} 
           />
+          </div>
+          </div>
         </div>
-        <div className="bottom-right">{/* Optional: last five numbers, timer, stats */}</div>
+        
       </div>
 
       {/* WINNER POPUP */}
