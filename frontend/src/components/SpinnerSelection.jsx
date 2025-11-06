@@ -573,7 +573,7 @@ useEffect(() => {
   margin: '20px 0',
   textAlign: 'center'
 }}>
-  Your balance: {wallet}
+    Your balance: {Math.floor(wallet)}
 </h2>
 
      
