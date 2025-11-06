@@ -85,10 +85,10 @@ const probabilities = {
   20: 1, // 20% chance
   15:2,
   12:2,
-  10: 5, // 20% chance
-  7:7,
+  10: 2, // 20% chance
+  7:2,
   5: 20, // 25% chance
-  0: 60, // 20% chance
+  0: 68, // 20% chance
 };
 
   const username = searchParams.get("username");
@@ -558,9 +558,9 @@ useEffect(() => {
         }
         `}
       </style>
-      {/* -------------------- END Custom Styles Block -------------------- */}
+      {/* -------------------/*    <h3 className="text-4xl font-black tracking-wide">Prize Wheel of Fortune</h1> -------------------- */}
 
-      <h1 className="text-4xl font-black tracking-wide">Prize Wheel of Fortune</h1>
+  
     <h2 style={{
   fontSize: '2rem',
   fontWeight: 'bold',
