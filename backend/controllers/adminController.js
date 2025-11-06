@@ -128,7 +128,7 @@ exports.registerUser = async (req, res) => {
 };
 
 
-/* exports.broadcastToAllCustomers = async (req, res) => {
+ exports.broadcastToAllCustomers = async (req, res) => {
     try {
         // Assume BingoBord is a Mongoose model
         const allUsers = await BingoBord.find({}, 'telegramId');
@@ -137,13 +137,17 @@ exports.registerUser = async (req, res) => {
         // Ensure that process.env.SUPPORT_GROUP and process.env.SUPPORT_USERNAME are defined.
         // NOTE: Telegram requires specific link formatting for Markdown V2 or HTML.
         // If 'Markdown' fails, try 'HTML' or 'MarkdownV2'
-        const message = `ዛሬም ያሸነፉ  🔥🔥🔥
+        const message = `አማራጮች እየሰፉ ነው 🔥🔥🔥
+        ከቢንጎ በተጨማሪ በስፒነር ጌም መጥተናል 🔥🔥🔥
+        spin and win የሚልውን በመንካት ይጫውቱ
+        ከዛ በተጨማሪ
         ጨዋታ ባሽነፉ ግዜ አንድ ኮይን እንደሚጨምርሎት ያቃሉ ?🔥🔥🔥
         ያሎትንስ  ኮይን ወድ ዋሌት እንድሚቅይሩስ ያቃሉ?🔥🔥🔥
         ኮይኖን ወደ ዋሌት ለመቀየር convert coins የሚልውን ይጠቀሙ
         ያሎትን ቀሪ ኮይን ለማወቅ  ሜኑ ውስጥ ገበተው  cheak your coin balance  የሚለውን ይመልክቱ 
 ሲምዘግቡ ነፃ የመጫውቻ ቦነስ  🔥🔥🔥
 በሪፍራል ሊነክ ሲያስመዝግቡ የሚያሰመዝገቡት ስው ከሚያስግባው ዲፖዚት  የማያቋርጥ 10% ኮሚሽን 
+እስከ 4 ካርቴላ መምርጥ እንድሚችሉ ሳይዘነጋ
 ለዲፖዚት እና ዊዝድሮዋል መመርያ
 [እዚህ ይጫኑ](${process.env.SUPPORT_GROUP}) 
 ለበለጠ መረጃ ከታች ባለው ቻናላችን ያናግሩን በተጨማሪም
@@ -180,9 +184,9 @@ exports.registerUser = async (req, res) => {
         console.error("Broadcast failed:", err);
         return res.status(500).json({ error: "Failed to broadcast message." });
     }
-}; */
+}; 
 // Register user (admin can choose role)
-exports.broadcastToAllCustomers = async (req, res) => {
+/* exports.broadcastToAllCustomers = async (req, res) => {
   try {
     const allUsers = await BingoBord.find({}, 'telegramId');
 
@@ -228,7 +232,7 @@ exports.broadcastToAllCustomers = async (req, res) => {
     console.error("Broadcast failed:", err);
     return res.status(500).json({ error: "Failed to broadcast message." });
   }
-};
+}; */
 
 // Delete user by ID
 exports.deleteUser = async (req, res) => {
