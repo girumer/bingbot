@@ -35,7 +35,8 @@ const mainMenu = {
       [
       
         { text: "🎮 Play Bingo", callback_data: "play" },
-        
+          { text: "🎰 Spin & Win", callback_data: "spin_game" },
+      
       ],
       [ 
          { text: "💰 Balance", callback_data: "balance" },
@@ -652,8 +653,21 @@ bot.on('callback_query', async (callbackQuery) => {
 
         }
       });
-      break;
 
+      break;
+case "spin_game":
+  // ✅ Acknowledge the button click
+  bot.sendMessage(chatId, "Select your bet amount for Spin & Win:", {
+    reply_markup: {
+   inline_keyboard: [
+  [
+    { text: "Spin 5 ETB", callback_data: "spin_5" },
+  ]
+]
+
+    }
+  });
+  break;
     case "gameHistory":
       if (!user.gameHistory || user.gameHistory.length === 0) {
         bot.sendMessage(chatId, "🎮 You have no game history yet.");
@@ -834,6 +848,36 @@ case "room_30":
   //   }
   // });
   
+  case "spin_5":
+
+  bot.answerCallbackQuery(callbackQuery.id); // ✅ Acknowledge the button click
+
+  const spinStake = Number(data.split("_")[1]);
+  
+  // REMOVE THIS DUPLICATE LINE: const user = await BingoBord.findOne({ telegramId: chatId });
+  // User is already fetched at the beginning of the callback handler
+
+  if (!user) {
+    bot.sendMessage(chatId, "❌ You are not registered. Use /start to begin.");
+    return;
+  }
+
+  if (user.Wallet < spinStake) {
+    bot.sendMessage(chatId, `❌ You don't have enough balance. Your wallet: ${user.Wallet} ETB`);
+    return;
+  }
+
+  const spinnerUrl = `${process.env.FRONTEND_URL}/SpinnerSelection?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&stake=${spinStake}`;
+
+  bot.sendMessage(chatId, `🎯 Ready to spin for ${spinStake} ETB! Click below to continue:`, {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "🎰 Launch Spinner", web_app: { url: spinnerUrl } }]
+      ]
+    }
+  });
+  break;
+
 case "transactions":
   try {
     // Fetch last 10 transactions for the user's phone number
