@@ -128,11 +128,11 @@ exports.registerUser = async (req, res) => {
 };
 
 
-exports.broadcastToAllCustomers = async (req, res) => {
+/* exports.broadcastToAllCustomers = async (req, res) => {
     try {
         // Assume BingoBord is a Mongoose model
         const allUsers = await BingoBord.find({}, 'telegramId');
-
+          const imageUrl= process.env.BROADCAST_IMAGE_URL;
         // The text message to broadcast (using Markdown V2 format for bold/links)
         // Ensure that process.env.SUPPORT_GROUP and process.env.SUPPORT_USERNAME are defined.
         // NOTE: Telegram requires specific link formatting for Markdown V2 or HTML.
@@ -180,8 +180,55 @@ exports.broadcastToAllCustomers = async (req, res) => {
         console.error("Broadcast failed:", err);
         return res.status(500).json({ error: "Failed to broadcast message." });
     }
-};
+}; */
 // Register user (admin can choose role)
+exports.broadcastToAllCustomers = async (req, res) => {
+  try {
+    const allUsers = await BingoBord.find({}, 'telegramId');
+
+    const imageUrl = process.env.BROADCAST_IMAGE_URL; // or local path
+    const message = `ዛሬም ያሸነፉ 🔥🔥🔥
+ጨዋታ ባሽነፉ ግዜ አንድ ኮይን እንደሚጨምርሎት ያቃሉ ?🔥🔥🔥
+ያሎትንስ ኮይን ወድ ዋሌት እንድሚቅይሩስ ያቃሉ?🔥🔥🔥
+ኮይኖን ወደ ዋሌት ለመቀየር convert coins የሚልውን ይጠቀሙ
+ያሎትን ቀሪ ኮይን ለማወቅ ሜኑ ውስጥ ገበተው cheak your coin balance የሚለውን ይመልክቱ
+ሲምዘግቡ ነፃ የመጫውቻ ቦነስ 🔥🔥🔥
+በሪፍራል ሊነክ ሲያስመዝግቡ የሚያሰመዝገቡት ስው ከሚያስግባው ዲፖዚት የማያቋርጥ 10% ኮሚሽን
+ለዲፖዚት እና ዊዝድሮዋል መመርያ
+[እዚህ ይጫኑ](${process.env.SUPPORT_GROUP})
+ለበለጠ መረጃ ከታች ባለው ቻናላችን ያናግሩን በተጨማሪም
+ለእገዛ [እዚህ ይጫኑ](${process.env.SUPPORT_USERNAME})`;
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const user of allUsers) {
+      if (user.telegramId) {
+        try {
+          await bot.sendPhoto(user.telegramId, imageUrl, {
+            caption: message,
+            parse_mode: 'Markdown'
+          });
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to to send to ${user.telegramId}:`, error.message);
+          failCount++;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+    }
+
+    console.log(`Broadcast completed. Sent to ${successCount}, failed for ${failCount}.`);
+    return res.status(200).json({
+      message: `Broadcast sent to ${successCount} users, failed for ${failCount}.`
+    });
+
+  } catch (err) {
+    console.error("Broadcast failed:", err);
+    return res.status(500).json({ error: "Failed to broadcast message." });
+  }
+};
 
 // Delete user by ID
 exports.deleteUser = async (req, res) => {

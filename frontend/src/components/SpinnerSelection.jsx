@@ -196,7 +196,7 @@ const deduction = -stakeValue;
     if (window.Telegram && window.Telegram.WebApp) {
       window.Telegram.WebApp.ready();
       window.Telegram.WebApp.expand();
-      console.log("Telegram WebApp initialized");
+      console.log("Telegram WebApp isinitialized");
     }
 
     if (username && telegramId && stake) {
