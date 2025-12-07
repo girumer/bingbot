@@ -1,10 +1,29 @@
 /* Wrapper for horizontal scrolling */
+:root {
+/* ... your existing variables ... */
+ --text-dark: hsl(210, 73%, 39%); 
+--card-background: #a8be79bd; /* (Used for quiz card) */
+ /* 🟢 ADD OR UPDATE THIS VARIABLE: */
+--main-app-background: #12024c; /* Solid Dark Purple */
+ 
+ /* ... rest of variables ... */
+}
+body {
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+ /* 🟢 Use the new variable for the main background: */
+ background-color: var(--main-app-background); 
+ 
+ color: var(--text-dark);
+ margin: 0;
+ /* ... rest of body styles ... */
+}
 .Cartelacontainer-wrapper {
     overflow-x: auto; /* enable horizontal scroll if needed */
     width: 100%;
     padding: 5px;
     box-sizing: border-box;
-    background-color: #12024cdb;
+    background-color: #12024c;
 }
 /* Top display buttons */
 .wallet-stake-display {
