@@ -9,7 +9,7 @@ import socket from "../socket";
 const SpinnerSelection = () => {
   const [searchParams] = useSearchParams();
   const [selectedNumbers, setSelectedNumbers] = useState([]);
-  const stakeValue=5;
+  const stakeValue=1;
     const [wallet, setWallet] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
  // State to control wheel rotation
@@ -83,11 +83,11 @@ const probabilities = {
   30: 1, // 10% chance
   25:1,
   20: 1, // 20% chance
-  15:2,
-  12:2,
-  10: 4, // 20% chance
+  15:1,
+  12:1,
+  10: 1, // 20% chance
   5:5,
-  1: 20, // 25% chance
+  1: 25, // 25% chance
   0: 63, // 20% chance
 };
 
