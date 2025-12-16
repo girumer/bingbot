@@ -451,7 +451,9 @@ useEffect(() => {
               ))}
             </div>
 
-            <div className="cartela-index">{w.winnerName}</div>
+           <div className="cartela-index">
+                Cartela #{w.cartelaIndex + 1} - {w.winnerName}
+            </div>
           </div>
         );
       })}
