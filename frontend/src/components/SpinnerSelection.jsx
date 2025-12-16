@@ -16,8 +16,8 @@ const SpinnerSelection = () => {
 const segmentThemes = [
   // Value 0 is the lowest prize/loss
   { value: 0, theme: 'Cabbage', color: '#6AA84F', icon: '🥬' }, // Cabbage (Green)
-  { value: 5, theme: 'Lemon', color: '#FFD966', icon: '🍋' }, // Lemon (Yellow)
-  { value: 7, theme: 'Orange', color: '#FFA500', icon: '🍊' }, // Orange (Orange)
+  { value: 1, theme: 'Lemon', color: '#FFD966', icon: '🍋' }, // Lemon (Yellow)
+  { value: 5, theme: 'Orange', color: '#FFA500', icon: '🍊' }, // Orange (Orange)
   { value: 10, theme: 'Apple', color: '#CC0000', icon: '🍎' }, // Apple (Red)
   { value: 12, theme: 'Papaya', color: '#FF6347', icon: '🍈' }, // Papaya (Tomato Red)
   { value: 15, theme: 'Cinnamon', color: '#D2691E', icon: '🌰' }, // Cinnamon (Brown)
@@ -86,8 +86,8 @@ const probabilities = {
   15:2,
   12:2,
   10: 4, // 20% chance
-  7:5,
-  5: 20, // 25% chance
+  5:5,
+  1: 20, // 25% chance
   0: 63, // 20% chance
 };
 

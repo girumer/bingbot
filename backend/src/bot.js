@@ -151,10 +151,6 @@ bot.onText(/\/(balance|play|deposit|history|help|withdraw|coins)/, async (msg, m
               [
                 { text: "Room 20 (Stake 20)", callback_data: "room_20" },
                 { text: "Room 30 (Stake 30)", callback_data: "room_30" },
-              ],
-              [
-                { text: "Room 50 (Stake 50)", callback_data: "room_50" },
-                { text: "Room 100 (Stake 100)", callback_data: "room_100" },
               ]
             ]
           }
@@ -661,7 +657,7 @@ case "spin_game":
     reply_markup: {
    inline_keyboard: [
   [
-    { text: "Spin 5 ETB", callback_data: "spin_5" },
+    { text: "Spin 1 ETB", callback_data: "spin_1" },
   ]
 ]
 
@@ -848,7 +844,7 @@ case "room_30":
   //   }
   // });
   
-  case "spin_5":
+  case "spin_1":
 
   bot.answerCallbackQuery(callbackQuery.id); // ✅ Acknowledge the button click
 
