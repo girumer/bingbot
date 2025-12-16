@@ -397,7 +397,10 @@ exports.depositAmount = async (req, res) => {
         if (!user) {
             return res.status(404).json({ error: "User not found. Please register or provide a valid phone number." });
         }
-        
+        const BONUS_PERCENTAGE = 0.10; // 10%
+        const bonusAmount = finalAmount * BONUS_PERCENTAGE;
+        // Total amount credited = 100 + (100 * 0.10) = 110
+        const totalCreditedAmount = finalAmount + bonusAmount;
         // Step 4: Find the PENDING transaction using the provided transactionNumber.
         // This is where the core security check happens. It ensures a pending deposit exists for this transaction ID.
         const updatedTx = await Transaction.findOne({
@@ -414,7 +417,7 @@ exports.depositAmount = async (req, res) => {
         // The rest of the code is secure because it's based on a pending transaction created by your admin.
 
         // Step 5: Process the transaction and handle referral bonus.
-        user.Wallet += finalAmount;
+        user.Wallet += totalCreditedAmount;
          const newTransaction = new Transaction({
            
             phoneNumber,
@@ -428,7 +431,7 @@ exports.depositAmount = async (req, res) => {
         if (user.referredBy ) {
             const referer = await BingoBord.findOne({ telegramId: user.referredBy });
             if (referer) {
-                const bonusAmount = finalAmount * 0.05;
+                const bonusAmount = finalAmount * 0.01;
                 referer.Wallet += bonusAmount;
                 await referer.save();
                 user.referralBonusPaid = true;
