@@ -1,15 +1,12 @@
 /* Wrapper for horizontal scrolling */
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  background-color: #12024c; /* solid dark background */
-}
+
 .Cartelacontainer-wrapper {
     overflow-x: auto; /* enable horizontal scroll if needed */
     width: 100%;
      height: 100vh;
-     
+       min-height: 100vh;         /* ensure it covers full viewport */
+  margin-top: 0;             /* no gap at the top */
+  padding-top: 0; 
     box-sizing: border-box;
     background-color: #12024c;
 }
