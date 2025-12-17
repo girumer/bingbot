@@ -4,6 +4,7 @@
     overflow-x: auto; /* enable horizontal scroll if needed */
     width: 100%;
     padding: 0px;
+     min-height: 100vh;
     box-sizing: border-box;
     background-color: #12024c;
 }
