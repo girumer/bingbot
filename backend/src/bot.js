@@ -634,13 +634,7 @@ bot.on('callback_query', async (callbackQuery) => {
     [
     { text: "Room 20 (Stake 20)", callback_data: "room_20" },
     { text: "Room 30 (Stake 30)", callback_data: "room_30" },
-    ],
-  
-  [
-    
-    { text: "Room 50 (Stake 50)", callback_data: "room_50" },
-    { text: "Room 100 (Stake 100)", callback_data: "room_100" },
-  ]
+    ]
 ]
 
         }
