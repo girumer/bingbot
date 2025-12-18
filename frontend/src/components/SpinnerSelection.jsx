@@ -79,16 +79,16 @@ const segmentAngle = 360 / segmentCount; // 60 degrees
 
 // These probabilities make the 50 point segment much rarer (5%)
 const probabilities = {
-  50: 1, // 5% chance
-  30: 1, // 10% chance
-  25:1,
-  20: 1, // 20% chance
-  15:1,
+  50: 0, // 5% chance
+  30: 0, // 10% chance
+  25:0,
+  20: 0, // 20% chance
+  15:0,
   12:1,
   10: 1, // 20% chance
-  5:5,
-  1: 25, // 25% chance
-  0: 63, // 20% chance
+  5:6,
+  1: 30, // 25% chance
+  0: 62, // 20% chance
 };
 
   const username = searchParams.get("username");
@@ -149,12 +149,12 @@ const deduction = -stakeValue;
 
     // Calculate the angle to the CENTER of the winning segment
     const centerAngleOfWinningSegment = segmentIndex * segmentAngle + (segmentAngle / 2);
-  console.log("center",centerAngleOfWinningSegment);
+  //console.log("center",centerAngleOfWinningSegment);
     // The wheel rotates CLOCKWISE. We want the center of the winning segment 
     // to stop at the pointer (which is at the top, or 0 degrees).
     // Rotation required: 360 - center angle
     const segmentTargetRotation = 360 - (centerAngleOfWinningSegment+36);
-   console.log("segment is ",segmentTargetRotation);
+  // console.log("segment is ",segmentTargetRotation);
     // Add full spins (5-9 spins) for a smooth, exciting animation
     const spins = 5 + Math.floor(Math.random() * 5);
     const targetRotation = (spins * 360) + segmentTargetRotation;
@@ -196,7 +196,7 @@ const deduction = -stakeValue;
     if (window.Telegram && window.Telegram.WebApp) {
       window.Telegram.WebApp.ready();
       window.Telegram.WebApp.expand();
-      console.log("Telegram WebApp isinitialized");
+    //  console.log("Telegram WebApp isinitialized");
     }
 
     if (username && telegramId && stake) {
@@ -226,7 +226,7 @@ const deduction = -stakeValue;
 
  try {
 
- console.log("Fetching wallet data for Telegram ID is:", telegramIdParam);
+ //console.log("Fetching wallet data for Telegram ID is:", telegramIdParam);
 
 const response = await axios.post(
 
@@ -277,7 +277,7 @@ const response = await axios.post(
 useEffect(() => {
   const init = async () => {
     if (!usernameParam || !telegramIdParam) {
-      console.log("Waiting for all required URL parameters...");
+     // console.log("Waiting for all required URL parameters...");
       setIsLoading(false);
       return;
     }

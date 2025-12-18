@@ -38,7 +38,7 @@ function Mainmenu() {
     alert("Failed to verify user. Please login again.");
   });
 }, []);
- console.log("user name1 2",loggedInUserPhone );
+ //console.log("user name1 2",loggedInUserPhone );
 //console.log("phone number is",phoneNumber)
  const checkpoint = async (username) => {
     try {

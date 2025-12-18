@@ -43,7 +43,7 @@ const handlelogout=()=>{
    const gototransfer=()=>{
     history("/Mainmenu")
   }
- console.log("the admin board token is",token);
+ ///console.log("the admin board token is",token);
   return (
     <header>
       <nav ref={navRef}>

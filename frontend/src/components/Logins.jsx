@@ -49,7 +49,7 @@ setadataa(response.data);
       } else if (resData.message) {
         setMessage(resData.message);
         setIsLoading(false);
-        console.log(resData.message);
+        //console.log(resData.message);
       } else {
         setMessage('Login failed. Please try again.');
         setIsLoading(false);
@@ -60,7 +60,7 @@ setadataa(response.data);
       setIsLoading(false);
     }
   };
-console.log(dataa);
+//console.log(dataa);
   return (
     <div className="container">
       <div className="login-container">

@@ -56,7 +56,7 @@ const Report = () => {
   setMonthlyReport(Array.isArray(response.data.monthly) ? response.data.monthly : [response.data.monthly]);
   setDailyReport(Array.isArray(response.data.daily) ? response.data.daily : [response.data.daily]);
 
-  console.log("dily rep is ",response.data.daily )
+ // console.log("dily rep is ",response.data.daily )
     } catch (err) {
       console.error('Error fetching report data:', err);
     } finally {

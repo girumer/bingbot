@@ -196,7 +196,7 @@ const [otherUsersCartelas, setOtherUsersCartelas] = useState([]); // Cartelas se
 
     try {
 
-      console.log("Fetching wallet data for Telegram ID:", telegramIdParam);
+      //console.log("Fetching wallet data for Telegram ID:", telegramIdParam);
 
       const response = await axios.post(
 
@@ -276,7 +276,7 @@ useEffect(() => {
 
     if (!roomId || !usernameParam || !telegramIdParam) {
 
-  console.log("Waiting for all required URL parameters...");
+  //console.log("Waiting for all required URL parameters...");
 
   setIsLoading(false);
 
