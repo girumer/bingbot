@@ -147,10 +147,6 @@ bot.onText(/\/(balance|play|deposit|history|help|withdraw|coins)/, async (msg, m
               [
                 { text: "Room 5 (Stake 5)", callback_data: "room_5" },
                 { text: "Room 10 (Stake 10)", callback_data: "room_10" },
-              ],
-              [
-                { text: "Room 20 (Stake 20)", callback_data: "room_20" },
-                { text: "Room 30 (Stake 30)", callback_data: "room_30" },
               ]
             ]
           }
@@ -288,10 +284,7 @@ bot.onText(/\/(|balance|play|deposit|history|help|withdraw)/, async (msg, match)
   [
     { text: "Room 5 (Stake 5)", callback_data: "room_5" },
     { text: "Room 10 (Stake 10)", callback_data: "room_10" },],
-    [
-    { text: "Room 20 (Stake 20)", callback_data: "room_20" },
-    { text: "Room 30 (Stake 30)", callback_data: "room_30" },
-    ],
+   
   
  
 ]
@@ -630,11 +623,7 @@ bot.on('callback_query', async (callbackQuery) => {
         inline_keyboard: [
   [
     { text: "Room 5 (Stake 5)", callback_data: "room_5" },
-    { text: "Room 10 (Stake 10)", callback_data: "room_10" },],
-    [
-    { text: "Room 20 (Stake 20)", callback_data: "room_20" },
-    { text: "Room 30 (Stake 30)", callback_data: "room_30" },
-    ]
+    { text: "Room 10 (Stake 10)", callback_data: "room_10" },]
 ]
 
         }
