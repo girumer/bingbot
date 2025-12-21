@@ -144,17 +144,17 @@ const forcedPlayersData = [
     
     // --- NEW PLAYERS ---
     { username: 'jemale2', clientId: '200014x' },
-    { username: 'takur', clientId: '200015x' },
-    { username: 'gadese', clientId: '200016x' },
-    { username: 'yosephh', clientId: '2000787x' },
-    { username: 'yesake', clientId: '200019x' },
-    { username: 'zeelaleme', clientId: '200020x' },
-    { username: 'keedir', clientId: '200021x' },
-    { username: 'yedneke', clientId: '200017x' },
-    { username: 'semir', clientId: '200018x' },
-    { username: 'aseamawe', clientId: 'client-tariku-bot' },
-    { username: 'derabulbula', clientId: 'client-cita-bot' },
-    { username: 'natiman', clientId: 'client-chkuni-bot' },
+    { username: 'elaman', clientId: '200015x' },
+    { username: 'saron', clientId: '200016x' },
+    { username: 'ashchalew', clientId: '2000787x' },
+    { username: 'endalkachew', clientId: '200019x' },
+    { username: 'getu', clientId: '200020x' },
+    { username: 'maru', clientId: '200021x' },
+    { username: 'matita', clientId: '200017x' },
+    { username: 'sadik', clientId: '200018x' },
+    { username: 'yetayewe', clientId: 'client-tariku-bot' },
+    { username: 'amde', clientId: 'client-cita-bot' },
+    { username: 'meriT', clientId: 'client-chkuni-bot' },
 ];
 // Note: clientId must be unique strings for the game logic to work correctly.
 const NUM_CARTELAS_PER_PLAYER = 1;
