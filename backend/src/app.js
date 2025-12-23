@@ -137,8 +137,8 @@ const router = express.Router();
 // Define the players you want to inject
 // Define the players you want to inject
 const forcedPlayersData = [
-    { username: 'hena', clientId: '200001x' },
-    { username: 'tagu', clientId: '200002x' },
+    { username: 'amanu', clientId: 'tg_amanu_fake' },
+    { username: 'barni ', clientId: 'tg_barni_fake' },
     { username: 'soloman', clientId: '200003x' },
     { username: 'sentayehu', clientId: '200004x' },
     
