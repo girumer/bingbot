@@ -4,13 +4,13 @@
   min-height: 100vh;
   background-color: #12024c; /* solid background */
   margin: 0;
-  padding: 5px;              /* match the working page */
+  padding: 0px;              /* match the working page update three*/
   box-sizing: border-box;
 }
 
 .Cartelacontainer-wrapper > .wallet-stake-display {
   margin-top: 0;             /* remove top margin */
-  margin-bottom: 5px;       /* keep spacing below */
+  margin-bottom: 0px;       /* keep spacing below update one */
   padding-top: 0px;          /* internal spacing */
 }
 
@@ -19,8 +19,8 @@
     display: flex;                   /* use flexbox */
     justify-content: space-between;  /* spread buttons evenly */
     width: 100%;
-    gap: 5px;                        /* small gap between buttons */
-    margin: 5px 0;
+    gap: 5px;                        /* small gap between buttons update two */
+    margin: 0px 0;
     flex-wrap: nowrap;                /* prevent wrapping */
 }
 
