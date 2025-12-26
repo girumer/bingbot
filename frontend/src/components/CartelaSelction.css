@@ -1,40 +1,35 @@
-/* Global Reset */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* Wrapper for horizontal scrolling */
 
-html, body {
-  margin: 0;
-  padding: 0;
-  background-color: #12024c;
-}
-
-/* Wrapper */
 .Cartelacontainer-wrapper {
   min-height: 100vh;
-  background-color: #12024c;
+  background-color: #12024c; /* solid background */
   margin: 0;
-  padding: 5px;
+  padding: 5px;              /* match the working page */
   box-sizing: border-box;
+}
+
+.Cartelacontainer-wrapper > .wallet-stake-display {
+  margin-top: 0;             /* remove top margin */
+  margin-bottom: 0px;       /* keep spacing below update one */
+  padding-top: 0px;          /* internal spacing */
 }
 
 /* Top display buttons */
 .wallet-stake-display {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  gap: 5px;
-  margin: 0 0 10px 0;
-  flex-wrap: nowrap;
+    display: flex;                   /* use flexbox */
+    justify-content: space-between;  /* spread buttons evenly */
+    width: 100%;
+    gap: 5px;                        /* small gap between buttons update two */
+    margin: 0px 0;
+    flex-wrap: nowrap;                /* prevent wrapping */
 }
+
 
 .display-btn {
   flex: 1 1 30%;
-  margin: 0.4rem 0;
+  margin: 0.4rem;
   padding: 0.6rem;
-  max-width: 120px;
+    max-width: 120px;
   min-width: 80px;
   background-color: #1d1e1f;
   color: white;
@@ -43,6 +38,7 @@ html, body {
   border-radius: 4px;
   box-shadow: 0px 2px 5px rgba(0,0,0,0.2);
 }
+
 
 .display-btn1 {
   flex: 1 1 30%;
@@ -57,108 +53,169 @@ html, body {
   border-radius: 4px;
   box-shadow: 0px 2px 5px rgba(0,0,0,0.2);
 }
+/* Cartela container (grid of 10 rows) */
+.Cartelacontainer {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr); /* 10 columns */
+  gap: 8px;
+  margin-top: 1rem;
+}
 
-/* Timer */
+/* Individual cartela buttons */
+.cartela {
+  padding: 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #121111;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.cartela:hover {
+  transform: scale(1.05);
+}
 .timer-display {
   font-size: 1.5rem;
   font-weight: bold;
   color: #962706;
   text-align: center;
-  margin: 10px 0;
   animation: pulse 1.5s infinite;
 }
-
 @keyframes pulse {
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.1); }
+  0%   { opacity: 1; transform: scale(1); }
+  50%  { opacity: 0.6; transform: scale(1.1); }
   100% { opacity: 1; transform: scale(1); }
 }
-
-/* Cartela Grid */
+/* Grid for buttons */
 .Cartelacontainer {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 5px;
-  width: 100%;
-  margin: 10px 0;
-  box-sizing: border-box;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr); /* 10 columns per row */
+    gap: 5px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .cartela {
-  width: 100%;
-  height: 35px;
-  min-width: 30px;
-  background-color: #16e916ed;
-  color: rgb(180, 29, 29);
-  border: none;
-  cursor: pointer;
-  text-align: center;
-  font-size: 0.8rem;
-  border-radius: 5px;
-  transition: transform 0.2s;
-  padding: 0.3rem;
-  font-weight: bold;
-}
-
-.cartela:hover:not(:disabled) {
-  transform: scale(1.05);
+    width: 100%; /* fill grid cell */
+    height: 35px;
+    min-width: 30px; /* minimum width for mobile */
+    background-color: #16e916ed;
+    color: rgb(180, 29, 29);
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    font-size: 0.8rem;
+    border-radius: 5px;
+    transition: transform 0.2s;
 }
 
 .cartela:active {
-  transform: scale(0.95);
+    transform: scale(0.95);
 }
 
-.cartela:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
+/* Command board for controls */
+.cartelacomand_bord {
+    background-color: rgba(49, 114, 227, 0.974);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-/* BOTTOM SECTION - Selected Cartela LEFT + Buttons VERTICAL RIGHT */
-.bottom-section {
-  display: flex;
-  gap: 25px;
-  justify-content: center;
-  align-items: flex-start;
-  margin-top: 20px;
-  flex-wrap: wrap;
+/* Game start button */
+.game_start {
+    background-color: rgb(135, 58, 65);
+    width: 100%;
+    height: 50px;
+    margin: 20px auto;
+    border-radius: 25px;
+    color: white;
+    font-size: large;
+    display: block;
 }
 
-/* Selected cartela - LEFT side */
-.pending-cartelas {
-  flex: 0 0 240px;
-  display: flex;
-  justify-content: center;
+/* Dropdowns and stake */
+.Stakeplace,
+.dropdown-cartela1 {
+    width: 90%;
+    max-width: 300px;
+    margin: 10px auto;
+    font-family: Arial, sans-serif;
 }
 
-.cartela-display1 {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  background: transparent;
-  padding: 12px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  border: 2px solid #333;
+.dropdown-header-cartela1 {
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 20px;
+    background-color: #e24f4f;
+    cursor: pointer;
 }
 
-.cartela-row1 {
-  display: flex;
-  gap: 3px;
-  justify-content: center;
+.dropdown-list-cartela {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #0e0e0e;
+    border-radius: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 1000;
 }
 
+
+
+.dropdown-item-cartela:hover {
+    background-color: #ec3636;
+    border-radius: 20px;
+}
+
+.arrow {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #12024c;
+    transition: transform 0.2s;
+}
+
+.arrow.open {
+    transform: rotate(180deg);
+}
+
+/* Stake values grid */
+.stakevalue {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+    gap: 10px;
+    font-size: large;
+}
+
+.stakevalue label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 .cartela-cell1 {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #444;
-  border-radius: 4px;
+  display: inline-block;
+  width: 35px;
+  height: 35px;
+  line-height: 35px;
+  text-align: center;
+  border: 1px solid #333;
+  margin: 2px;
+  border-radius: 6px;
+  background: #0f0f0e;
+  color:white;
+  transition: 0.3s;
+}
+
+.cartela-cell1.taken {
+  background: red;
+  color: rgb(190, 70, 30);
   font-weight: bold;
-  font-size: 0.75rem;
-  background-color: #ffb46494;
-  color: black;
 }
 
 .cartela-display1.pending {
@@ -170,95 +227,152 @@ html, body {
   opacity: 0;
 }
 
-/* Buttons - RIGHT side, VERTICAL stack */
+/* Mobile responsiveness */
+
+.selected-cartela {
+    display: flex;
+    justify-content: center; /* center the card horizontally */
+    margin: 20px 0;
+}
+
+.cartela-display1 {
+    display: flex;
+    flex-direction: column;
+    gap: 5px; /* space between rows */
+    background: transparent !important;
+    padding: 15px;
+    border-radius: 0px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.cartela-row1 {
+    display: flex;
+    gap: 5px; /* space between cells */
+    justify-content: center;
+}
+
+.cartela-cell1 {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #333;
+    border-radius: 3px;
+    font-weight: bold;
+    background-color: #ffb46494;
+    color:black;
+    cursor: default; /* change to pointer if you want clickable cells */
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Example hover effect */
+.cartela-cell1:hover {
+    background-color: #a6a398;
+    color: #f3fbff;
+}
 .buttonconfirm {
-  display: flex;
-  flex-direction: column;  /* VERTICAL ALIGNMENT */
-  gap: 12px;
-  align-items: center;
-  min-width: 140px;
-}
-
-.game_start, .game_start1 {
-  width: 130px;
-  height: 48px;
-  padding: 0;
-  font-size: 15px;
-  font-weight: bold;
-  border: none;
-  border-radius: 8px;
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.game_start {
-  background-color: #375516;
+    display: flex;           /* use flexbox */
+    flex-direction: row;     /* horizontal layout */
+    justify-content: center; /* center buttons horizontally */
+    gap: 20px;               /* space between buttons */
+    margin: 20px 0;
 }
 
 .game_start1 {
-  background-color: #ff4000;
+    width: 150px; 
+    height: 50px;           /* button width */
+    padding: 12px 0;         /* vertical padding */
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    margin-top: 10px;
+    border-radius: 8px;
+    background-color: #ff4000;
+    color: #f4f6f6;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.loading{
+    display: none;
+}
+.game_start {
+    width: 150px; 
+    height: 50px;            /* button width */
+    padding: 12px 0;         /* vertical padding */
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 10px;
+    border: none;
+    border-radius: 8px;
+    background-color: #375516;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
-.game_start:hover:not(:disabled),
-.game_start1:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+.game_start:disabled {
+    background-color: #935353;
+    cursor: not-allowed;
 }
 
-.game_start:disabled,
+.game_start:hover:not(:disabled) {
+    background-color: #0056b3;
+}
 .game_start1:disabled {
-  background-color: #935353;
-  cursor: not-allowed;
-  opacity: 0.6;
+    background-color: #935353;
+    cursor: not-allowed;
 }
 
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-  .bottom-section {
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-  }
-  
-  .Cartelacontainer {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 4px;
-  }
-  
-  .cartela {
-    height: 32px;
-    font-size: 0.7rem;
-  }
-  
-  .pending-cartelas {
-    flex: 0 0 200px;
-  }
-  
-  .cartela-cell1 {
-    width: 30px;
-    height: 30px;
-    font-size: 0.7rem;
-  }
-  
-  .game_start, .game_start1 {
-    width: 120px;
-    height: 42px;
-    font-size: 14px;
-  }
-  
-  .buttonconfirm {
-    flex-direction: row; /* Horizontal on very small screens */
-    gap: 10px;
-  }
+.game_start1:hover:not(:disabled) {
+    background-color: #ff4000;
 }
 
-/* Unused/legacy styles kept */
-.loading { display: none; }
-.cartelacomand_bord, .Stakeplace, .dropdown-cartela1,
-.dropdown-header-cartela1, .dropdown-list-cartela,
-.dropdown-item-cartela, .arrow, .stakevalue,
-.selected-cartela, .wallet-stake-buttons { }
+@media (max-width: 480px) {
+    .cartela {
+        height: 28px;
+        font-size: 0.65rem;
+    }
+
+    .stakevalue {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+/* Top three buttons horizontal full width, like 10 columns */
+/* Top three buttons horizontal full width, exactly filling 10 columns */
+/* Container for top three buttons */
+/* Top three buttons horizontal full width */
+.wallet-stake-buttons {
+    display: flex;
+    justify-content: space-between; /* spread buttons evenly */
+    width: 100%;
+    gap: 5px; /* space between buttons */
+    margin-bottom: 10px;
+    flex-wrap: nowrap; /* prevent wrapping */
+}
+
+/* Each button proportional width */
+.wallet-stake-buttons button {
+    flex: 1; /* default equal width */
+    padding: 0.8rem;
+    font-size: 0.9rem;
+    text-align: center;
+    border-radius: 6px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+/* Proportional widths for desktop */
+.wallet-stake-buttons button:nth-child(1) {
+    flex: 3; /* 3 parts */
+}
+.wallet-stake-buttons button:nth-child(2) {
+    flex: 4; /* 4 parts */
+}
+.wallet-stake-buttons button:nth-child(3) {
+    flex: 3; /* 3 parts */
+}
+
+/* Mobile adjustments */
