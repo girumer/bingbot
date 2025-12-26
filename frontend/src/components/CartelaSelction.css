@@ -1,10 +1,17 @@
 /* Wrapper for horizontal scrolling */
-
+.Cartelacontainer-wrapper {
+  height: 100vh;
+  overflow: hidden;   /* stop page scrolling */
+}
+.Cartelacontainer {
+  max-height: 45vh;   /* adjust */
+  overflow-y: auto;   /* scroll ONLY the cartela grid */
+}
 .Cartelacontainer-wrapper {
   min-height: 100vh;
   background-color: #12024c; /* solid background */
   margin: 0;
-  padding: 0px;              /* match the working page update three*/
+  padding: 5px;              /* match the working page */
   box-sizing: border-box;
 }
 
@@ -29,8 +36,8 @@
   flex: 1 1 30%;
   margin: 0.4rem;
   padding: 0.6rem;
-    max-width: 150px;
-  min-width: 130px;
+    max-width: 120px;
+  min-width: 80px;
   background-color: #1d1e1f;
   color: white;
   font-weight: bold;
