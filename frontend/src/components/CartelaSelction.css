@@ -230,28 +230,29 @@
 /* Mobile responsiveness */
 /* Container that holds both the card and the buttons */
 .selection-controls-area {
-    display: flex;
-    flex-direction: row; /* This makes them side-by-side */
-    justify-content: center;
-    align-items: center;
-    gap: 15px;
-    margin: 10px 0;
-    width: 100%;
+  display: flex;
+  flex-direction: row; 
+  justify-content: center; 
+  align-items: center; 
+  gap: 12px;           /* Space between the card and the buttons */
+  margin-top: 10px;
+  width: 100%;
 }
 
 /* Container for the two buttons on the right */
 .side-button-container {
-    display: flex;
-    flex-direction: column; /* Buttons stay stacked vertically next to the card */
-    gap: 10px;
+  display: flex;
+  flex-direction: column; 
+  gap: 8px;            /* Space between the two buttons */
 }
 
-/* Adjust button sizes to fit nicely next to the card */
-.game_start, .game_start1 {
-    width: 100px; /* Made smaller to fit side-by-side */
-    height: 45px;
-    margin: 0;   /* Remove the auto margins */
-    font-size: 14px;
+/* Make sure the buttons aren't too wide so they fit on mobile screens */
+.side-button-container .game_start, 
+.side-button-container .game_start1 {
+  width: 100px;        
+  height: 40px;
+  font-size: 14px;
+  margin: 0;           /* Crucial: remove any old auto-margins */
 }
 
 /* Ensure the preview card doesn't take up too much width */

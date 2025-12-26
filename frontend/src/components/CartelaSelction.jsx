@@ -748,7 +748,7 @@ return (
       </div>
 
       {/* This is the NEW side-by-side area */}
-      {selectedCartelas.length > 0 && (
+   {selectedCartelas.length > 0 && (
         <div className="selection-controls-area">
           <div className="pending-cartelas">
             <div key={`pending-${selectedCartelas[selectedCartelas.length - 1]}`} className="cartela-display1 pending">
