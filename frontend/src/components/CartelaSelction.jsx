@@ -706,120 +706,86 @@ const refreshpg = () => {
 
 
 
-  return (
+return (
+  <React.Fragment>
+    <div className="Cartelacontainer-wrapper">
+      <div className="wallet-stake-display">
+        <div className="display-btn">Wallet: {Math.floor(wallet)}</div>
+        <div className="display-btn">Active Game: {activeGame ? "1" : "0"}</div>
+        <div className="display-btn">Stake: {stake} ETB</div>
+      </div>
 
-    <React.Fragment>
+      {activeGame ? (
+        <div className="timer-display">Game started – please wait…</div>
+      ) : (
+        timer !== null && (
+          <div className="timer-display">
+            {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}
+          </div>
+        )
+      )}
 
-      <div className="Cartelacontainer-wrapper">
+      <div className="Cartelacontainer">
+        {cartela.map((_, index) => {
+          const isSelectedByMe = selectedCartelas.includes(index) || myConfirmedCartelas.includes(index);
+          const isSelectedByOthers = otherUsersCartelas.includes(index);
+          return (
+            <button
+              key={`cartela-btn-${index}`}
+              onClick={() => handleButtonClick(index)}
+              className="cartela"
+              style={{
+                background: isSelectedByOthers ? "red" : isSelectedByMe ? "green" : "#ffb46494",
+                color: isSelectedByOthers || isSelectedByMe ? "white" : "black",
+                cursor: isSelectedByOthers || activeGame ? "not-allowed" : "pointer",
+              }}
+              disabled={isSelectedByOthers || activeGame || wallet < stake}
+            >
+              {index + 1}
+            </button>
+          );
+        })}
+      </div>
 
-        <div className="wallet-stake-display">
+      {/* This is the NEW side-by-side area */}
+      {selectedCartelas.length > 0 && (
+        <div className="selection-controls-area">
+          <div className="pending-cartelas">
+            <div key={`pending-${selectedCartelas[selectedCartelas.length - 1]}`} className="cartela-display1 pending">
+              {cartela[selectedCartelas[selectedCartelas.length - 1]].cart.map((row, rowIndex) => (
+                <div key={rowIndex} className="cartela-row1">
+                  {row.map((cell, cellIndex) => (
+                    <span key={cellIndex} className="cartela-cell1">{cell}</span>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
 
-          <div className="display-btn">Wallet: {Math.floor(wallet)}</div>
-
-          <div className="display-btn">Active Game: {activeGame ? "1" : "0"}</div>
-
-          <div className="display-btn">Stake: {stake} ETB</div>
-         
-        
-      
-        </div>
-
-       
-
- {activeGame ? (
-   <div className="timer-display">
-  Game started – please wait…
-</div>
-) : (
- timer !== null && 
-  <div className="timer-display">
-     {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}
-  </div>
-)}
-
-
- <div className="Cartelacontainer">
-
-{cartela.map((_, index) => {
-  const isSelectedByMe = selectedCartelas.includes(index) || myConfirmedCartelas.includes(index);
-  const isSelectedByOthers = otherUsersCartelas.includes(index);
-  
-  return (
-    <button
-      key={`cartela-btn-${index}`}
-      onClick={() => handleButtonClick(index)}
-      className="cartela"
-      style={{
-        background: isSelectedByOthers ? "red" : isSelectedByMe ? "green" : "#ffb46494",
-        color: isSelectedByOthers || isSelectedByMe ? "white" : "black",
-        cursor: isSelectedByOthers || activeGame ? "not-allowed" : "pointer",
-      }}
-      disabled={isSelectedByOthers || activeGame || wallet < stake}
-    >
-      {index + 1}
-    </button>
-  );
-})}
-
-</div>
-
-
-
-{selectedCartelas.length > 0 && (
-  <div className="pending-cartelas">
-    {/* Only show the last selected cartela */}
-    <div key={`pending-${selectedCartelas[selectedCartelas.length - 1]}`} className="cartela-display1 pending">
-      {cartela[selectedCartelas[selectedCartelas.length - 1]].cart.map((row, rowIndex) => (
-        <div key={rowIndex} className="cartela-row1">
-          {row.map((cell, cellIndex) => (
-            <span key={cellIndex} className="cartela-cell1">
-              {cell}
-            </span>
-          ))}
+          <div className="side-button-container">
+            <button
+              className="game_start"
+              disabled={activeGame || wallet < stake}
+              onClick={handleAddCartela}
+            >
+              Confirm
+            </button>
+            <button
+              className="game_start1"
+              onClick={handleremoveCartela}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
-      ))}
+      )}
+
+      {/* IMPORTANT: I REMOVED the old "buttonconfirm" div from here! */}
+
     </div>
-  </div>
-)}
-
-
- <div className="buttonconfirm">
-<button
-
- className="game_start1"
-
- disabled={!selectedCartelas.length || activeGame || wallet < stake * selectedCartelas.length}
-
-onClick={handleremoveCartela}
-
- >
-
- Cancel
-
-</button>
-<button
-
- className="game_start"
-
- disabled={!selectedCartelas.length || activeGame || wallet < stake * selectedCartelas.length}
-
-onClick={handleAddCartela}
-
- >
-
- confirm
-
-</button>
-
- </div>
-
-</div>
-
-<ToastContainer />
-
- </React.Fragment>
-
- );
+    <ToastContainer />
+  </React.Fragment>
+);
 
 }
 

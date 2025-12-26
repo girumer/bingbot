@@ -228,7 +228,52 @@
 }
 
 /* Mobile responsiveness */
+/* Container that holds both the card and the buttons */
+.selection-controls-area {
+    display: flex;
+    flex-direction: row; /* This makes them side-by-side */
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin: 10px 0;
+    width: 100%;
+}
 
+/* Container for the two buttons on the right */
+.side-button-container {
+    display: flex;
+    flex-direction: column; /* Buttons stay stacked vertically next to the card */
+    gap: 10px;
+}
+
+/* Adjust button sizes to fit nicely next to the card */
+.game_start, .game_start1 {
+    width: 100px; /* Made smaller to fit side-by-side */
+    height: 45px;
+    margin: 0;   /* Remove the auto margins */
+    font-size: 14px;
+}
+
+/* Ensure the preview card doesn't take up too much width */
+.pending-cartelas {
+    margin: 0;
+}
+
+.cartela-cell1 {
+    width: 25px; /* Slightly smaller cells to save horizontal space */
+    height: 25px;
+    font-size: 0.7rem;
+}
+
+/* Mobile Tweak: If the screen is too narrow, stack them back up */
+@media (max-width: 360px) {
+    .selection-controls-area {
+        flex-direction: column;
+    }
+    .side-button-container {
+        flex-direction: row;
+    }
+}
 .selected-cartela {
     display: flex;
     justify-content: center; /* center the card horizontally */
@@ -252,8 +297,8 @@
 }
 
 .cartela-cell1 {
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
