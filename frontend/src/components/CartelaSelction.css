@@ -10,8 +10,8 @@
 
 .Cartelacontainer-wrapper > .wallet-stake-display {
   margin-top: 0;             /* remove top margin */
-  margin-bottom: 1rem;       /* keep spacing below */
-  padding-top: 5px;          /* internal spacing */
+  margin-bottom: 5px;       /* keep spacing below */
+  padding-top: 0px;          /* internal spacing */
 }
 
 /* Top display buttons */
@@ -20,7 +20,7 @@
     justify-content: space-between;  /* spread buttons evenly */
     width: 100%;
     gap: 5px;                        /* small gap between buttons */
-    margin: 1rem 0;
+    margin: 5px 0;
     flex-wrap: nowrap;                /* prevent wrapping */
 }
 
