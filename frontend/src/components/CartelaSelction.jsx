@@ -748,10 +748,11 @@ return (
       </div>
 
       {/* This is the NEW side-by-side area */}
-   {selectedCartelas.length > 0 && (
+{selectedCartelas.length > 0 && (
         <div className="selection-controls-area">
+          {/* LEFT: The Card */}
           <div className="pending-cartelas">
-            <div key={`pending-${selectedCartelas[selectedCartelas.length - 1]}`} className="cartela-display1 pending">
+            <div className="cartela-display1 pending">
               {cartela[selectedCartelas[selectedCartelas.length - 1]].cart.map((row, rowIndex) => (
                 <div key={rowIndex} className="cartela-row1">
                   {row.map((cell, cellIndex) => (
@@ -762,6 +763,7 @@ return (
             </div>
           </div>
 
+          {/* RIGHT: Stacked Buttons */}
           <div className="side-button-container">
             <button
               className="game_start"
@@ -779,7 +781,6 @@ return (
           </div>
         </div>
       )}
-
       {/* IMPORTANT: I REMOVED the old "buttonconfirm" div from here! */}
 
     </div>

@@ -231,10 +231,10 @@
 /* Container that holds both the card and the buttons */
 .selection-controls-area {
   display: flex;
-  flex-direction: row; 
-  justify-content: center; 
-  align-items: center; 
-  gap: 12px;           /* Space between the card and the buttons */
+  flex-direction: row;      /* Horizontal layout */
+  justify-content: center;  /* Center the group */
+  align-items: center;      /* Align middle vertically */
+  gap: 15px;                /* Space between card and buttons */
   margin-top: 10px;
   width: 100%;
 }
@@ -242,17 +242,16 @@
 /* Container for the two buttons on the right */
 .side-button-container {
   display: flex;
-  flex-direction: column; 
-  gap: 8px;            /* Space between the two buttons */
+  flex-direction: column;   /* Vertical stack */
+  gap: 8px;                 /* Space between Confirm and Cancel */
 }
-
 /* Make sure the buttons aren't too wide so they fit on mobile screens */
 .side-button-container .game_start, 
 .side-button-container .game_start1 {
-  width: 100px;        
-  height: 40px;
+  width: 110px;             
+  height: 45px;
+  margin: 0;                /* Remove all old auto-margins */
   font-size: 14px;
-  margin: 0;           /* Crucial: remove any old auto-margins */
 }
 
 /* Ensure the preview card doesn't take up too much width */
