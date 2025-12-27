@@ -22,7 +22,7 @@
   position: absolute;
   cursor: pointer;
   top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #3fa8484f;
+  background-color: #9ef1a54f;
   transition: .4s;
   border-radius: 24px;
 }
@@ -66,11 +66,11 @@ input:checked + .toggle-slider:before { transform: translateX(26px); }
 }
 
 /* Winner styles */
-.cartela-cell.highlighted { background-color: rgb(8, 8, 104); color: rgb(211, 204, 204); }
+.cartela-cell.highlighted { background-color: rgb(92, 134, 102); color: rgb(19, 14, 14); }
 .winner-highlight {
-  background-color: rgb(31, 12, 201) !important;
+  background-color: rgb(15, 139, 98) !important;
   border: 3px solid rgb(20, 12, 17) !important;
-  color: white;
+  color: rgb(12, 10, 10);
   font-weight: bold !important;
   transform: scale(1.1);
 }
@@ -94,10 +94,10 @@ input:checked + .toggle-slider:before { transform: translateX(26px); }
 }
 .stat-button {
   padding: 10px;
-  background: #2802434f;
+background: #ad99f7db;
   border: 1px solid #efa8a8;
   border-radius: 10%;
-  color: white;
+  color: rgb(39, 35, 35);
   font-size: 18px;
   font-weight: bold;
   text-align: center;
@@ -173,7 +173,7 @@ input:checked + .toggle-slider:before { transform: translateX(26px); }
 }
 
 /* Called state */
-.number-button.called { background: #0914b7; color: white; }
+.number-button.called { background: #74b5e6; color: rgb(35, 30, 30); }
 
 /* --- BOTTOM SECTION - 60% --- */
 .bottom-panels {
@@ -256,7 +256,7 @@ input:checked + .toggle-slider:before { transform: translateX(26px); }
 .cartela-header-cell.o { background: #ce4b1f; }
 
 /* Cartela rows and cells (desktop defaults) */
-.cartela-rows-container { flex: 1; display: flex; flex-direction: column; background-color: #040d4b; gap: 0px; }
+.cartela-rows-container { flex: 1; display: flex; flex-direction: column; background-color:  #dbaff8a5; gap: 0px; }
 .cartela-row { flex: 1; display: flex; gap: 0px; }
 .cartela-cell { flex: 1; min-width: 22px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; background: #fff; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; }
 .cartela-cell.clicked { background: #2ecc71; color: white; }
