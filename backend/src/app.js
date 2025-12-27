@@ -862,7 +862,7 @@ async function checkWinners(roomId, calledNumber) {
       if (rooms[roomId]) {
         resetRoom(roomId);
       }
-    }, 4000);
+    }, 10000);
    // io.to(roomId).emit("roomAvailable");
 //io.to(roomId).emit("resetRoom");
     // ✅ Update winners in parallel
