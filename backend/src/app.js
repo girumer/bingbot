@@ -702,7 +702,7 @@ function startNumberGenerator(roomId) {
       clearInterval(room.numberInterval);
       room.numberInterval = null;
     }
-  }, 4000);
+  }, 5000);
 }
 function generateGameId() {
   let newGameId;
