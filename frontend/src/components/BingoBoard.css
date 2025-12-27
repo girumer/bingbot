@@ -86,7 +86,8 @@ input:checked + .toggle-slider:before { transform: translateX(26px); }
   align-items: center;
   gap: 5px;
   padding: 5px;
-  background: #12024cdb;
+  background: #ad99f7db;
+  color: black;
   border-radius: 5px;
   box-sizing: border-box;
 }
@@ -115,7 +116,7 @@ input:checked + .toggle-slider:before { transform: translateX(26px); }
   justify-content: center;
   gap: 5px;
   padding: 5px;
-  background: #12024cdb;
+ background-color:  #dbaff8a5; 
   border-radius: 5px;
   box-sizing: border-box;
 }
@@ -157,7 +158,7 @@ input:checked + .toggle-slider:before { transform: translateX(26px); }
 /* Cartela container (generic) */
 .cartela-container {
   display: flex; overflow-x: auto; padding: 5px;
-  background-color: #12024cdb; gap: 5px;
+ background-color:  #dbaff8a5; ; gap: 5px;
   -webkit-overflow-scrolling: touch;
 }
 .cartela-column { display: flex; flex-direction: column; min-width: 50px; }
