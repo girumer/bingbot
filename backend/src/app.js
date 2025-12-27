@@ -575,28 +575,36 @@ socket.on("disconnect", () => {
     const room = rooms[roomId];
     if (!room || !room.players[clientId]) continue;
 
-    // Remove player from room
-    delete room.playerCartelas[clientId];
-    delete room.players[clientId];
+    // --- START OF FIX ---
+    // We only delete the player if the game is NOT currently running.
+    // If room.activeGame is true, we keep the data so you can win during refresh.
+    if (!room.activeGame) {
+      delete room.playerCartelas[clientId];
+      delete room.players[clientId];
 
-    // Check if room is now empty
-    const playersWithCartela = Object.values(room.playerCartelas).filter(
-      arr => arr.length > 0
-    ).length;
+      // Check if room is now empty (Only relevant if game hasn't started)
+      const playersWithCartela = Object.values(room.playerCartelas).filter(
+        arr => arr.length > 0
+      ).length;
 
-    if (playersWithCartela === 0) {
-      // Room has no players with cartelas - check if completely empty
-      const totalPlayers = Object.keys(room.players).length;
-      if (totalPlayers === 0) {
-        // Room is completely empty - delete it
-        console.log(`Room ${roomId} is empty after disconnect. Deleting room.`);
-        resetRoom(roomId);
-        delete rooms[roomId];
-      } else {
-        // Room has spectators but no players with cartelas - just reset
-        resetRoom(roomId);
+      if (playersWithCartela === 0) {
+        const totalPlayers = Object.keys(room.players).length;
+        if (totalPlayers === 0) {
+          resetRoom(roomId);
+          delete rooms[roomId];
+        } else {
+          resetRoom(roomId);
+        }
       }
-    }
+    } 
+    // --- END OF FIX ---
+
+    // Broadcast updated player count
+    // Because we didn't delete the data above, this count will stay at 16.
+    const activePlayers = Object.values(room.playerCartelas)
+      .reduce((sum, arr) => sum + arr.length, 0);
+
+    io.to(roomId).emit("playerCount", { totalPlayers: activePlayers });
     break;
   }
 });
