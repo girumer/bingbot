@@ -476,7 +476,7 @@ if (amount < 50) {
             method: 'deposit' // Make sure this matches your model field
         });
           const totalDeposits = depositTransactions.reduce((sum, tx) => sum + tx.amount, 0);
- if (totalDeposits < 50) {
+ if (totalDeposits < 0) {
             bot.sendMessage(chatId, `❌ Withdrawal requires a total deposit of at least 50 Birr. Your total deposit is only ${totalDeposits} Birr.`);
             delete userStates[chatId]; // Clear state
             return;
