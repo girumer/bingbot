@@ -473,64 +473,48 @@ if (step === "depositAmount") {
 }
 // ...
 if (step === "withdrawAmount") {
-    const amount = parseFloat(text);
-     const MIN_REMAINING_BALANCE = 50; 
-    if (isNaN(amount) || amount <= 0) {
-      bot.sendMessage(chatId, "⚠️ Please enter a valid withdrawal amount.");
-      return;
-    }
-if (amount < 50) {
-        bot.sendMessage(chatId, "❌ The minimum withdrawal amount is 50 Birr.");
-        return; // Stop the function here
-    }
-    const type = userStates[chatId].method;
+    // We wrap everything in an async IIFE (Immediately Invoked Function Expression) 
+    // to fix the SyntaxError and allow 'await'.
+    (async () => {
+        const amount = parseFloat(text);
+        const MIN_REMAINING_BALANCE = 50;
 
-    try {
-      const user = await BingoBord.findOne({ telegramId: chatId });
-      if (!user) {
-        bot.sendMessage(chatId, "User not found. Please /start first.");
-        delete userStates[chatId];
-        return;
-      }
-      const depositTransactions = await Transaction.find({
-            phoneNumber: user.phoneNumber,
-            method: 'deposit' // Make sure this matches your model field
-        });
-          const totalDeposits = depositTransactions.reduce((sum, tx) => sum + tx.amount, 0);
- if (totalDeposits < 0) {
-            bot.sendMessage(chatId, `❌ Withdrawal requires a total deposit of at least 50 Birr. Your total deposit is only ${totalDeposits} Birr.`);
-            delete userStates[chatId]; // Clear state
-            return;
+        if (isNaN(amount) || amount <= 0) {
+            return bot.sendMessage(chatId, "⚠️ Please enter a valid withdrawal amount.");
         }
-          if (user.Wallet < amount) {
-            bot.sendMessage(chatId, `❌ You have insufficient funds. Your current balance is ${user.Wallet} ETB.`);
-            delete userStates[chatId];
-            return;
+
+        if (amount < 50) {
+            return bot.sendMessage(chatId, "❌ The minimum withdrawal amount is 50 Birr.");
         }
-         const maxWithdrawalAmount = user.Wallet - MIN_REMAINING_BALANCE;
-         if (maxWithdrawalAmount < 0) {
-            // User's balance is already below 50 (e.g., balance is 40).
-            bot.sendMessage(chatId, `❌ Your current balance (${user.Wallet} Birr) is less than the required minimum play balance of ${MIN_REMAINING_BALANCE} Birr. You cannot withdraw.`);
-            delete userStates[chatId];
-            return;
-        }
-        
-        if (amount > maxWithdrawalAmount) {
-            // User is requesting too much (e.g., balance 230, requesting 181).
-            bot.sendMessage(chatId, `❌ You must leave at least ${MIN_REMAINING_BALANCE} Birr in your wallet. The maximum amount you can withdraw is **${maxWithdrawalAmount} Birr**.`);
-            delete userStates[chatId];
-            return;
-        }
-const txType = userStates[chatId].method; 
-      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/transactions/withdraw`, {
-        username: user.username,
-        phoneNumber: user.phoneNumber,
-        amount,
-        method: 'withdrawal', // <-- This is the transaction type
-        type: userStates[chatId].method
-     
-      });
-const adminMessage = `
+
+        try {
+            const user = await BingoBord.findOne({ telegramId: chatId });
+            if (!user) {
+                bot.sendMessage(chatId, "User not found. Please /start first.");
+                delete userStates[chatId];
+                return;
+            }
+
+            // 1. Check if user has enough balance after leaving the 50 Birr minimum
+            const maxWithdrawalAmount = user.Wallet - MIN_REMAINING_BALANCE;
+            if (maxWithdrawalAmount < 0 || amount > maxWithdrawalAmount) {
+                bot.sendMessage(chatId, `❌ You must leave at least ${MIN_REMAINING_BALANCE} Birr in your wallet. The maximum you can withdraw is ${Math.max(0, maxWithdrawalAmount)} Birr.`);
+                delete userStates[chatId];
+                return;
+            }
+
+            // 2. BACKEND CALL
+            // This is usually where "Withdrawal Failed" happens if the URL is wrong
+            const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/transactions/withdraw`, {
+                username: user.username,
+                phoneNumber: user.phoneNumber,
+                amount,
+                method: 'withdrawal',
+                type: userStates[chatId].method
+            });
+
+            // 3. ADMIN ALERT (Your Step 1 logic)
+            const adminMessage = `
 💰 **WITHDRAWAL REQUEST**
 ━━━━━━━━━━━━━━━━━━
 👤 User: ${user.username}
@@ -539,40 +523,24 @@ const adminMessage = `
 🏦 Via: ${userStates[chatId].method.toUpperCase()}
 ━━━━━━━━━━━━━━━━━━`;
 
-      await adminBot.sendMessage(ADMIN_ID, adminMessage, { parse_mode: 'Markdown' });
-      bot.sendMessage(chatId, res.data.message || "✅ Withdrawal successful!");
-    } catch (err) {
-      bot.sendMessage(chatId, err.response?.data?.message || "❌ Withdrawal failed.");
-    }
+            // Use .catch here so if Admin Bot is down, the user still gets their success message
+            await adminBot.sendMessage(ADMIN_ID, adminMessage, { parse_mode: 'Markdown' })
+                .catch(e => console.error("Admin Bot Notification Error:", e.message));
 
-    delete userStates[chatId]; // clear state
+            bot.sendMessage(chatId, res.data.message || "✅ Withdrawal successful!");
+
+        } catch (err) {
+            // This prints the REAL error to your terminal/PM2 logs
+            console.error("PRODUCTION WITHDRAWAL ERROR:", err.response?.data || err.message);
+            
+            const errorMsg = err.response?.data?.message || "❌ Withdrawal failed. Please try again later.";
+            bot.sendMessage(chatId, errorMsg);
+        }
+
+        delete userStates[chatId];
+    })(); // End of async wrapper
     return;
-  }
-  // Deposit Message
-  if (step === "depositMessage") {
-    try {
-      const user = await BingoBord.findOne({ telegramId: chatId });
-      if (!user) {
-        bot.sendMessage(chatId, "User not found. Please /start first.");
-        return;
-      }
-     const depositAmount = userStates[chatId].amount;
-      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/deposit`, {
-        transactionNumber: text,
-        phoneNumber: user.phoneNumber,
-         amount: depositAmount,
-         method: 'deposit', // <-- This should be the transaction type
-         type: userStates[chatId].depositMethod
-
-      });
-
-      bot.sendMessage(chatId, res.data.message || "Deposit claimed successfully! 🎉");
-    } catch (err) {
-      bot.sendMessage(chatId, err.response?.data?.error || "Failed to claim deposit.");
-    }
-    delete userStates[chatId];
-    return;
-  }
+}
 });
 
 // ----------------------
