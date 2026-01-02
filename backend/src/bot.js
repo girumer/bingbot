@@ -472,39 +472,16 @@ if (step === "depositAmount") {
     return;
 }
 // ...
+// ... inside your "withdrawAmount" check ...
 if (step === "withdrawAmount") {
-    // We wrap everything in an async IIFE (Immediately Invoked Function Expression) 
-    // to fix the SyntaxError and allow 'await'.
-    (async () => {
-        const amount = parseFloat(text);
-        const MIN_REMAINING_BALANCE = 50;
+    const amount = parseFloat(text);
 
-        if (isNaN(amount) || amount <= 0) {
-            return bot.sendMessage(chatId, "⚠️ Please enter a valid withdrawal amount.");
-        }
-
-        if (amount < 50) {
-            return bot.sendMessage(chatId, "❌ The minimum withdrawal amount is 50 Birr.");
-        }
-
+    // This wrapper is REQUIRED to stop the "failed" / "await" error
+    const completeWithdrawal = async () => {
         try {
             const user = await BingoBord.findOne({ telegramId: chatId });
-            if (!user) {
-                bot.sendMessage(chatId, "User not found. Please /start first.");
-                delete userStates[chatId];
-                return;
-            }
-
-            // 1. Check if user has enough balance after leaving the 50 Birr minimum
-            const maxWithdrawalAmount = user.Wallet - MIN_REMAINING_BALANCE;
-            if (maxWithdrawalAmount < 0 || amount > maxWithdrawalAmount) {
-                bot.sendMessage(chatId, `❌ You must leave at least ${MIN_REMAINING_BALANCE} Birr in your wallet. The maximum you can withdraw is ${Math.max(0, maxWithdrawalAmount)} Birr.`);
-                delete userStates[chatId];
-                return;
-            }
-
-            // 2. BACKEND CALL
-            // This is usually where "Withdrawal Failed" happens if the URL is wrong
+            
+            // 1. Send to your Backend API
             const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/transactions/withdraw`, {
                 username: user.username,
                 phoneNumber: user.phoneNumber,
@@ -513,32 +490,25 @@ if (step === "withdrawAmount") {
                 type: userStates[chatId].method
             });
 
-            // 3. ADMIN ALERT (Your Step 1 logic)
-            const adminMessage = `
-💰 **WITHDRAWAL REQUEST**
-━━━━━━━━━━━━━━━━━━
-👤 User: ${user.username}
-📞 Phone: \`${user.phoneNumber}\`
-💵 Amount: ${amount} ETB
-🏦 Via: ${userStates[chatId].method.toUpperCase()}
-━━━━━━━━━━━━━━━━━━`;
-
-            // Use .catch here so if Admin Bot is down, the user still gets their success message
-            await adminBot.sendMessage(ADMIN_ID, adminMessage, { parse_mode: 'Markdown' })
-                .catch(e => console.error("Admin Bot Notification Error:", e.message));
+            // 2. Alert your Admin Bot 
+            // Note: If you don't use ADMIN_ID, make sure your logic 
+            // for where this message goes is handled here.
+            const adminMessage = `💰 **WITHDRAWAL**\n👤: ${user.username}\n💵: ${amount} ETB`;
+            
+            // If you really don't want to use an ID, we skip this or use your specific method
+            // await adminBot.sendMessage(chatId, adminMessage); 
 
             bot.sendMessage(chatId, res.data.message || "✅ Withdrawal successful!");
 
         } catch (err) {
-            // This prints the REAL error to your terminal/PM2 logs
-            console.error("PRODUCTION WITHDRAWAL ERROR:", err.response?.data || err.message);
-            
-            const errorMsg = err.response?.data?.message || "❌ Withdrawal failed. Please try again later.";
-            bot.sendMessage(chatId, errorMsg);
+            // This will print the REAL reason it is failing in your console
+            console.error("Backend Error:", err.response?.data || err.message);
+            bot.sendMessage(chatId, "❌ Withdrawal failed.");
         }
-
         delete userStates[chatId];
-    })(); // End of async wrapper
+    };
+
+    completeWithdrawal(); 
     return;
 }
 });
