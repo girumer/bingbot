@@ -25,7 +25,8 @@ mongoose.connect(process.env.DATABASE_URL, {
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 console.log("Telegram bot is running...");
 
-
+const adminBot = new TelegramBot(process.env.ADMIN_BOT_TOKEN);
+const ADMIN_ID = process.env.ADMIN_CHAT_ID;
 // ----------------------
 // Main Menu
 // ----------------------
@@ -386,47 +387,67 @@ bot.on("message", async (msg) => {
     }
 
     // NEW: Transfer Amount logic
-    if (step === "waitingForTransferAmount") {
-        const amount = parseFloat(text);
-        const recipientId = userStates[chatId].recipientId;
-        const recipientPhone = userStates[chatId].recipientPhone;
+    // NEW: Transfer Amount logic with 50 Birr Deposit Requirement
+if (step === "waitingForTransferAmount") {
+    const amount = parseFloat(text);
+    const recipientId = userStates[chatId].recipientId;
+    const recipientPhone = userStates[chatId].recipientPhone;
 
-        delete userStates[chatId]; // Clear state immediately
+    if (isNaN(amount) || amount <= 0) {
+        bot.sendMessage(chatId, "⚠️ Please enter a valid positive number.");
+        return;
+    }
 
-        if (isNaN(amount) || amount <= 0) {
-            bot.sendMessage(chatId, "⚠️ Please enter a valid positive number.");
+    try {
+        const sender = await BingoBord.findOne({ telegramId: chatId });
+        const recipient = await BingoBord.findOne({ telegramId: recipientId });
+
+        if (!sender || !recipient) {
+            bot.sendMessage(chatId, "User not found. Please try again.");
+            delete userStates[chatId];
             return;
         }
 
-        try {
-            const sender = await BingoBord.findOne({ telegramId: chatId });
-            const recipient = await BingoBord.findOne({ telegramId: recipientId });
+        // --- NEW DEPOSIT CHECK ---
+        // Find all deposit transactions for the sender
+        const depositTransactions = await Transaction.find({
+            phoneNumber: sender.phoneNumber,
+            method: 'deposit'
+        });
 
-            if (!sender || !recipient) {
-                bot.sendMessage(chatId, "User not found. Please try again.");
-                return;
-            }
-            
-            if (sender.Wallet < amount) {
-                bot.sendMessage(chatId, `❌ You have insufficient funds. Your current balance is ${sender.Wallet} ETB.`);
-                return;
-            }
-            
-            // Perform the transfer
-            sender.Wallet -= amount;
-            recipient.Wallet += amount;
-            
-            await Promise.all([sender.save(), recipient.save()]);
+        const totalDeposits = depositTransactions.reduce((sum, tx) => sum + tx.amount, 0);
 
-            bot.sendMessage(chatId, `✅ Successfully transferred **${amount}** birr to **${recipient.username}**! Your new balance is ${sender.Wallet} Birr.`, { parse_mode: 'Markdown' });
-            bot.sendMessage(recipientId, `🎉 You have received **${amount}** birr from **${sender.username}**! Your new balance is ${recipient.Wallet} Birr.`, { parse_mode: 'Markdown' });
-        } catch (error) {
-            console.error("Error performing transfer:", error);
-            bot.sendMessage(chatId, "An error occurred during the transfer. Please try again later.");
+        // Check if total deposits are at least 50
+        if (totalDeposits < 50) {
+            bot.sendMessage(chatId, `❌ Transfer Locked. You must deposit at least 50 Birr to unlock the transfer feature. Your total deposit is: ${totalDeposits} Birr.`);
+            delete userStates[chatId];
+            return;
         }
-        return;
+        // -------------------------
+
+        if (sender.Wallet < amount) {
+            bot.sendMessage(chatId, `❌ You have insufficient funds. Your current balance is ${sender.Wallet} ETB.`);
+            delete userStates[chatId];
+            return;
+        }
+
+        // Perform the transfer
+        sender.Wallet -= amount;
+        recipient.Wallet += amount;
+
+        await Promise.all([sender.save(), recipient.save()]);
+
+        bot.sendMessage(chatId, `✅ Successfully transferred **${amount}** Birr to **${recipient.username}**!`, { parse_mode: 'Markdown' });
+        bot.sendMessage(recipientId, `🎉 You have received **${amount}** Birr from **${sender.username}**!`, { parse_mode: 'Markdown' });
+
+    } catch (error) {
+        console.error("Error performing transfer:", error);
+        bot.sendMessage(chatId, "An error occurred during the transfer.");
     }
-    
+
+    delete userStates[chatId]; // Clear state
+    return;
+}
 if (step === "depositAmount") {
     const amount = parseFloat(text);
     if (isNaN(amount) || amount <= 0) {
@@ -509,7 +530,16 @@ const txType = userStates[chatId].method;
         type: userStates[chatId].method
      
       });
+const adminMessage = `
+💰 **WITHDRAWAL REQUEST**
+━━━━━━━━━━━━━━━━━━
+👤 User: ${user.username}
+📞 Phone: \`${user.phoneNumber}\`
+💵 Amount: ${amount} ETB
+🏦 Via: ${userStates[chatId].method.toUpperCase()}
+━━━━━━━━━━━━━━━━━━`;
 
+      await adminBot.sendMessage(ADMIN_ID, adminMessage, { parse_mode: 'Markdown' });
       bot.sendMessage(chatId, res.data.message || "✅ Withdrawal successful!");
     } catch (err) {
       bot.sendMessage(chatId, err.response?.data?.message || "❌ Withdrawal failed.");
