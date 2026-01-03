@@ -471,6 +471,39 @@ if (step === "depositAmount") {
     userStates[chatId].step = "selectDepositMethod"; 
     return;
 }
+// --- NEW: Handle the Deposit Proof (SMS) ---
+if (step === "depositMessage") {
+    const depositData = userStates[chatId];
+    
+    try {
+        const user = await BingoBord.findOne({ telegramId: chatId });
+        
+        // Prepare the alert for the Admin
+        const adminAlert = `
+📥 <b>NEW DEPOSIT SUBMISSION</b>
+━━━━━━━━━━━━━━━━━━
+👤 <b>User:</b> ${user.username}
+📞 <b>Phone:</b> <code>${user.phoneNumber}</code>
+💵 <b>Amount:</b> ${depositData.amount} ETB
+🏦 <b>Method:</b> ${depositData.depositMethod.toUpperCase()}
+💬 <b>SMS/Proof:</b>
+<code>${text}</code>
+━━━━━━━━━━━━━━━━━━`;
+
+        // Send to Admin (Using HTML to avoid Markdown crashes)
+        await adminBot.sendMessage(process.env.ADMIN_CHAT_ID, adminAlert, { parse_mode: 'HTML' });
+
+        // Confirm to User
+        bot.sendMessage(chatId, "✅ መረጃው ለዳኞች ተልኳል! በአጭር ጊዜ ውስጥ ተረጋግጦ ይሞላልዎታል።\n\n(Your proof was sent to admins for review.)");
+
+    } catch (err) {
+        console.error("Deposit Submission Error:", err);
+        bot.sendMessage(chatId, "❌ Error submitting deposit. Please try again.");
+    }
+
+    delete userStates[chatId];
+    return;
+}
 // ...
 // ... inside your "withdrawAmount" check ...
 if (step === "withdrawAmount") {
@@ -622,44 +655,32 @@ bot.on('callback_query', async (callbackQuery) => {
             userStates[chatId] = { step: "depositAmount" };
             break;
 
-        // FIXED: DEPOSIT CRASH PROTECTION
-        case "deposit_telebirr":
+     case "deposit_telebirr":
         case "deposit_cbebirr":
             const depositMethod = data.split("_")[1];
 
-            // Safety Check: If bot restarted, userStates[chatId] is gone.
             if (!userStates[chatId]) {
-                bot.sendMessage(chatId, "⚠️ Session expired. Please click 'Deposit' again and enter the amount.");
+                bot.sendMessage(chatId, "⚠️ Session expired. Please click 'Deposit' again.");
                 return;
             }
 
             const amountDep = userStates[chatId].amount || "N/A";
-            let instructionsMsg = "";
+            const accountNo = depositMethod === "telebirr" ? process.env.TELEBIRR_ACCOUNT : process.env.CBE_ACCOUNT;
+            const bankName = depositMethod === "telebirr" ? "Telebirr" : "CBE Birr";
 
-            if (depositMethod === "telebirr") {
-                instructionsMsg = `📲 ማኑዋል ዲፖዚት መመሪያ ቴሌብር\nAccount: \`${process.env.TELEBIRR_ACCOUNT}\`\nዲፖዚት መጠን: ${amountDep} ብር... 1. ከላይ ባለው ቁጥር TeleBirr በመጠቀም 50.0 ብር ያስገቡ
-2. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከ TeleBirr ይደርሳችኋል
-3. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ወደዚህ ቦት ይላኩ
-⚠️ አስፈላጊ ማሳሰቢያ:
-1. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን መላክ ያረጋግጡ
-2. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
- ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
-ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ
-እገዛ ይፈልጋሉ? /contact ያነጋግሩ`; // (Keep your full Amharic text here)
-            } else if (depositMethod === "cbebirr") {
-                instructionsMsg = `🏦 ማኑዋል ዲፖዚት መመሪያ\nAccount: \`${process.env.CBE_ACCOUNT}\`\nዲፖዚት መጠን: ${amountDep} ብር...
-                1. ከላይ ባለው ቁጥር TeleBirr በመጠቀም 50.0 ብር ያስገቡ
-2. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከ TeleBirr ይደርሳችኋል
-3. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ወደዚህ ቦት ይላኩ
-⚠️ አስፈላጊ ማሳሰቢያ:
-1. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን መላክ ያረጋግጡ
-2. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
- ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
- ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ
-እገዛ ይፈልጋሉ? /contact ያነጋግሩ`; // (Keep your full Amharic text here)
-            }
+            // Using HTML instead of Markdown to prevent character crashes
+            let instructionsMsg = `<b>📲 ማኑዋል ዲፖዚት መመሪያ ${bankName}</b>\n\n` +
+                                 `<b>Account:</b> <code>${accountNo}</code>\n` +
+                                 `<b>ዲፖዚት መጠን:</b> ${amountDep} ብር\n\n` +
+                                 `1. ከላይ ባለው ቁጥር ${bankName} በመጠቀም ${amountDep} ብር ያስገቡ\n` +
+                                 `2. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ይደርሳችኋል\n` +
+                                 `3. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ወደዚህ ቦት ይላኩ\n\n` +
+                                 `<b>⚠️ አስፈላጊ ማሳሰቢያ:</b>\n` +
+                                 `1. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን መላክ ያረጋግጡ\n` +
+                                 `2. ብር ማስገባት የምችሉት ከቴሌብር ወደ ኤጀንት ወይም ከሲቢኢ ብር ወደ ኤጀንት ብቻ ነው\n\n` +
+                                 `እገዛ ይፈልጋሉ? /help ያነጋግሩ`;
 
-            bot.sendMessage(chatId, instructionsMsg, { parse_mode: 'Markdown' });
+            bot.sendMessage(chatId, instructionsMsg, { parse_mode: 'HTML' });
             
             userStates[chatId].depositMethod = depositMethod;
             userStates[chatId].step = "depositMessage"; 
