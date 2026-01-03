@@ -1,66 +1,75 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
-const axios = require('axios'); // Ensure axios is required
+const axios = require('axios');
+const mongoose = require('mongoose'); // Needed to talk to your DB
+const BingoBord = require('./models/BingoBord'); // Adjust path to your User model
 
-// YOUR MAIN GAME BOT
+// 1. Database Connection
+mongoose.connect(process.env.DATABASE_URL)
+    .then(() => console.log("✅ Database Connected"))
+    .catch(err => console.log("❌ DB Connection Error:", err));
+
+// 2. Bot Setup
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
-
-// YOUR NEW ADMIN BOT
 const adminBot = new TelegramBot(process.env.ADMIN_BOT_TOKEN);
-const ADMIN_ID = process.env.ADMIN_CHAT_ID;
+const ADMIN_ID = process.env.ADMIN_CHAT_ID; // Your ID: 2092082952
 
-// Use a shared state object
 let userStates = {};
 
-// We MUST wrap the logic in an 'async' function to use 'await'
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
 
-    // Safety check for production: Ensure state exists
     if (!userStates[chatId]) return;
-
     const step = userStates[chatId].step;
 
     if (step === "withdrawAmount") {
         const amount = parseFloat(text);
         
-        // Basic Validation
         if (isNaN(amount) || amount <= 0) {
             return bot.sendMessage(chatId, "⚠️ Please enter a valid amount.");
         }
 
         try {
-            // 1. YOUR ORIGINAL BACKEND CALL
-            // Make sure your .env has REACT_APP_BACKEND_URL
+            // GET REAL USER DATA FROM DB
+            const user = await BingoBord.findOne({ telegramId: chatId });
+            
+            if (!user) {
+                bot.sendMessage(chatId, "❌ User record not found.");
+                delete userStates[chatId];
+                return;
+            }
+
+            // 1. CALL BACKEND WITH REAL DATA
             const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/transactions/withdraw`, {
-                username: "User", // You'll need to fetch the real user from DB here
-                phoneNumber: "Phone", 
+                username: user.username,     // REAL USERNAME
+                phoneNumber: user.phoneNumber, // REAL PHONE
                 amount,
                 method: 'withdrawal', 
                 type: userStates[chatId].method || 'telebirr'
             });
 
-            // 2. SEND ALERT TO THE ADMIN BOT
+            // 2. PUSH ALERT TO NEW ADMIN BOT
             const adminAlert = `
 🏦 **WITHDRAWAL ALERT** 🏦
 ━━━━━━━━━━━━━━━━━━
-👤 **User:** ${chatId}
+👤 **User:** ${user.username}
+📱 **Phone:** ${user.phoneNumber}
 💵 **Amount:** ${amount} Birr
 🏛️ **Bank:** ${(userStates[chatId].method || 'N/A').toUpperCase()}
 🕒 **Time:** ${new Date().toLocaleString()}
 ━━━━━━━━━━━━━━━━━━`;
 
-            // Production Safety: Catch admin bot errors separately so main bot doesn't die
+            // This sends the message to your new bot (2092082952)
             await adminBot.sendMessage(ADMIN_ID, adminAlert, { parse_mode: 'Markdown' })
-                .catch(e => console.error("Admin notification failed:", e.message));
+                .catch(e => console.error("Admin bot error:", e.message));
 
-            // 3. ORIGINAL RESPONSE TO THE USER
+            // 3. SUCCESS MESSAGE TO USER
             bot.sendMessage(chatId, res.data.message || "✅ Request submitted!");
 
         } catch (err) {
-            console.error("Production Withdrawal Error:", err.message);
-            bot.sendMessage(chatId, "❌ Error processing withdrawal.");
+            console.error("Error:", err.response?.data || err.message);
+            bot.sendMessage(chatId, "❌ Withdrawal failed. Please check your balance.");
         }
         
         delete userStates[chatId];
@@ -68,4 +77,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("🚀 Production Bot is running...");
+console.log("🚀 Bot is running and ready for withdrawals...");

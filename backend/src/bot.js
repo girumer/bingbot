@@ -474,41 +474,52 @@ if (step === "depositAmount") {
 // ...
 // ... inside your "withdrawAmount" check ...
 if (step === "withdrawAmount") {
-    const amount = parseFloat(text);
-
-    // This wrapper is REQUIRED to stop the "failed" / "await" error
-    const completeWithdrawal = async () => {
+    // We use a self-invoking async function to handle the 'await' commands
+    (async () => {
+        const amount = parseFloat(text);
+        
         try {
+            // 1. Get real data from Database
             const user = await BingoBord.findOne({ telegramId: chatId });
-            
-            // 1. Send to your Backend API
+            if (!user) {
+                bot.sendMessage(chatId, "❌ User not found.");
+                delete userStates[chatId];
+                return;
+            }
+
+            // 2. Push to your Backend
             const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/transactions/withdraw`, {
                 username: user.username,
                 phoneNumber: user.phoneNumber,
-                amount,
+                amount: amount,
                 method: 'withdrawal',
                 type: userStates[chatId].method
             });
 
-            // 2. Alert your Admin Bot 
-            // Note: If you don't use ADMIN_ID, make sure your logic 
-            // for where this message goes is handled here.
-            const adminMessage = `💰 **WITHDRAWAL**\n👤: ${user.username}\n💵: ${amount} ETB`;
-            
-            // If you really don't want to use an ID, we skip this or use your specific method
-            // await adminBot.sendMessage(chatId, adminMessage); 
+            // 3. PUSH notification to your NEW ADMIN BOT
+            // It will send the message directly to you (2092082952)
+            const adminMessage = `
+💰 **NEW WITHDRAWAL REQUEST**
+━━━━━━━━━━━━━━━━━━
+👤 User: ${user.username}
+📞 Phone: \`${user.phoneNumber}\`
+💵 Amount: ${amount} ETB
+🏦 Method: ${userStates[chatId].method.toUpperCase()}
+━━━━━━━━━━━━━━━━━━`;
 
-            bot.sendMessage(chatId, res.data.message || "✅ Withdrawal successful!");
+            await adminBot.sendMessage(process.env.ADMIN_CHAT_ID, adminMessage, { parse_mode: 'Markdown' })
+                .catch(e => console.log("Admin Bot alert failed, but transaction is saved."));
+
+            // 4. Send success to user
+            bot.sendMessage(chatId, res.data.message || "✅ Withdrawal request successful!");
 
         } catch (err) {
-            // This will print the REAL reason it is failing in your console
-            console.error("Backend Error:", err.response?.data || err.message);
-            bot.sendMessage(chatId, "❌ Withdrawal failed.");
+            console.error("WITHDRAW_ERROR:", err.response?.data || err.message);
+            bot.sendMessage(chatId, "❌ Withdrawal failed. Please check your balance.");
         }
-        delete userStates[chatId];
-    };
 
-    completeWithdrawal(); 
+        delete userStates[chatId];
+    })();
     return;
 }
 });
