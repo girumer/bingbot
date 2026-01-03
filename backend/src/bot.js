@@ -25,8 +25,7 @@ mongoose.connect(process.env.DATABASE_URL, {
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 console.log("Telegram bot is running...");
 
-const adminBot = new TelegramBot(process.env.ADMIN_BOT_TOKEN);
-const ADMIN_ID = process.env.ADMIN_CHAT_ID;
+
 // ----------------------
 // Main Menu
 // ----------------------
@@ -34,10 +33,9 @@ const mainMenu = {
   reply_markup: {
     inline_keyboard: [
       [
-      
+       
         { text: "🎮 Play Bingo", callback_data: "play" },
-          { text: "🎰 Spin & Win", callback_data: "spin_game" },
-      
+        { text: "🎰 Spin & Win", callback_data: "spin_game" },
       ],
       [ 
          { text: "💰 Balance", callback_data: "balance" },
@@ -148,6 +146,14 @@ bot.onText(/\/(balance|play|deposit|history|help|withdraw|coins)/, async (msg, m
               [
                 { text: "Room 5 (Stake 5)", callback_data: "room_5" },
                 { text: "Room 10 (Stake 10)", callback_data: "room_10" },
+              ],
+              [
+                { text: "Room 20 (Stake 20)", callback_data: "room_20" },
+                { text: "Room 30 (Stake 30)", callback_data: "room_30" },
+              ],
+              [
+                { text: "Room 50 (Stake 50)", callback_data: "room_50" },
+                { text: "Room 100 (Stake 100)", callback_data: "room_100" },
               ]
             ]
           }
@@ -156,7 +162,7 @@ bot.onText(/\/(balance|play|deposit|history|help|withdraw|coins)/, async (msg, m
         // Case for when the user selects 'Play Bingo' from the main menu
 // ... existing switch cases ...
 
- 
+       
 
 // ... rest of the switch cases ...
       case "help":
@@ -285,16 +291,24 @@ bot.onText(/\/(|balance|play|deposit|history|help|withdraw)/, async (msg, match)
   [
     { text: "Room 5 (Stake 5)", callback_data: "room_5" },
     { text: "Room 10 (Stake 10)", callback_data: "room_10" },],
-   
+    [
+    { text: "Room 20 (Stake 20)", callback_data: "room_20" },
+    { text: "Room 30 (Stake 30)", callback_data: "room_30" },
+    ],
   
- 
+  [
+    
+    { text: "Room 50 (Stake 50)", callback_data: "room_50" },
+    { text: "Room 100 (Stake 100)", callback_data: "room_100" },
+  ]
 ]
 
         }
       });
   break;
   
-      
+   
+
     
     case "help":
      bot.sendMessage(chatId, "Use the menu to check balance, play games, or see your history. If you need further assistance, please contact our support team.", {
@@ -387,67 +401,47 @@ bot.on("message", async (msg) => {
     }
 
     // NEW: Transfer Amount logic
-    // NEW: Transfer Amount logic with 50 Birr Deposit Requirement
-if (step === "waitingForTransferAmount") {
-    const amount = parseFloat(text);
-    const recipientId = userStates[chatId].recipientId;
-    const recipientPhone = userStates[chatId].recipientPhone;
+    if (step === "waitingForTransferAmount") {
+        const amount = parseFloat(text);
+        const recipientId = userStates[chatId].recipientId;
+        const recipientPhone = userStates[chatId].recipientPhone;
 
-    if (isNaN(amount) || amount <= 0) {
-        bot.sendMessage(chatId, "⚠️ Please enter a valid positive number.");
+        delete userStates[chatId]; // Clear state immediately
+
+        if (isNaN(amount) || amount <= 0) {
+            bot.sendMessage(chatId, "⚠️ Please enter a valid positive number.");
+            return;
+        }
+
+        try {
+            const sender = await BingoBord.findOne({ telegramId: chatId });
+            const recipient = await BingoBord.findOne({ telegramId: recipientId });
+
+            if (!sender || !recipient) {
+                bot.sendMessage(chatId, "User not found. Please try again.");
+                return;
+            }
+            
+            if (sender.Wallet < amount) {
+                bot.sendMessage(chatId, `❌ You have insufficient funds. Your current balance is ${sender.Wallet} ETB.`);
+                return;
+            }
+            
+            // Perform the transfer
+            sender.Wallet -= amount;
+            recipient.Wallet += amount;
+            
+            await Promise.all([sender.save(), recipient.save()]);
+
+            bot.sendMessage(chatId, `✅ Successfully transferred **${amount}** birr to **${recipient.username}**! Your new balance is ${sender.Wallet} Birr.`, { parse_mode: 'Markdown' });
+            bot.sendMessage(recipientId, `🎉 You have received **${amount}** birr from **${sender.username}**! Your new balance is ${recipient.Wallet} Birr.`, { parse_mode: 'Markdown' });
+        } catch (error) {
+            console.error("Error performing transfer:", error);
+            bot.sendMessage(chatId, "An error occurred during the transfer. Please try again later.");
+        }
         return;
     }
-
-    try {
-        const sender = await BingoBord.findOne({ telegramId: chatId });
-        const recipient = await BingoBord.findOne({ telegramId: recipientId });
-
-        if (!sender || !recipient) {
-            bot.sendMessage(chatId, "User not found. Please try again.");
-            delete userStates[chatId];
-            return;
-        }
-
-        // --- NEW DEPOSIT CHECK ---
-        // Find all deposit transactions for the sender
-        const depositTransactions = await Transaction.find({
-            phoneNumber: sender.phoneNumber,
-            method: 'deposit'
-        });
-
-        const totalDeposits = depositTransactions.reduce((sum, tx) => sum + tx.amount, 0);
-
-        // Check if total deposits are at least 50
-        if (totalDeposits < 50) {
-            bot.sendMessage(chatId, `❌ Transfer Locked. You must deposit at least 50 Birr to unlock the transfer feature. Your total deposit is: ${totalDeposits} Birr.`);
-            delete userStates[chatId];
-            return;
-        }
-        // -------------------------
-
-        if (sender.Wallet < amount) {
-            bot.sendMessage(chatId, `❌ You have insufficient funds. Your current balance is ${sender.Wallet} ETB.`);
-            delete userStates[chatId];
-            return;
-        }
-
-        // Perform the transfer
-        sender.Wallet -= amount;
-        recipient.Wallet += amount;
-
-        await Promise.all([sender.save(), recipient.save()]);
-
-        bot.sendMessage(chatId, `✅ Successfully transferred **${amount}** Birr to **${recipient.username}**!`, { parse_mode: 'Markdown' });
-        bot.sendMessage(recipientId, `🎉 You have received **${amount}** Birr from **${sender.username}**!`, { parse_mode: 'Markdown' });
-
-    } catch (error) {
-        console.error("Error performing transfer:", error);
-        bot.sendMessage(chatId, "An error occurred during the transfer.");
-    }
-
-    delete userStates[chatId]; // Clear state
-    return;
-}
+    
 if (step === "depositAmount") {
     const amount = parseFloat(text);
     if (isNaN(amount) || amount <= 0) {
@@ -471,90 +465,99 @@ if (step === "depositAmount") {
     userStates[chatId].step = "selectDepositMethod"; 
     return;
 }
-// --- NEW: Handle the Deposit Proof (SMS) ---
-if (step === "depositMessage") {
-    const depositData = userStates[chatId];
-    
+// ...
+if (step === "withdrawAmount") {
+    const amount = parseFloat(text);
+     const MIN_REMAINING_BALANCE = 50; 
+    if (isNaN(amount) || amount <= 0) {
+      bot.sendMessage(chatId, "⚠️ Please enter a valid withdrawal amount.");
+      return;
+    }
+if (amount < 50) {
+        bot.sendMessage(chatId, "❌ The minimum withdrawal amount is 50 Birr.");
+        return; // Stop the function here
+    }
+    const type = userStates[chatId].method;
+
     try {
-        const user = await BingoBord.findOne({ telegramId: chatId });
+      const user = await BingoBord.findOne({ telegramId: chatId });
+      if (!user) {
+        bot.sendMessage(chatId, "User not found. Please /start first.");
+        delete userStates[chatId];
+        return;
+      }
+      const depositTransactions = await Transaction.find({
+            phoneNumber: user.phoneNumber,
+            method: 'deposit' // Make sure this matches your model field
+        });
+          const totalDeposits = depositTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+ if (totalDeposits < 50) {
+            bot.sendMessage(chatId, `❌ Withdrawal requires a total deposit of at least 50 Birr. Your total deposit is only ${totalDeposits} Birr.`);
+            delete userStates[chatId]; // Clear state
+            return;
+        }
+          if (user.Wallet < amount) {
+            bot.sendMessage(chatId, `❌ You have insufficient funds. Your current balance is ${user.Wallet} ETB.`);
+            delete userStates[chatId];
+            return;
+        }
+         const maxWithdrawalAmount = user.Wallet - MIN_REMAINING_BALANCE;
+         if (maxWithdrawalAmount < 0) {
+            // User's balance is already below 50 (e.g., balance is 40).
+            bot.sendMessage(chatId, `❌ Your current balance (${user.Wallet} Birr) is less than the required minimum play balance of ${MIN_REMAINING_BALANCE} Birr. You cannot withdraw.`);
+            delete userStates[chatId];
+            return;
+        }
         
-        // Prepare the alert for the Admin
-        const adminAlert = `
-📥 <b>NEW DEPOSIT SUBMISSION</b>
-━━━━━━━━━━━━━━━━━━
-👤 <b>User:</b> ${user.username}
-📞 <b>Phone:</b> <code>${user.phoneNumber}</code>
-💵 <b>Amount:</b> ${depositData.amount} ETB
-🏦 <b>Method:</b> ${depositData.depositMethod.toUpperCase()}
-💬 <b>SMS/Proof:</b>
-<code>${text}</code>
-━━━━━━━━━━━━━━━━━━`;
+        if (amount > maxWithdrawalAmount) {
+            // User is requesting too much (e.g., balance 230, requesting 181).
+            bot.sendMessage(chatId, `❌ You must leave at least ${MIN_REMAINING_BALANCE} Birr in your wallet. The maximum amount you can withdraw is **${maxWithdrawalAmount} Birr**.`);
+            delete userStates[chatId];
+            return;
+        }
+const txType = userStates[chatId].method; 
+      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/transactions/withdraw`, {
+        username: user.username,
+        phoneNumber: user.phoneNumber,
+        amount,
+        method: 'withdrawal', // <-- This is the transaction type
+        type: userStates[chatId].method
+     
+      });
 
-        // Send to Admin (Using HTML to avoid Markdown crashes)
-        await adminBot.sendMessage(process.env.ADMIN_CHAT_ID, adminAlert, { parse_mode: 'HTML' });
-
-        // Confirm to User
-        bot.sendMessage(chatId, "✅ መረጃው ለዳኞች ተልኳል! በአጭር ጊዜ ውስጥ ተረጋግጦ ይሞላልዎታል።\n\n(Your proof was sent to admins for review.)");
-
+      bot.sendMessage(chatId, res.data.message || "✅ Withdrawal successful!");
     } catch (err) {
-        console.error("Deposit Submission Error:", err);
-        bot.sendMessage(chatId, "❌ Error submitting deposit. Please try again.");
+      bot.sendMessage(chatId, err.response?.data?.message || "❌ Withdrawal failed.");
     }
 
+    delete userStates[chatId]; // clear state
+    return;
+  }
+  // Deposit Message
+  if (step === "depositMessage") {
+    try {
+      const user = await BingoBord.findOne({ telegramId: chatId });
+      if (!user) {
+        bot.sendMessage(chatId, "User not found. Please /start first.");
+        return;
+      }
+     const depositAmount = userStates[chatId].amount;
+      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/deposit`, {
+        transactionNumber: text,
+        phoneNumber: user.phoneNumber,
+         amount: depositAmount,
+         method: 'deposit', // <-- This should be the transaction type
+         type: userStates[chatId].depositMethod
+
+      });
+
+      bot.sendMessage(chatId, res.data.message || "Deposit claimed successfully! 🎉");
+    } catch (err) {
+      bot.sendMessage(chatId, err.response?.data?.error || "Failed to claim deposit.");
+    }
     delete userStates[chatId];
     return;
-}
-// ...
-// ... inside your "withdrawAmount" check ...
-if (step === "withdrawAmount") {
-    // We use a self-invoking async function to handle the 'await' commands
-    (async () => {
-        const amount = parseFloat(text);
-        
-        try {
-            // 1. Get real data from Database
-            const user = await BingoBord.findOne({ telegramId: chatId });
-            if (!user) {
-                bot.sendMessage(chatId, "❌ User not found.");
-                delete userStates[chatId];
-                return;
-            }
-
-            // 2. Push to your Backend
-            const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/transactions/withdraw`, {
-                username: user.username,
-                phoneNumber: user.phoneNumber,
-                amount: amount,
-                method: 'withdrawal',
-                type: userStates[chatId].method
-            });
-
-            // 3. PUSH notification to your NEW ADMIN BOT
-            // It will send the message directly to you (2092082952)
-            const adminMessage = `
-💰 **NEW WITHDRAWAL REQUEST**
-━━━━━━━━━━━━━━━━━━
-👤 User: ${user.username}
-📞 Phone: \`${user.phoneNumber}\`
-💵 Amount: ${amount} ETB
-🏦 Method: ${userStates[chatId].method.toUpperCase()}
-━━━━━━━━━━━━━━━━━━`;
-
-            await adminBot.sendMessage(process.env.ADMIN_CHAT_ID, adminMessage, { parse_mode: 'Markdown' })
-                .catch(e => console.log("Admin Bot alert failed, but transaction is saved."));
-
-            // 4. Send success to user
-            bot.sendMessage(chatId, res.data.message || "✅ Withdrawal request successful!");
-
-        } catch (err) {
-            console.error("WITHDRAW_ERROR:", err.response?.data || err.message);
-            bot.sendMessage(chatId, "❌ Withdrawal failed. Please check your balance.");
-        }
-
-        delete userStates[chatId];
-    })();
-    return;
-}
+  }
 });
 
 // ----------------------
@@ -601,212 +604,355 @@ bot.on("contact", async (msg) => {
 // Handle Menu Buttons
 // ----------------------
 bot.on('callback_query', async (callbackQuery) => {
-    const chatId = callbackQuery.message.chat.id;
-    const data = callbackQuery.data;
+  const chatId = callbackQuery.message.chat.id;
+  const data = callbackQuery.data;
 
-    const answerQuery = (text, showAlert) => bot.answerCallbackQuery(callbackQuery.id, { text: text, show_alert: showAlert });
-    
-    const user = await BingoBord.findOne({ telegramId: chatId });
-    if (!user) {
-        bot.sendMessage(chatId, "You are not registered. Use /start to register.");
+  const answerQuery = (text, showAlert) => bot.answerCallbackQuery(callbackQuery.id, { text: text, show_alert: showAlert });
+  const user = await BingoBord.findOne({ telegramId: chatId });
+  if (!user) {
+    bot.sendMessage(chatId, "You are not registered. Use /start to register.");
+    return;
+  }
+
+  switch (data) {
+    case "balance":
+      bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} Birr`);
+      break;
+
+    case "history":
+      if (!user.gameHistory || user.gameHistory.length === 0) {
+        bot.sendMessage(chatId, "You have no game history yet.");
         return;
+      }
+      let historyText = "📜 Your game history:\n";
+      user.gameHistory.forEach((g, i) => {
+        historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, gameid:${g.gameId},Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
+      });
+      bot.sendMessage(chatId, historyText);
+      break;
+
+    case "play":
+      bot.sendMessage(chatId, "Select a room to play:", {
+        reply_markup: {
+        
+        inline_keyboard: [
+  [
+    { text: "Room 5 (Stake 5)", callback_data: "room_5" },
+    { text: "Room 10 (Stake 10)", callback_data: "room_10" },],
+    [
+    { text: "Room 20 (Stake 20)", callback_data: "room_20" },
+    { text: "Room 30 (Stake 30)", callback_data: "room_30" },
+    ],
+  
+  [
+    
+    { text: "Room 50 (Stake 50)", callback_data: "room_50" },
+    { text: "Room 100 (Stake 100)", callback_data: "room_100" },
+  ]
+]
+
+        }
+      });
+      break;
+ case "spin_game":
+  // ✅ Acknowledge the button click
+  bot.sendMessage(chatId, "Select your bet amount for Spin & Win:", {
+    reply_markup: {
+   inline_keyboard: [
+  [
+    { text: "Spin 5 ETB", callback_data: "spin_5" },
+  ]
+]
+
     }
+  });
+  break;
+    case "gameHistory":
+      if (!user.gameHistory || user.gameHistory.length === 0) {
+        bot.sendMessage(chatId, "🎮 You have no game history yet.");
+        return;
+      }
 
-    switch (data) {
-        case "balance":
-            bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} Birr`);
-            break;
+      let gameText = "🎮 Last 10 Games:\n";
+      user.gameHistory
+        .slice(-10) // last 10 only
+        .reverse() // newest first
+        .forEach((g, i) => {
+          gameText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, gameid:${g.gameId},Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
+        });
 
-        case "history":
-            if (!user.gameHistory || user.gameHistory.length === 0) {
-                bot.sendMessage(chatId, "You have no game history yet.");
-                return;
-            }
-            let historyText = "📜 Your game history:\n";
-            user.gameHistory.slice(-10).forEach((g, i) => {
-                historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, gameid:${g.gameId}, Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
-            });
-            bot.sendMessage(chatId, historyText);
-            break;
+      bot.sendMessage(chatId, gameText);
+      break;
+      
 
-        case "play":
-            bot.sendMessage(chatId, "Select a room to play:", {
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { text: "Room 5 (Stake 5)", callback_data: "room_5" },
-                            { text: "Room 10 (Stake 10)", callback_data: "room_10" },
-                        ]
-                    ]
-                }
-            });
-            break;
+    case "deposit":
+      bot.sendMessage(chatId, "💵 How much money do you want to deposit?");
+      userStates[chatId] = { step: "depositAmount" };
+      break;
 
-        case "spin_game":
-            bot.sendMessage(chatId, "Select your bet amount for Spin & Win:", {
-                reply_markup: {
-                    inline_keyboard: [[{ text: "Spin 1 ETB", callback_data: "spin_1" }]]
-                }
-            });
-            break;
+   case "deposit_telebirr":
+case "deposit_cbebirr":
+    const depositMethod = data.split("_")[1];
+    const amountDep = userStates[chatId]?.amount || "N/A";
 
-        case "deposit":
-            bot.sendMessage(chatId, "💵 How much money do you want to deposit?");
-            userStates[chatId] = { step: "depositAmount" };
-            break;
+    let instructionsMsg = "";
+if (depositMethod === "telebirr") {
+  instructionsMsg = `
+📲 ማኑዋል ዲፖዚት መመሪያ ቴሌብር
+Account: \`${process.env.TELEBIRR_ACCOUNT}\`
+ዲፖዚት መጠን: ${amountDep} ብር
 
-     case "deposit_telebirr":
-        case "deposit_cbebirr":
-            const depositMethod = data.split("_")[1];
+1\\. ከላይ ባለው ቁጥር TeleBirr በመጠቀም  ${amountDep} ብር ያስገቡ
+2\\. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልክት\\(sms\\) ከ TeleBirr ይደርሳችኋል
+3\\. የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) የደረሳችሁን ትራንዛክሸን ቁጥር  ብቻ ኮፒ አርጋችሁ ወደዚህ ቦት ላኩ\\(copy\\) በማረግ ወደዚህ ቦት ይላኩ
+⚠️ አስፈላጊ ማሳሰቢያ:
+•1\\. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) ሙሉዉን መላክ ያረጋግጡ
+•2\\. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
+•     ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
+•     ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ
+ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ ለእገዛ በሚከተለው ቴሌግራም ግሩፓቸን ቪደዮ [እዚህ ይጫኑ](${process.env.SUPPORT_GROUP})ይመለከቱ`;
+} else if (depositMethod === "cbebirr") {
+  instructionsMsg = `
+🏦 ማኑዋል ዲፖዚት መመሪያ
+Account: \`${process.env.CBE_ACCOUNT}\`
+ዲፖዚት መጠን: ${amountDep} ብር
 
-            if (!userStates[chatId]) {
-                bot.sendMessage(chatId, "⚠️ Session expired. Please click 'Deposit' again.");
-                return;
-            }
+1\\. ከላይ ባለው ቁጥር ሲቢኢ  በመጠቀም  ${amountDep}ብር ያስገቡ
+2\\. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልክት\\(sms\\) ከ TeleBirr ይደርሳችኋል
+3\\. የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) የደረሳችሁን ትራንዛክሸን ቁጥር  ብቻ ኮፒ አርጋችሁ ወደዚህ ቦት ላኩ\\(copy\\) በማረግ ወደዚህ ቦት ይላኩ
+⚠️ አስፈላጊ ማሳሰቢያ:
+•1\\. ከcbebirr የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) ሙሉዉን መላክ ያረጋግጡ
+•2\\. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
+•     ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
+•     ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ ለእገዛ በሚከተለው ቴሌግራም ግሩፓቸን ቪደዮ[እዚህ ይጫኑ](${process.env.SUPPORT_GROUP}) ይመለከቱ`;
+}
+// ...
+    
+    // ✅ Keep only this single bot.sendMessage call.
+    bot.sendMessage(chatId, instructionsMsg, {
+        parse_mode: 'MarkdownV2'
+    });
+    
+    userStates[chatId].depositMethod = depositMethod;
+    userStates[chatId].step = "depositMessage"; 
+    break;
+  
+  case "withdraw":
+    bot.sendMessage(chatId, "Choose your withdrawal method:", {
+      reply_markup: {
+       inline_keyboard: [
+  [
+    { text: "📲 Telebirr", callback_data: "withdraw_telebirr" },
+    { text: "🏦 CBE Birr", callback_data: "withdraw_cbebirr" }
+  ]
+]
 
-            const amountDep = userStates[chatId].amount || "N/A";
-            const accountNo = depositMethod === "telebirr" ? process.env.TELEBIRR_ACCOUNT : process.env.CBE_ACCOUNT;
-            const bankName = depositMethod === "telebirr" ? "Telebirr" : "CBE Birr";
+      }
+    });
+    break;
+     case "withdraw_telebirr":
+  case "withdraw_cbebirr":
+    const method = data.split("_")[1]; // telebirr / cbebirr
+    userStates[chatId] = { step: "withdrawAmount", method };
+    bot.sendMessage(chatId, `Enter the amount you want to withdraw via ${method.toUpperCase()}:`);
+    break;
+      case "transfer_coins_to_wallet":
+      // 'user' is the pre-fetched BingoBord document for the user
+      const coinsToTransfer = user.coins || 0;
+      const minTransfer = 0.01; // Minimum coin amount to initiate transfer
 
-            // Using HTML instead of Markdown to prevent character crashes
-            let instructionsMsg = `<b>📲 ማኑዋል ዲፖዚት መመሪያ ${bankName}</b>\n\n` +
-                                 `<b>Account:</b> <code>${accountNo}</code>\n` +
-                                 `<b>ዲፖዚት መጠን:</b> ${amountDep} ብር\n\n` +
-                                 `1. ከላይ ባለው ቁጥር ${bankName} በመጠቀም ${amountDep} ብር ያስገቡ\n` +
-                                 `2. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ይደርሳችኋል\n` +
-                                 `3. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ወደዚህ ቦት ይላኩ\n\n` +
-                                 `<b>⚠️ አስፈላጊ ማሳሰቢያ:</b>\n` +
-                                 `1. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን መላክ ያረጋግጡ\n` +
-                                 `2. ብር ማስገባት የምችሉት ከቴሌብር ወደ ኤጀንት ወይም ከሲቢኢ ብር ወደ ኤጀንት ብቻ ነው\n\n` +
-                                 `እገዛ ይፈልጋሉ? /help ያነጋግሩ`;
+      if (coinsToTransfer < minTransfer) {
+        // answerQuery is a helper to respond to the Telegram callback
+        answerQuery(`❌ You need at least ${minTransfer} coins to transfer.`, true);
+        return;
+      }
+      
+      // Use the actual coins to transfer (rounded to 2 decimal places)
+      const roundedCoins = parseFloat(formatBalance(coinsToTransfer)); 
 
-            bot.sendMessage(chatId, instructionsMsg, { parse_mode: 'HTML' });
-            
-            userStates[chatId].depositMethod = depositMethod;
-            userStates[chatId].step = "depositMessage"; 
-            break;
+      try {
+        answerQuery("Processing coin transfer...", false);
 
-        case "withdraw":
-            bot.sendMessage(chatId, "Choose your withdrawal method:", {
-                reply_markup: {
-                    inline_keyboard: [[
-                        { text: "📲 Telebirr", callback_data: "withdraw_telebirr" },
-                        { text: "🏦 CBE Birr", callback_data: "withdraw_cbebirr" }
-                    ]]
-                }
-            });
-            break;
+        // ATOMIC OPERATION: Check the coin balance is sufficient AND execute the update
+        const updatedUser = await BingoBord.findOneAndUpdate(
+          { telegramId: chatId, coins: { $gte: roundedCoins } }, // Atomic check and target
+          {
+            $inc: { Wallet: roundedCoins, coins: -roundedCoins } // Add to Wallet, Subtract from coins
+          },
+          { new: true } // Return the updated document
+        );
+        
+        if (!updatedUser) {
+          // Failed because the coin balance check in the query failed (race condition or insufficient funds)
+          answerQuery("❌ Transfer failed. Your coin balance might have changed or you have insufficient coins.", true);
+          return;
+        }
 
-        case "withdraw_telebirr":
-        case "withdraw_cbebirr":
-            const wMethod = data.split("_")[1];
-            userStates[chatId] = { step: "withdrawAmount", method: wMethod };
-            bot.sendMessage(chatId, `Enter the amount you want to withdraw via ${wMethod.toUpperCase()}:`);
-            break;
+        // Get fresh balances from the updated document
+        const newWalletBalance = updatedUser.Wallet;
+        const newCoinBalance = updatedUser.coins; 
+        
+        // Send success message
+        bot.sendMessage(chatId, 
+          `🎉 Success! **${formatBalance(roundedCoins)} Coins** converted to Wallet.
+          
+New balances:
+💰 Wallet: **${formatBalance(newWalletBalance)} Birr**
+🪙 Coins: **${formatBalance(newCoinBalance)} Coins**`, 
+          { parse_mode: 'Markdown' }
+        );
 
-        case "transfer_coins_to_wallet":
-            const coinsToTransfer = user.coins || 0;
-            const minTransfer = 0.01;
+      } catch (error) {
+        console.error("Coin Transfer Error:", error);
+        answerQuery("❌ Transfer failed due to a database error.", true);
+      }
+      break;
+case "room_5":
+case "room_50":
+case "room_100":
+case "room_10":
+case "room_20":
+case "room_30":
+  const stake = parseInt(data.split("_")[1]);
+  if (user.Wallet < stake) {
+    bot.sendMessage(chatId, "⚠️ Not enough birr. Earn more to play.");
+    return;
+  }
 
-            if (coinsToTransfer < minTransfer) {
-                answerQuery(`❌ You need at least ${minTransfer} coins to transfer.`, true);
-                return;
-            }
-            
-            const roundedCoins = parseFloat(coinsToTransfer.toFixed(2)); 
+  
+  await user.save();
 
-            try {
-                const updatedUser = await BingoBord.findOneAndUpdate(
-                    { telegramId: chatId, coins: { $gte: roundedCoins } },
-                    { $inc: { Wallet: roundedCoins, coins: -roundedCoins } },
-                    { new: true }
-                );
-                
-                if (!updatedUser) {
-                    answerQuery("❌ Transfer failed. Insufficient coins.", true);
-                    return;
-                }
-
-                bot.sendMessage(chatId, `🎉 Success! **${roundedCoins} Coins** converted to Wallet.`, { parse_mode: 'Markdown' });
-            } catch (error) {
-                console.error("Coin Transfer Error:", error);
-                answerQuery("❌ Database error.", true);
-            }
-            break;
-
-        case "room_5":
-        case "room_10":
-            const stake = parseInt(data.split("_")[1]);
-            if (user.Wallet < stake) {
-                bot.sendMessage(chatId, "⚠️ Not enough birr. Earn more to play.");
-                return;
-            }
-
-            const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;
-            bot.sendMessage(chatId, `🎮 *play ${stake} ETB*`, {
-                parse_mode: "Markdown",
-                reply_markup: {
-                    inline_keyboard: [[{ text: "🚀 PLAY NOW", web_app: { url: webAppUrl } }]]
-                }
-            });
-            break;
-
-        case "spin_1":
-            const spinStake = 1; // Explicitly set based on your "spin_1" data
-            if (user.Wallet < spinStake) {
-                bot.sendMessage(chatId, `❌ Insufficient balance: ${user.Wallet} ETB`);
-                return;
-            }
-
-            const spinnerUrl = `${process.env.FRONTEND_URL}/SpinnerSelection?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&stake=${spinStake}`;
-            bot.sendMessage(chatId, `🎯 Ready to spin for ${spinStake} ETB!`, {
-                reply_markup: {
-                    inline_keyboard: [[{ text: "🎰 Launch Spinner", web_app: { url: spinnerUrl } }]]
-                }
-            });
-            break;
-
-        case "transactions":
-            try {
-                const transactions = await Transaction.find({ phoneNumber: user.phoneNumber }).sort({ createdAt: -1 }).limit(10);
-                if (!transactions.length) {
-                    bot.sendMessage(chatId, "No transactions found.");
-                    return;
-                }
-                let tText = "📜 Last 10 transactions:\n";
-                transactions.forEach((t, i) => {
-                    // Check if properties exist before calling toUpperCase()
-                    const m = t.method ? t.method.toUpperCase() : "UNKNOWN";
-                    const ty = t.type ? t.type.toUpperCase() : "N/A";
-                    tText += `${i + 1}. Type: ${m}, via: ${ty}, Amount: ${t.amount} ብር\n`;
-                });
-                bot.sendMessage(chatId, tText);
-            } catch (err) {
-                bot.sendMessage(chatId, "❌ History error.");
-            }
-            break;
-
-        case "referral":
-            const botInfo = await bot.getMe();
-            const referralLink = `https://t.me/${botInfo.username}?start=${chatId}`;
-            const photoId = 'AgACAgQAAxkBAAIK7mjE1Y1VX0ivUkBQGwJsXW08-92LAAKm0DEb55coUv1XJCHTpYurAQADAgADeAADNgQ'; 
-            
-            bot.sendPhoto(chatId, photoId, {
-                caption: `*Your Referral Link:*\n🔗 [Invite Friends](${referralLink})`,
-                parse_mode: 'Markdown'
-            });
-            break;
-
-        case "top":
-            bot.sendMessage(chatId, `🏆 *Leaderboard*`, {
-                reply_markup: {
-                    inline_keyboard: [[{ text: "📊 View", web_app: { url: `${process.env.FRONTEND_URL}/TopUsers` } }]]
-                },
-                parse_mode: "Markdown"
-            });
-            break;
+  const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;
+  
+  // ✅ Corrected Markdown: Added a closing *
+  bot.sendMessage(chatId, `🎮 *play ${stake} ETB*`, {
+    parse_mode: "Markdown",
+    reply_markup: {
+      inline_keyboard: [
+        [{
+          text: "🚀 PLAY NOW", 
+          web_app: { url: webAppUrl }
+        }]
+      ]
     }
+  });
+  break;
+ case "spin_5":
+
+  bot.answerCallbackQuery(callbackQuery.id); // ✅ Acknowledge the button click
+
+  const spinStake = Number(data.split("_")[1]);
+  
+  // REMOVE THIS DUPLICATE LINE: const user = await BingoBord.findOne({ telegramId: chatId });
+  // User is already fetched at the beginning of the callback handler
+
+  if (!user) {
+    bot.sendMessage(chatId, "❌ You are not registered. Use /start to begin.");
+    return;
+  }
+
+  if (user.Wallet < spinStake) {
+    bot.sendMessage(chatId, `❌ You don't have enough balance. Your wallet: ${user.Wallet} ETB`);
+    return;
+  }
+
+  const spinnerUrl = `${process.env.FRONTEND_URL}/SpinnerSelection?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&stake=${spinStake}`;
+
+  bot.sendMessage(chatId, `🎯 Ready to spin for ${spinStake} ETB! Click below to continue:`, {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "🎰 Launch Spinner", web_app: { url: spinnerUrl } }]
+      ]
+    }
+  });
+  break;
+
+    // Alternative: If you want to automatically open the web app without a button
+  // Note: This requires the user to have interacted with the bot first
+  // bot.sendMessage(chatId, `✅ You joined Room ${stake}! ${stake} coins deducted.`, {
+  //   reply_markup: {
+  //     inline_keyboard: [
+  //       [{ text: "Continue", web_app: { url: webAppUrl } }]
+  //     ]
+  //   }
+  // });
+  
+case "transactions":
+  try {
+    // Fetch last 10 transactions for the user's phone number
+    const transactions = await Transaction.find({ phoneNumber: user.phoneNumber })
+      .sort({ createdAt: -1 }) // newest first
+      .limit(10);
+
+    if (!transactions || transactions.length === 0) {
+      bot.sendMessage(chatId, "You have no transaction history yet.");
+      return;
+    }
+
+    let historyText = "📜 Your last 10 transactions:\n";
+    transactions.forEach((t, i) => {
+      // Corrected line below: t.method and t.type are the correct keys
+        historyText += `${i + 1}. Type: ${t.method.toUpperCase()}, via: ${t.type.toUpperCase()}, Amount: ${t.amount} ብር, Date: ${t.createdAt.toLocaleString()}\n`;
+    });
+
+    bot.sendMessage(chatId, historyText);
+  } catch (err) {
+    console.error(err);
+    bot.sendMessage(chatId, "❌ Failed to fetch transaction history.");
+  }
+  break;
+case "referral":
+    // Get the bot's username dynamically from the API.
+    const botInfo = await bot.getMe();
+    const botUsername = botInfo.username;
+    
+    // Use the bot's username and the correct user ID from the callbackQuery.
+    const referralLink = `https://t.me/${botUsername}?start=${callbackQuery.from.id}`;
+    
+    // This is the file_id you found.
+    const botProfilePictureId = 'AgACAgQAAxkBAAIK7mjE1Y1VX0ivUkBQGwJsXW08-92LAAKm0DEb55coUv1XJCHTpYurAQADAgADeAADNgQ'; 
+    
+    // Use the [Text](URL) format to create a clickable link
+    const captionText = `
+*Here is your personal referral link!*
+    
+ከታች ያለውን ሊንክ ለወዳጆቾ በመጋበዝ የጋበዟቸው ደንበኞች ከሚያስቀምጡት ዲፖዛት የማያቋርጥ የ10% ባለድርሻ ይሁኑ.
+    
+🔗 [Click Here to Invite](${referralLink})
+    
+እየተዝናን አብረን  እንስራ
+`;
+    
+    bot.sendPhoto(
+        chatId,
+        botProfilePictureId, 
+        {
+            caption: captionText,
+            parse_mode: 'Markdown'
+        }
+    );
+    break;
+ case "top":
+        const topUsersUrl = `${process.env.FRONTEND_URL}/TopUsers`;
+        
+        bot.sendMessage(chatId, `🏆 *View the Leaders Board!*`, {
+            parse_mode: "Markdown",
+            reply_markup: {
+                inline_keyboard: [
+                    [{
+                        text: "📊 View Leaderboard",
+                        web_app: { url: topUsersUrl }
+                    }]
+                ]
+            }
+        });
+        break;
+    
+    default:
+      bot.sendMessage(chatId, "Unknown action occured.");
+  }
+
+// TEMPORARY CODE TO GET PHOTO FILE_ID
+
 });
-
-
 module.exports = bot;
