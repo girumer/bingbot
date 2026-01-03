@@ -642,7 +642,7 @@ bot.on('callback_query', async (callbackQuery) => {
                 instructionsMsg = `🏦 ማኑዋል ዲፖዚት መመሪያ\nAccount: \`${process.env.CBE_ACCOUNT}\`\nዲፖዚት መጠን: ${amountDep} ብር...`; // (Keep your full Amharic text here)
             }
 
-            bot.sendMessage(chatId, instructionsMsg, { parse_mode: 'MarkdownV2' });
+            bot.sendMessage(chatId, instructionsMsg, { parse_mode: 'Markdown' });
             
             userStates[chatId].depositMethod = depositMethod;
             userStates[chatId].step = "depositMessage"; 
