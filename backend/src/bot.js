@@ -510,7 +510,10 @@ const txType = userStates[chatId].method;
       });
 
       bot.sendMessage(chatId, res.data.message || "✅ Withdrawal successful!");
-      const adminAlert = ` 🏦 **WITHDRAWAL ALERT** 🏦 ━━━━━━━━━━━━━━━━━━ 👤 **User:** ${user.username} 📱 **Phone:** ${user.phoneNumber} 💵 **Amount:** ${amount} Birr 🏛️ **Bank:** ${(userStates[chatId].method || 'N/A').toUpperCase()} 🕒 **Time:** ${new Date().toLocaleString()} ━━━━━━━━━━━━━━━━━━`;
+      const adminAlert = ` 🏦 **WITHDRAWAL ALERT** 🏦 ━━━━━━━━━━━━━━━━━━ 
+      👤 **User:** ${user.username} 
+      📱 **Phone:** \`${user.phoneNumber}\`
+      💵 **Amount:** \`${amount}\` Birr 🏛️ **Bank:** ${(userStates[chatId].method || 'N/A').toUpperCase()} 🕒 **Time:** ${new Date().toLocaleString()} ━━━━━━━━━━━━━━━━━━`;
        await adminBot.sendMessage(ADMIN_ID, adminAlert, { parse_mode: 'Markdown' });
     } catch (err) {
       bot.sendMessage(chatId, err.response?.data?.message || "❌ Withdrawal failed.");
