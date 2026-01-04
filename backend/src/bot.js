@@ -23,6 +23,8 @@ mongoose.connect(process.env.DATABASE_URL, {
 // Create bot
 // ----------------------
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
+const adminBot = new TelegramBot(process.env.ADMIN_BOT_TOKEN); 
+const ADMIN_ID = process.env.ADMIN_CHAT_ID;
 console.log("Telegram bot is running...");
 
 
@@ -146,14 +148,6 @@ bot.onText(/\/(balance|play|deposit|history|help|withdraw|coins)/, async (msg, m
               [
                 { text: "Room 5 (Stake 5)", callback_data: "room_5" },
                 { text: "Room 10 (Stake 10)", callback_data: "room_10" },
-              ],
-              [
-                { text: "Room 20 (Stake 20)", callback_data: "room_20" },
-                { text: "Room 30 (Stake 30)", callback_data: "room_30" },
-              ],
-              [
-                { text: "Room 50 (Stake 50)", callback_data: "room_50" },
-                { text: "Room 100 (Stake 100)", callback_data: "room_100" },
               ]
             ]
           }
@@ -290,17 +284,7 @@ bot.onText(/\/(|balance|play|deposit|history|help|withdraw)/, async (msg, match)
         inline_keyboard: [
   [
     { text: "Room 5 (Stake 5)", callback_data: "room_5" },
-    { text: "Room 10 (Stake 10)", callback_data: "room_10" },],
-    [
-    { text: "Room 20 (Stake 20)", callback_data: "room_20" },
-    { text: "Room 30 (Stake 30)", callback_data: "room_30" },
-    ],
-  
-  [
-    
-    { text: "Room 50 (Stake 50)", callback_data: "room_50" },
-    { text: "Room 100 (Stake 100)", callback_data: "room_100" },
-  ]
+    { text: "Room 10 (Stake 10)", callback_data: "room_10" },]
 ]
 
         }
@@ -526,6 +510,8 @@ const txType = userStates[chatId].method;
       });
 
       bot.sendMessage(chatId, res.data.message || "✅ Withdrawal successful!");
+      const adminAlert = ` 🏦 **WITHDRAWAL ALERT** 🏦 ━━━━━━━━━━━━━━━━━━ 👤 **User:** ${user.username} 📱 **Phone:** ${user.phoneNumber} 💵 **Amount:** ${amount} Birr 🏛️ **Bank:** ${(userStates[chatId].method || 'N/A').toUpperCase()} 🕒 **Time:** ${new Date().toLocaleString()} ━━━━━━━━━━━━━━━━━━`;
+       await adminBot.sendMessage(ADMIN_ID, adminAlert, { parse_mode: 'Markdown' });
     } catch (err) {
       bot.sendMessage(chatId, err.response?.data?.message || "❌ Withdrawal failed.");
     }
@@ -638,17 +624,7 @@ bot.on('callback_query', async (callbackQuery) => {
         inline_keyboard: [
   [
     { text: "Room 5 (Stake 5)", callback_data: "room_5" },
-    { text: "Room 10 (Stake 10)", callback_data: "room_10" },],
-    [
-    { text: "Room 20 (Stake 20)", callback_data: "room_20" },
-    { text: "Room 30 (Stake 30)", callback_data: "room_30" },
-    ],
-  
-  [
-    
-    { text: "Room 50 (Stake 50)", callback_data: "room_50" },
-    { text: "Room 100 (Stake 100)", callback_data: "room_100" },
-  ]
+    { text: "Room 10 (Stake 10)", callback_data: "room_10" },]
 ]
 
         }
@@ -878,29 +854,29 @@ case "room_30":
   // });
   
 case "transactions":
-  try {
-    // Fetch last 10 transactions for the user's phone number
-    const transactions = await Transaction.find({ phoneNumber: user.phoneNumber })
-      .sort({ createdAt: -1 }) // newest first
-      .limit(10);
+try {
+ // Fetch last 10 transactions for the user's phone number
+ const transactions = await Transaction.find({ phoneNumber: user.phoneNumber })
+ .sort({ createdAt: -1 }) // newest first
+ .limit(10);
 
-    if (!transactions || transactions.length === 0) {
-      bot.sendMessage(chatId, "You have no transaction history yet.");
-      return;
-    }
+ if (!transactions || transactions.length === 0) {
+ bot.sendMessage(chatId, "You have no transaction history yet.");
+ return;
+ }
 
-    let historyText = "📜 Your last 10 transactions:\n";
-    transactions.forEach((t, i) => {
-      // Corrected line below: t.method and t.type are the correct keys
-        historyText += `${i + 1}. Type: ${t.method.toUpperCase()}, via: ${t.type.toUpperCase()}, Amount: ${t.amount} ብር, Date: ${t.createdAt.toLocaleString()}\n`;
-    });
+ let historyText = "📜 Your last 10 transactions:\n";
+ transactions.forEach((t, i) => {
+ // Corrected line below: t.method and t.type are the correct keys
+ historyText += `${i + 1}. Type: ${t.method.toUpperCase()}, via: ${t.type.toUpperCase()}, Amount: ${t.amount} ብር, Date: ${t.createdAt.toLocaleString()}\n`;
+ });
 
-    bot.sendMessage(chatId, historyText);
-  } catch (err) {
-    console.error(err);
-    bot.sendMessage(chatId, "❌ Failed to fetch transaction history.");
-  }
-  break;
+ bot.sendMessage(chatId, historyText);
+ } catch (err) {
+ console.error(err);
+ bot.sendMessage(chatId, "❌ Failed to fetch transaction history.");
+ }
+ break;
 case "referral":
     // Get the bot's username dynamically from the API.
     const botInfo = await bot.getMe();
