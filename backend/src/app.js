@@ -651,6 +651,9 @@ function startNumberGenerator(roomId) {
   const room = rooms[roomId];
   if (!room) return;
   
+  // SAFETY: Don't start a second timer if one is already running
+  if (room.numberInterval) return; 
+
   const playersWithCartela = Object.values(room.playerCartelas).filter(
     (arr) => arr.length > 0
   ).length;
@@ -658,17 +661,17 @@ function startNumberGenerator(roomId) {
   if (playersWithCartela < 1) return;
   if (!Array.isArray(room.calledNumbers)) room.calledNumbers = [];
   
-  // Create an array with all 75 numbers
   const numbers = Array.from({ length: 75 }, (_, i) => i + 1);
-  console.log(`[Room ${roomId}] Shuffled numbers:`, numbers);
   
-  // Fisher-Yates shuffle algorithm to randomize the array
+  // Fisher-Yates shuffle algorithm
   for (let i = numbers.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
   }
+
+  // MOVED LOG: Now it shows the real random order in your PM2 logs
+  console.log(`[Room ${roomId}] REAL Shuffled numbers:`, numbers);
   
-  // Use the shuffled array directly with error handling
   room.numberInterval = setInterval(() => {
     try {
       if (!rooms[roomId]) {
@@ -676,15 +679,11 @@ function startNumberGenerator(roomId) {
         return;
       }
 
-      // If all numbers have been called, end the game
       if (room.calledNumbers.length >= 75) {
         clearInterval(room.numberInterval);
         room.numberInterval = null;
-
-        // After all numbers, check for winners one last time
         checkWinners(roomId, room.calledNumbers.slice(-1)[0]);
 
-        // If no winner was found by checkWinners, reset the room manually
         if (room.alreadyWon.length === 0) {
           console.log(`No winner in room ${roomId} after all numbers. Resetting room.`);
           resetRoom(roomId);
@@ -692,17 +691,12 @@ function startNumberGenerator(roomId) {
         return;
       }
       
-      // Get the next number from the shuffled array
       const nextNumber = numbers[room.calledNumbers.length];
-      
-      // Add to called numbers
       room.calledNumbers.push(nextNumber);
       
-      // Emit to all clients
       io.to(roomId).emit("numberCalled", nextNumber);
-      io.to(roomId).emit("currentCalledNumbers", room.calledNumbers.slice(-5).reverse());
+      io.to(roomId).emit("currentCalledNumbers", [...room.calledNumbers].slice(-5).reverse());
       
-      // Check for winners
       checkWinners(roomId, nextNumber);
       
     } catch (error) {
