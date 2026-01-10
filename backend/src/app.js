@@ -876,53 +876,51 @@ async function checkWinners(roomId, calledNumber) {
     // ✅ Update winners in parallel
    (async () => {
   // Update winners
-  await Promise.all(winners.map(async (winner) => {
-    const user = await BingoBord.findOne({ username: winner.winnerName });
-    if (user) {
-      user.Wallet += awardPerWinner;
-      user.coins += 1;
-      await user.save();
-
-      // ✅ Faster history save using $push
-      await BingoBord.updateOne(
+  // REPLACE your winner update block with this:
+await Promise.all(winners.map(async (winner) => {
+    await BingoBord.updateOne(
         { username: winner.winnerName },
-        {
-          $push: {
-            gameHistory: {
-              roomId: Number(roomId),
-              stake: Number(awardPerWinner),
-              outcome: "win",
-              timestamp: new Date(),
-              gameId: room.gameId,
+        { 
+            $inc: { Wallet: awardPerWinner, coins: 1 }, // Updates balance instantly
+            $push: {
+                gameHistory: {
+                    $each: [{
+                        roomId: Number(roomId),
+                        stake: Number(awardPerWinner),
+                        outcome: "win",
+                        timestamp: new Date(),
+                        gameId: room.gameId || Date.now()
+                    }],
+                    $slice: -50 // CRITICAL: This trims the 10,000 items down to 50!
+                }
             }
-          }
         }
-      );
-
-      winnerUsernames.add(winner.winnerName);
-    }
-  }));
+    ).catch(err => console.error("Winner update failed:", err));
+    winnerUsernames.add(winner.winnerName);
+}));
 
   // Update losers
-  await Promise.all(Object.entries(room.players).map(async ([clientId, username]) => {
+await Promise.all(Object.entries(room.players).map(async ([clientId, username]) => {
     if (!winnerUsernames.has(username)) {
-      // ✅ Direct history push without loading full user
       await BingoBord.updateOne(
         { username },
         {
           $push: {
             gameHistory: {
-              roomId: Number(roomId),
-              stake: Number(stakeAmount),
-              outcome: "loss",
-              timestamp: new Date(),
-              gameId: room.gameId,
+              $each: [{ // Use $each to allow for $slice
+                roomId: Number(roomId),
+                stake: Number(stakeAmount),
+                outcome: "loss",
+                timestamp: new Date(),
+                gameId: room.gameId || Date.now(), // Fallback if gameId is missing
+              }],
+              $slice: -50 // ⚡ This keeps history small and fast!
             }
           }
         }
-      );
+      ).catch(err => console.error(`Error updating loser ${username}:`, err.message));
     }
-  }));
+}));
 })();
 
 
