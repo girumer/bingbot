@@ -1375,7 +1375,15 @@ app.post("/gameid",async(req,res)=>{
   }
 
 })
-const port=process.env.PORT;
-server.listen(port||3001,'0.0.0.0',()=>{
-    console.log(`port connected port  ${port}`);
-})
+const port = process.env.PORT || 3001;
+
+if (!process.env.NODE_APP_INSTANCE || process.env.NODE_APP_INSTANCE === '0') {
+    // This block ONLY runs on the first CPU Core (Core 0)
+    server.listen(port, '0.0.0.0', () => {
+        console.log(`MASTER CORE (0): Server and Bot connected on port ${port}`);
+    });
+} else {
+    // This block runs on Cores 1, 2, and 3
+    // We don't call server.listen here to avoid "Port in Use" or "Telegram Conflict" errors
+    console.log(`WORKER CORE (${process.env.NODE_APP_INSTANCE}): Handling game logic and DB.`);
+}
