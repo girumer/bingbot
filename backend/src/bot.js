@@ -22,10 +22,27 @@ mongoose.connect(process.env.DATABASE_URL, {
 // ----------------------
 // Create bot
 // ----------------------
-const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
+// ----------------------
+// Create bot (CLEAN VERSION)
+// ----------------------
+let bot;
+
+// ONLY the first core (0) handles the polling connection
+if (!process.env.NODE_APP_INSTANCE || process.env.NODE_APP_INSTANCE === '0') {
+    bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
+    console.log("MASTER CORE (0): Telegram bot is running with polling...");
+} 
+else {
+    // Other cores create the bot WITHOUT polling
+    bot = new TelegramBot(process.env.BOT_TOKEN, { polling: false });
+    console.log(`WORKER CORE (${process.env.NODE_APP_INSTANCE}): Logic worker active (no polling).`);
+}
+
+// Admin bot and IDs (these don't use polling, so they are fine on all cores)
+
 const adminBot = new TelegramBot(process.env.ADMIN_BOT_TOKEN); 
 const ADMIN_ID = process.env.ADMIN_CHAT_ID;
-console.log("Telegram bot is running...");
+
 
 
 // ----------------------
