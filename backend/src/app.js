@@ -508,10 +508,9 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
         return;
       }
         
-      user.Wallet -= stake;
-      
-      await user.save();
 
+
+await BingoBord.updateOne( { telegramId: user.telegramId, Wallet: { $gte: stake } }, { $inc: { Wallet: -stake } } );
       userCartelas.push(cartelaIndex);
       rooms[rId].selectedIndexes.push(cartelaIndex);
 
@@ -809,23 +808,52 @@ function findWinningPattern(cartelaData, calledNumbers) {
     return innerCorners;
   return null;
 }
-
-async function saveGameHistory(username, roomId, stake, outcome,  gameId ) {
+async function saveGameHistory(username, roomId, stake, outcome, maybeGameId) {
   try {
-    const user = await BingoBord.findOne({ username });
-    if (!user) return;
-    user.gameHistory.push({
-      roomId: Number(roomId),
-      stake: Number(stake),
-      outcome,
-      timestamp: new Date(),
-      gameId,
-    });
-    await user.save();
+    // Prefer the room's gameId; fallback to a unique one
+    const room = rooms[String(roomId)];
+    const gameId =
+      maybeGameId ??
+      (room && room.gameId) ??
+      (Date.now() + Math.floor(Math.random() * 1000));
+
+    await BingoBord.updateOne(
+      { username },
+      {
+        $push: {
+          gameHistory: {
+            roomId: Number(roomId),
+            stake: Number(stake),
+            outcome,
+            timestamp: new Date(),
+            gameId,
+          }
+        }
+      }
+    );
+    // If you want automatic trimming to latest N entries:
+    // await BingoBord.updateOne(
+    //   { username },
+    //   {
+    //     $push: {
+    //       gameHistory: {
+    //         $each: [{
+    //           roomId: Number(roomId),
+    //           stake: Number(stake),
+    //           outcome,
+    //           timestamp: new Date(),
+    //           gameId,
+    //         }],
+    //         $slice: -100
+    //       }
+    //     }
+    //   }
+    // );
   } catch (err) {
     console.error("Failed to save game history:", err);
   }
 }
+
 
 
 async function checkWinners(roomId, calledNumber) {
@@ -835,103 +863,55 @@ async function checkWinners(roomId, calledNumber) {
   const winners = [];
   const stakeAmount = Number(roomId);
 
-  for (const clientId in room.playerCartelas) {
-    const cartelas = room.playerCartelas[clientId];
-    if (!cartelas || cartelas.length === 0) continue;
+  try {
+    for (const clientId in room.playerCartelas) {
+      const cartelas = room.playerCartelas[clientId];
+      if (!cartelas || cartelas.length === 0) continue;
 
-    const username = room.players[clientId];
-    if (!username) continue;
+      const username = room.players[clientId];
+      if (!username) continue;
 
-    for (const cartelaIndex of cartelas) {
-      if (!cartela[cartelaIndex]) continue;
-      const key = clientId + "-" + cartelaIndex;
-      if (room.alreadyWon.includes(key)) continue;
+      for (const cartelaData of cartelas) {
+        if (!cartelaData || !cartelaData.cart) continue;
 
-      const pattern = findWinningPattern(cartela[cartelaIndex].cart, room.calledNumbers);
-      if (pattern) {
-        winners.push({ clientId, cartelaIndex, pattern, winnerName: username });
-        room.alreadyWon.push(key);
+        // Use cartelaData.id (or fallback to index) for uniqueness
+        const cartelaKey = clientId + "-" + (cartelaData.id || cartelaData.index || "unknown");
+
+        if (room.alreadyWon.includes(cartelaKey)) continue;
+
+        const pattern = findWinningPattern(cartelaData.cart, room.calledNumbers);
+        if (pattern) {
+          winners.push({ clientId, cartelaKey, pattern, winnerName: username });
+          room.alreadyWon.push(cartelaKey);
+
+          // Save game history safely
+          await saveGameHistory(username, roomId, stakeAmount, "win", room.gameId);
+        }
       }
     }
-  }
 
-  if (winners.length > 0) {
-    if (room.numberInterval) {
-      clearInterval(room.numberInterval);
-      room.numberInterval = null;
-    }
-
-    const awardPerWinner = Math.floor(room.totalAward / winners.length);
-    const winnerUsernames = new Set();
-
-    // ✅ Emit winners immediately
-    io.to(roomId).emit("winningPattern", winners);
- setTimeout(() => {
-      if (rooms[roomId]) {
-        resetRoom(roomId);
+    if (winners.length > 0) {
+      // Stop number generator once winners are found
+      if (room.numberInterval) {
+        clearInterval(room.numberInterval);
+        room.numberInterval = null;
       }
-    }, 6000);
-   // io.to(roomId).emit("roomAvailable");
-//io.to(roomId).emit("resetRoom");
-    // ✅ Update winners in parallel
-   (async () => {
-  // Update winners
-  await Promise.all(winners.map(async (winner) => {
-    const user = await BingoBord.findOne({ username: winner.winnerName });
-    if (user) {
-      user.Wallet += awardPerWinner;
-      user.coins += 1;
-      await user.save();
 
-      // ✅ Faster history save using $push
-      await BingoBord.updateOne(
-        { username: winner.winnerName },
-        {
-          $push: {
-            gameHistory: {
-              roomId: Number(roomId),
-              stake: Number(awardPerWinner),
-              outcome: "win",
-              timestamp: new Date(),
-              gameId: room.gameId,
-            }
-          }
-        }
-      );
+      // Broadcast winners
+      io.to(roomId).emit("winnersDeclared", {
+        winners,
+        totalAward: room.totalAward,
+        gameId: room.gameId
+      });
 
-      winnerUsernames.add(winner.winnerName);
+      // Reset room after winners are declared
+      resetRoom(roomId);
     }
-  }));
-
-  // Update losers
-  await Promise.all(Object.entries(room.players).map(async ([clientId, username]) => {
-    if (!winnerUsernames.has(username)) {
-      // ✅ Direct history push without loading full user
-      await BingoBord.updateOne(
-        { username },
-        {
-          $push: {
-            gameHistory: {
-              roomId: Number(roomId),
-              stake: Number(stakeAmount),
-              outcome: "loss",
-              timestamp: new Date(),
-              gameId: room.gameId,
-            }
-          }
-        }
-      );
-    }
-  }));
-})();
-
-
+  } catch (err) {
+    console.error(`[WINNER ERROR] Room ${roomId}:`, err);
   }
-   
-
-    // ✅ Delay backend reset only
-   
 }
+
 
  app.get('/', (req, res) => {
   res.json({ message: 'Hello, world! ass i know ' }); // Sends a JSON response

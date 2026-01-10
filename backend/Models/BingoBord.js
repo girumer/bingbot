@@ -15,7 +15,7 @@ mongoose.connect(process.env.DATABASE_URL, {
 // Main BingoBord schema
 const BingoBordSchema = new mongoose.Schema({
   telegramId: {
-    type: Number,   // or String, both work, I suggest Number since Telegram IDs are numbers
+   type: String,   // or String, both work, I suggest Number since Telegram IDs are numbers
     
     unique: true
   },
@@ -56,7 +56,7 @@ const BingoBordSchema = new mongoose.Schema({
     }
   ],
  referredBy: {
-    type: Number, // <-- CORRECTED: Must be a Number to match Telegram IDs
+    type: String, // <-- CORRECTED: Must be a Number to match Telegram IDs
     default: null,
   },
 referralBonusPaid: {
