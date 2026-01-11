@@ -610,345 +610,111 @@ bot.on("contact", async (msg) => {
 // Handle Menu Buttons
 // ----------------------
 bot.on('callback_query', async (callbackQuery) => {
-  const chatId = callbackQuery.message.chat.id;
-  const data = callbackQuery.data;
+    const chatId = callbackQuery.message.chat.id;
+    const data = callbackQuery.data;
 
-  const answerQuery = (text, showAlert) => bot.answerCallbackQuery(callbackQuery.id, { text: text, show_alert: showAlert });
-  const user = await BingoBord.findOne({ telegramId: chatId });
-  if (!user) {
-    bot.sendMessage(chatId, "You are not registered. Use /start to register.");
-    return;
-  }
+    // FIX 1: Add .catch() to answerQuery to prevent "query ID not found" crashes
+    const answerQuery = (text, showAlert) => 
+        bot.answerCallbackQuery(callbackQuery.id, { text: text, show_alert: showAlert })
+           .catch(err => console.error("Callback Answer Error:", err.message));
 
-  switch (data) {
-    case "balance":
-      bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} Birr`);
-      break;
-
-    case "history":
-      if (!user.gameHistory || user.gameHistory.length === 0) {
-        bot.sendMessage(chatId, "You have no game history yet.");
-        return;
-      }
-      let historyText = "📜 Your game history:\n";
-      user.gameHistory.forEach((g, i) => {
-        historyText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, gameid:${g.gameId},Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
-      });
-      bot.sendMessage(chatId, historyText);
-      break;
-
-    case "play":
-      bot.sendMessage(chatId, "Select a room to play:", {
-        reply_markup: {
+    // FIX 2: Wrap everything in a try/catch
+    try {
+        const user = await BingoBord.findOne({ telegramId: chatId });
         
-        inline_keyboard: [
-  [
-    { text: "Room 5 (Stake 5)", callback_data: "room_5" },
-    { text: "Room 10 (Stake 10)", callback_data: "room_10" },]
-]
-
-        }
-      });
-      break;
- case "spin_game":
-  // ✅ Acknowledge the button click
-  bot.sendMessage(chatId, "Select your bet amount for Spin & Win:", {
-    reply_markup: {
-   inline_keyboard: [
-  [
-    { text: "Spin 5 ETB", callback_data: "spin_5" },
-  ]
-]
-
-    }
-  });
-  break;
-    case "gameHistory":
-      if (!user.gameHistory || user.gameHistory.length === 0) {
-        bot.sendMessage(chatId, "🎮 You have no game history yet.");
-        return;
-      }
-
-      let gameText = "🎮 Last 10 Games:\n";
-      user.gameHistory
-        .slice(-10) // last 10 only
-        .reverse() // newest first
-        .forEach((g, i) => {
-          gameText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, gameid:${g.gameId},Date: ${g.timestamp?.toLocaleString() || "N/A"}\n`;
-        });
-
-      bot.sendMessage(chatId, gameText);
-      break;
-      
-
-    case "deposit":
-      bot.sendMessage(chatId, "💵 How much money do you want to deposit?");
-      userStates[chatId] = { step: "depositAmount" };
-      break;
-
-   case "deposit_telebirr":
-case "deposit_cbebirr":
-    const depositMethod = data.split("_")[1];
-    const amountDep = userStates[chatId]?.amount || "N/A";
-
-    let instructionsMsg = "";
-if (depositMethod === "telebirr") {
-  instructionsMsg = `
-📲 ማኑዋል ዲፖዚት መመሪያ ቴሌብር
-Account: \`${process.env.TELEBIRR_ACCOUNT}\`
-ዲፖዚት መጠን: ${amountDep} ብር
-
-1\\. ከላይ ባለው ቁጥር TeleBirr በመጠቀም  ${amountDep} ብር ያስገቡ
-2\\. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልክት\\(sms\\) ከ TeleBirr ይደርሳችኋል
-3\\. የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) የደረሳችሁን ትራንዛክሸን ቁጥር  ብቻ ኮፒ አርጋችሁ ወደዚህ ቦት ላኩ\\(copy\\) በማረግ ወደዚህ ቦት ይላኩ
-⚠️ አስፈላጊ ማሳሰቢያ:
-•1\\. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) ሙሉዉን መላክ ያረጋግጡ
-•2\\. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
-•     ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
-•     ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ
-ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ ለእገዛ በሚከተለው ቴሌግራም ግሩፓቸን ቪደዮ [እዚህ ይጫኑ](${process.env.SUPPORT_GROUP})ይመለከቱ`;
-} else if (depositMethod === "cbebirr") {
-  instructionsMsg = `
-🏦 ማኑዋል ዲፖዚት መመሪያ
-Account: \`${process.env.CBE_ACCOUNT}\`
-ዲፖዚት መጠን: ${amountDep} ብር
-
-1\\. ከላይ ባለው ቁጥር ሲቢኢ  በመጠቀም  ${amountDep}ብር ያስገቡ
-2\\. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልክት\\(sms\\) ከ TeleBirr ይደርሳችኋል
-3\\. የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) የደረሳችሁን ትራንዛክሸን ቁጥር  ብቻ ኮፒ አርጋችሁ ወደዚህ ቦት ላኩ\\(copy\\) በማረግ ወደዚህ ቦት ይላኩ
-⚠️ አስፈላጊ ማሳሰቢያ:
-•1\\. ከcbebirr የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) ሙሉዉን መላክ ያረጋግጡ
-•2\\. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው
-•     ከቴሌብር ወደ ኤጀንት ቴሌብር ብቻ
-•     ከሲቢኢ ብር ወደ ኤጀንት ሲቢኢ ብር ብቻ ለእገዛ በሚከተለው ቴሌግራም ግሩፓቸን ቪደዮ[እዚህ ይጫኑ](${process.env.SUPPORT_GROUP}) ይመለከቱ`;
-}
-// ...
-    
-    // ✅ Keep only this single bot.sendMessage call.
-    bot.sendMessage(chatId, instructionsMsg, {
-        parse_mode: 'MarkdownV2'
-    });
-    
-    userStates[chatId].depositMethod = depositMethod;
-    userStates[chatId].step = "depositMessage"; 
-    break;
-  
-  case "withdraw":
-    bot.sendMessage(chatId, "Choose your withdrawal method:", {
-      reply_markup: {
-       inline_keyboard: [
-  [
-    { text: "📲 Telebirr", callback_data: "withdraw_telebirr" },
-    { text: "🏦 CBE Birr", callback_data: "withdraw_cbebirr" }
-  ]
-]
-
-      }
-    });
-    break;
-     case "withdraw_telebirr":
-  case "withdraw_cbebirr":
-    const method = data.split("_")[1]; // telebirr / cbebirr
-    userStates[chatId] = { step: "withdrawAmount", method };
-    bot.sendMessage(chatId, `Enter the amount you want to withdraw via ${method.toUpperCase()}:`);
-    break;
-      case "transfer_coins_to_wallet":
-      // 'user' is the pre-fetched BingoBord document for the user
-      const coinsToTransfer = user.coins || 0;
-      const minTransfer = 0.01; // Minimum coin amount to initiate transfer
-
-      if (coinsToTransfer < minTransfer) {
-        // answerQuery is a helper to respond to the Telegram callback
-        answerQuery(`❌ You need at least ${minTransfer} coins to transfer.`, true);
-        return;
-      }
-      
-      // Use the actual coins to transfer (rounded to 2 decimal places)
-      const roundedCoins = parseFloat(formatBalance(coinsToTransfer)); 
-
-      try {
-        answerQuery("Processing coin transfer...", false);
-
-        // ATOMIC OPERATION: Check the coin balance is sufficient AND execute the update
-        const updatedUser = await BingoBord.findOneAndUpdate(
-          { telegramId: chatId, coins: { $gte: roundedCoins } }, // Atomic check and target
-          {
-            $inc: { Wallet: roundedCoins, coins: -roundedCoins } // Add to Wallet, Subtract from coins
-          },
-          { new: true } // Return the updated document
-        );
-        
-        if (!updatedUser) {
-          // Failed because the coin balance check in the query failed (race condition or insufficient funds)
-          answerQuery("❌ Transfer failed. Your coin balance might have changed or you have insufficient coins.", true);
-          return;
+        if (!user) {
+            return bot.sendMessage(chatId, "You are not registered. Use /start to register.");
         }
 
-        // Get fresh balances from the updated document
-        const newWalletBalance = updatedUser.Wallet;
-        const newCoinBalance = updatedUser.coins; 
-        
-        // Send success message
-        bot.sendMessage(chatId, 
-          `🎉 Success! **${formatBalance(roundedCoins)} Coins** converted to Wallet.
-          
-New balances:
-💰 Wallet: **${formatBalance(newWalletBalance)} Birr**
-🪙 Coins: **${formatBalance(newCoinBalance)} Coins**`, 
-          { parse_mode: 'Markdown' }
-        );
+        switch (data) {
+            case "balance":
+                // FIX 3: Use || 0 to prevent "undefined" display
+                bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet || 0} Birr`);
+                break;
 
-      } catch (error) {
-        console.error("Coin Transfer Error:", error);
-        answerQuery("❌ Transfer failed due to a database error.", true);
-      }
-      break;
-case "room_5":
-case "room_50":
-case "room_100":
-case "room_10":
-case "room_20":
-case "room_30":
-  const stake = parseInt(data.split("_")[1]);
-  if (user.Wallet < stake) {
-    bot.sendMessage(chatId, "⚠️ Not enough birr. Earn more to play.");
-    return;
-  }
+            case "history":
+            case "gameHistory":
+                if (!user.gameHistory || user.gameHistory.length === 0) {
+                    return bot.sendMessage(chatId, "You have no game history yet.");
+                }
+                let gameText = data === "gameHistory" ? "🎮 Last 10 Games:\n" : "📜 Your game history:\n";
+                user.gameHistory
+                    .slice(-10)
+                    .reverse()
+                    .forEach((g, i) => {
+                        gameText += `${i + 1}. Room: ${g.roomId}, Stake: ${g.stake}, Outcome: ${g.outcome}, gameid:${g.gameId || 'N/A'}\n`;
+                    });
+                bot.sendMessage(chatId, gameText);
+                break;
 
-  
-  await user.save();
+            case "transfer_coins_to_wallet":
+                const coinsToTransfer = user.coins || 0;
+                const minTransfer = 0.01;
 
-  const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;
-  
-  // ✅ Corrected Markdown: Added a closing *
-  bot.sendMessage(chatId, `🎮 *play ${stake} ETB*`, {
-    parse_mode: "Markdown",
-    reply_markup: {
-      inline_keyboard: [
-        [{
-          text: "🚀 PLAY NOW", 
-          web_app: { url: webAppUrl }
-        }]
-      ]
-    }
-  });
-  break;
- case "spin_5":
+                if (coinsToTransfer < minTransfer) {
+                    return answerQuery(`❌ You need at least ${minTransfer} coins to transfer.`, true);
+                }
 
-  bot.answerCallbackQuery(callbackQuery.id); // ✅ Acknowledge the button click
+                const roundedCoins = parseFloat(formatBalance(coinsToTransfer)); 
 
-  const spinStake = Number(data.split("_")[1]);
-  
-  // REMOVE THIS DUPLICATE LINE: const user = await BingoBord.findOne({ telegramId: chatId });
-  // User is already fetched at the beginning of the callback handler
+                // This try/catch inside the case is good for specific database errors
+                try {
+                    await answerQuery("Processing coin transfer...", false);
 
-  if (!user) {
-    bot.sendMessage(chatId, "❌ You are not registered. Use /start to begin.");
-    return;
-  }
+                    const updatedUser = await BingoBord.findOneAndUpdate(
+                        { telegramId: chatId, coins: { $gte: roundedCoins } },
+                        { $inc: { Wallet: roundedCoins, coins: -roundedCoins } },
+                        { new: true }
+                    );
+                    
+                    if (!updatedUser) {
+                        return bot.sendMessage(chatId, "❌ Transfer failed. Insufficient coins.");
+                    }
 
-  if (user.Wallet < spinStake) {
-    bot.sendMessage(chatId, `❌ You don't have enough balance. Your wallet: ${user.Wallet} ETB`);
-    return;
-  }
+                    bot.sendMessage(chatId, 
+                        `🎉 Success! **${formatBalance(roundedCoins)} Coins** converted.\n\n💰 Wallet: **${formatBalance(updatedUser.Wallet)} Birr**\n🪙 Coins: **${formatBalance(updatedUser.coins)} Coins**`, 
+                        { parse_mode: 'Markdown' }
+                    );
+                } catch (innerError) {
+                    console.error("Coin Transfer Error:", innerError);
+                    bot.sendMessage(chatId, "❌ Database error during transfer.");
+                }
+                break;
 
-  const spinnerUrl = `${process.env.FRONTEND_URL}/SpinnerSelection?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&stake=${spinStake}`;
+            case "room_5":
+            case "room_10":
+                const stake = parseInt(data.split("_")[1]);
+                if ((user.Wallet || 0) < stake) {
+                    return bot.sendMessage(chatId, "⚠️ Not enough birr. Earn more to play.");
+                }
+                const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;
+                bot.sendMessage(chatId, `🎮 *play ${stake} ETB*`, {
+                    parse_mode: "Markdown",
+                    reply_markup: {
+                        inline_keyboard: [[{ text: "🚀 PLAY NOW", web_app: { url: webAppUrl } }]]
+                    }
+                });
+                break;
 
-  bot.sendMessage(chatId, `🎯 Ready to spin for ${spinStake} ETB! Click below to continue:`, {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "🎰 Launch Spinner", web_app: { url: spinnerUrl } }]
-      ]
-    }
-  });
-  break;
+            case "referral":
+                const botInfo = await bot.getMe();
+                const referralLink = `https://t.me/${botInfo.username}?start=${chatId}`;
+                const botProfilePictureId = 'AgACAgQAAxkBAAIK7mjE1Y1VX0ivUkBQGwJsXW08-92LAAKm0DEb55coUv1XJCHTpYurAQADAgADeAADNgQ'; 
+                
+                bot.sendPhoto(chatId, botProfilePictureId, {
+                    caption: `*Invite Link:*\n${referralLink}`,
+                    parse_mode: 'Markdown'
+                }).catch(err => bot.sendMessage(chatId, `🔗 Invite Link: ${referralLink}`));
+                break;
 
-    // Alternative: If you want to automatically open the web app without a button
-  // Note: This requires the user to have interacted with the bot first
-  // bot.sendMessage(chatId, `✅ You joined Room ${stake}! ${stake} coins deducted.`, {
-  //   reply_markup: {
-  //     inline_keyboard: [
-  //       [{ text: "Continue", web_app: { url: webAppUrl } }]
-  //     ]
-  //   }
-  // });
-  
-case "transactions":
-try {
- // Fetch last 10 transactions for the user's phone number
- const transactions = await Transaction.find({ phoneNumber: user.phoneNumber })
- .sort({ createdAt: -1 }) // newest first
- .limit(10);
-
- if (!transactions || transactions.length === 0) {
- bot.sendMessage(chatId, "You have no transaction history yet.");
- return;
- }
-
- let historyText = "📜 Your last 10 transactions:\n";
- transactions.forEach((t, i) => {
- // Corrected line below: t.method and t.type are the correct keys
- historyText += `${i + 1}. Type: ${t.method.toUpperCase()}, via: ${t.type.toUpperCase()}, Amount: ${t.amount} ብር, Date: ${t.createdAt.toLocaleString()}\n`;
- });
-
- bot.sendMessage(chatId, historyText);
- } catch (err) {
- console.error(err);
- bot.sendMessage(chatId, "❌ Failed to fetch transaction history.");
- }
- break;
-case "referral":
-    // Get the bot's username dynamically from the API.
-    const botInfo = await bot.getMe();
-    const botUsername = botInfo.username;
-    
-    // Use the bot's username and the correct user ID from the callbackQuery.
-    const referralLink = `https://t.me/${botUsername}?start=${callbackQuery.from.id}`;
-    
-    // This is the file_id you found.
-    const botProfilePictureId = 'AgACAgQAAxkBAAIK7mjE1Y1VX0ivUkBQGwJsXW08-92LAAKm0DEb55coUv1XJCHTpYurAQADAgADeAADNgQ'; 
-    
-    // Use the [Text](URL) format to create a clickable link
-    const captionText = `
-*Here is your personal referral link!*
-    
-ከታች ያለውን ሊንክ ለወዳጆቾ በመጋበዝ የጋበዟቸው ደንበኞች ከሚያስቀምጡት ዲፖዛት የማያቋርጥ የ10% ባለድርሻ ይሁኑ.
-    
-🔗 [Click Here to Invite](${referralLink})
-    
-እየተዝናን አብረን  እንስራ
-`;
-    
-    bot.sendPhoto(
-        chatId,
-        botProfilePictureId, 
-        {
-            caption: captionText,
-            parse_mode: 'Markdown'
+            // ... include other cases here (top, transactions, etc.)
+            
+            default:
+                bot.sendMessage(chatId, "Unknown action occurred.");
         }
-    );
-    break;
- case "top":
-        const topUsersUrl = `${process.env.FRONTEND_URL}/TopUsers`;
-        
-        bot.sendMessage(chatId, `🏆 *View the Leaders Board!*`, {
-            parse_mode: "Markdown",
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: "📊 View Leaderboard",
-                        web_app: { url: topUsersUrl }
-                    }]
-                ]
-            }
-        });
-        break;
-    
-    default:
-      bot.sendMessage(chatId, "Unknown action occured.");
-  }
-
-// TEMPORARY CODE TO GET PHOTO FILE_ID
-
+    } catch (globalError) {
+        console.error("CRITICAL ERROR IN CALLBACK:", globalError);
+        // This ensures the bot stays alive even if something totally unexpected happens
+    }
 });
 module.exports = bot;
