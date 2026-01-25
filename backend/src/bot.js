@@ -8,6 +8,40 @@ const axios = require('axios');
 // ----------------------
 // Connect to MongoDB
 // ----------------------
+// Global error handling
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('⚠️ Unhandled Rejection at:', promise, 'reason:', reason);
+  // Optionally notify admin
+ // adminBot.sendMessage(ADMIN_ID, `⚠️ Unhandled Rejection:\n${reason}`);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('💥 Uncaught Exception:', err);
+  // Optionally notify admin
+  //adminBot.sendMessage(ADMIN_ID, `💥 Uncaught Exception:\n${err.message}`);
+});
+
+
+async function generateUniqueUsername(baseName, maxRetries = 5) {
+  let attempt = 0;
+  let username;
+
+  while (attempt < maxRetries) {
+    username =
+      attempt === 0
+        ? baseName
+        : `${baseName}_${Math.floor(1000 + Math.random() * 9000)}`;
+
+    // Use findOne instead of exists for better compatibility
+    const existingUser = await BingoBord.findOne({ username });
+    if (!existingUser) return username;
+
+    attempt++;
+  }
+
+  return `${baseName}_${Date.now()}`;
+}
+
 const formatBalance = (amount) => {
     // Added || 0 fallback to prevent issues if 'amount' is null, undefined, or empty string
     return parseFloat(amount || 0).toFixed(2);
@@ -43,8 +77,26 @@ else {
 const adminBot = new TelegramBot(process.env.ADMIN_BOT_TOKEN); 
 const ADMIN_ID = process.env.ADMIN_CHAT_ID;
 
-
-
+async function ensureUser(chatId) { 
+  try {
+    const user = await BingoBord.findOne({ telegramId: chatId }); 
+    if (!user) { 
+      // Try to send a message, but if it fails, just log and return null.
+      try {
+        await bot.sendMessage(chatId, "❌ You are not registered. Please use /start to register."); 
+      } catch (sendError) {
+        console.error("Failed to send registration message:", sendError);
+        // In worker cores, you might want to use adminBot to notify the admin
+        // But for now, just log.
+      }
+      return null; 
+    } 
+    return user; 
+  } catch (error) {
+    console.error("Error in ensureUser:", error);
+    return null;
+  }
+}
 // ----------------------
 // Main Menu
 // ----------------------
@@ -117,11 +169,12 @@ bot.onText(/\/(balance|play|deposit|history|help|withdraw|coins)/, async (msg, m
     const cmd = match[1]; // the command without '/'
   
     // Fetch the user
-    const user = await BingoBord.findOne({ telegramId: chatId });
-  
+     const user = await ensureUser(chatId);
+    if (!user) return; 
     // Call the same logic as your callback_query switch
     switch (cmd) {
       case "start":
+        
         bot.sendMessage(chatId, "🏠 Main Menu:", mainMenu);
         break;
       case "balance":
@@ -347,39 +400,52 @@ bot.on("message", async (msg) => {
   // Deposit Amount
  // ...
 // Deposit Amount
-  if (step === "waitingForNewUsername") {
-        const newUsername = text.trim();
-        delete userStates[chatId]; // Clear state immediately
+ if (step === "waitingForNewUsername") {
+  const inputUsername = text.trim();
+  delete userStates[chatId];
 
-        if (newUsername.includes(' ') || newUsername.length < 3) {
-            bot.sendMessage(chatId, "Invalid username. Usernames must be a single word and at least 3 characters long. Please try again with /changeusername.");
-            return;
-        }
+  if (inputUsername.includes(" ") || inputUsername.length < 3) {
+    bot.sendMessage(
+      chatId,
+      "❌ Username must be a single word and at least 3 characters. Use /changeusername again."
+    );
+    return;
+  }
 
-        try {
-            const user = await BingoBord.findOne({ telegramId: chatId });
-            if (!user) {
-                bot.sendMessage(chatId, "User not found. Please start with /start.");
-                return;
-            }
-
-            const existingUser = await BingoBord.findOne({ username: newUsername });
-            if (existingUser) {
-                bot.sendMessage(chatId, `The username "${newUsername}" is already taken. Please choose another one.`);
-                return;
-            }
-
-            user.username = newUsername;
-            await user.save();
-
-            bot.sendMessage(chatId, `✅ Your username has been successfully changed to **${newUsername}**!`, { parse_mode: 'Markdown' });
-
-        } catch (error) {
-            console.error("Error changing username:", error);
-            bot.sendMessage(chatId, "An error occurred while changing your username. Please try again later.");
-        }
-        return;
+  try {
+    const user = await BingoBord.findOne({ telegramId: chatId });
+    if (!user) {
+      bot.sendMessage(chatId, "User not found. Please /start again.");
+      return;
     }
+
+    const baseName = inputUsername.toLowerCase();
+    const finalUsername = await generateUniqueUsername(baseName);
+
+    user.username = finalUsername;
+    await user.save();
+
+    if (finalUsername !== inputUsername) {
+      bot.sendMessage(
+        chatId,
+        `⚠️ Username was taken.\nYour new username is **${finalUsername}**`,
+        { parse_mode: "Markdown" }
+      );
+    } else {
+      bot.sendMessage(
+        chatId,
+        `✅ Username successfully changed to **${finalUsername}**`,
+        { parse_mode: "Markdown" }
+      );
+    }
+
+  } catch (err) {
+    console.error("Username change error:", err);
+    bot.sendMessage(chatId, "❌ Failed to change username. Try again later.");
+  }
+  return;
+}
+
     // NEW: Transfer Phone Number logic
     if (step === "waitingForRecipientPhone") {
         const recipientPhone = text.trim();
@@ -576,35 +642,46 @@ const txType = userStates[chatId].method;
 // Handle Contact
 // ----------------------
 bot.on("contact", async (msg) => {
-  const chatId = msg.chat.id;
-  const contact = msg.contact;
-  const state = userStates[chatId];
+  const chatId = msg.chat.id;
+  const contact = msg.contact;
+  const state = userStates[chatId];
 
-  if (state && state.step === "waitingForContact") {
-    let existingUser = await BingoBord.findOne({ telegramId: chatId });
-    if (existingUser) {
-      bot.sendMessage(chatId, "⚠️ This phone number is already registered.");
-      delete userStates[chatId];
-      return;
-    }
+  if (state && state.step === "waitingForContact") {
+    // Check if this telegramId is already registered
+    let existingUser = await BingoBord.findOne({ telegramId: chatId });
+    if (existingUser) {
+      bot.sendMessage(chatId, "⚠️ You are already registered!");
+      delete userStates[chatId];
+      return;
+    }
 
-    const username = contact.first_name + (contact.last_name ? " " + contact.last_name : "");
-    const newUser = new BingoBord({
-      telegramId: chatId,
-      username: username,
-      phoneNumber: contact.phone_number,
-      Wallet: 5,
-      gameHistory: [],
-      // NEW: Add the referrer's ID to the new user's document
-      referredBy: state.referrerId || null,
-      referralBonusPaid: false, // Explicitly set, though it's the default
-    });
+    // Check if the phone number is already registered by another user
+    existingUser = await BingoBord.findOne({ phoneNumber: contact.phone_number });
+    if (existingUser) {
+      bot.sendMessage(chatId, "⚠️ This phone number is already registered by another user.");
+      delete userStates[chatId];
+      return;
+    }
 
-    await newUser.save();
+    const rawName = contact.first_name + (contact.last_name ? contact.last_name : "");
+    const baseName = rawName.replace(/\s+/g, "").toLowerCase();
+    const uniqueUsername = await generateUniqueUsername(baseName);
 
-    delete userStates[chatId];
-    bot.sendMessage(chatId, "✅ Registration complete! 🎉", mainMenu);
-  }
+    const newUser = new BingoBord({
+      telegramId: chatId,
+      username: uniqueUsername,
+      phoneNumber: contact.phone_number,
+      Wallet: 5,
+      gameHistory: [],
+      referredBy: state.referrerId || null,
+      referralBonusPaid: false,
+    });
+
+    await newUser.save();
+
+    delete userStates[chatId];
+    bot.sendMessage(chatId, "✅ Registration complete! 🎉", mainMenu);
+  }
 });
 // ----------------------
 // Handle Menu Buttons
@@ -614,11 +691,8 @@ bot.on('callback_query', async (callbackQuery) => {
   const data = callbackQuery.data;
 
   const answerQuery = (text, showAlert) => bot.answerCallbackQuery(callbackQuery.id, { text: text, show_alert: showAlert });
-  const user = await BingoBord.findOne({ telegramId: chatId });
-  if (!user) {
-    bot.sendMessage(chatId, "You are not registered. Use /start to register.");
-    return;
-  }
+  const user = await ensureUser(chatId);
+   if (!user) return;
 
   switch (data) {
     case "balance":
