@@ -58,7 +58,8 @@ router.post("/withdraw", async (req, res) => {
 
     res.json({
       message: `Withdrawal successful with id ${withdrawalId}`,
-      wallet: user.Wallet
+      wallet: user.Wallet,
+      withdrawalId
     });
 
   } catch (err) {
