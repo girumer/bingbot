@@ -255,7 +255,7 @@ function startInjectionMonitor(rId, initiatorClientId) {
     
     const activeBots = forcedPlayersData.filter(player => player.clientId !== initiatorClientId);
     let currentBotIndex = 0;
-    const DELAY_MS = 2000; // 2 seconds
+    const DELAY_MS = 1000; // 2 seconds
 
     // Use a self-invoking, named async function for sequential processing
     const runInjectionCycle = async () => {
