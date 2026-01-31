@@ -287,7 +287,7 @@ function startInjectionMonitor(rId, initiatorClientId) {
         
         if (!room.timer && playersWithCartela >= 2) {
             console.log(`[INJECT TRIGGER] ${playersWithCartela} players now have cartelas. Starting 45s countdown.`);
-            startCountdown(rId, 45);
+            startCountdown(rId, 30);
         }
 
 

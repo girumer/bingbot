@@ -599,7 +599,8 @@ const withdrawalId = res.data.withdrawalId;
        🆔 **Withdrawal ID:** \`WD${withdrawalId}\`
       💵 **Amount:** \`${amount}\` Birr 🏛️ **Bank:** ${(userStates[chatId].method || 'N/A').toUpperCase()} 🕒 **Time:** ${new Date().toLocaleString()} ━━━━━━━━━━━━━━━━━━`;
      
-       await adminBot.sendMessage(ADMIN_ID, adminAlert, { parse_mode: 'Markdown' });
+      await adminBot.sendMessage(ADMIN_ID, adminAlert, { parse_mode: 'MarkdownV2' });
+
     } catch (err) {
       bot.sendMessage(chatId, err.response?.data?.message || "❌ Withdrawal failed.");
     }
