@@ -41,7 +41,15 @@ async function generateUniqueUsername(baseName, maxRetries = 5) {
 
   return `${baseName}_${Date.now()}`;
 }
-
+      function escapeHtml(text) {
+  return String(text).replace(/[&<>"]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    if (m === '"') return '&quot;';
+    return m;
+  });
+}
 const formatBalance = (amount) => {
     // Added || 0 fallback to prevent issues if 'amount' is null, undefined, or empty string
     return parseFloat(amount || 0).toFixed(2);
@@ -181,7 +189,7 @@ bot.onText(/\/(balance|play|deposit|history|help|withdraw|coins)/, async (msg, m
         bot.sendMessage(chatId, `💰 Your wallet balance: ${user.Wallet} ETB`);
         break;
         case "coins": // <--- NEW CASE
-       bot.sendMessage(chatId, `🪙 Your **Coin** balance: ${user.coins || 0} Coins`, { parse_mode: 'Markdown' });
+    bot.sendMessage(chatId, `🪙 Your <b>Coin</b> balance: ${user.coins || 0} Coins`, { parse_mode: 'HTML' });
         break;
       case "withdraw":
         bot.sendMessage(chatId, "Choose your withdrawal method:", {
@@ -301,7 +309,7 @@ bot.onText(/\/transferwallet/, async (msg) => {
 // ----------------------
 // Handle Commands (like /balance, /play, etc.)
 // ----------------------
-bot.onText(/\/(|balance|play|deposit|history|help|withdraw)/, async (msg, match) => {
+/* bot.onText(/\/(|balance|play|deposit|history|help|withdraw)/, async (msg, match) => {
   const chatId = msg.chat.id;
   const cmd = match[1]; // the command without '/'
 
@@ -381,7 +389,7 @@ bot.onText(/\/(|balance|play|deposit|history|help|withdraw)/, async (msg, match)
       userStates[chatId] = { step: "depositAmount" };
       break;
   }
-});
+}); */
 
 // ----------------------
 // Handle Text Messages
@@ -427,15 +435,15 @@ bot.on("message", async (msg) => {
 
     if (finalUsername !== inputUsername) {
       bot.sendMessage(
-        chatId,
-        `⚠️ Username was taken.\nYour new username is **${finalUsername}**`,
-        { parse_mode: "Markdown" }
-      );
+  chatId,
+  `⚠️ Username was taken.\nYour new username is <b>${finalUsername}</b>`,
+  { parse_mode: "HTML" }
+);
     } else {
       bot.sendMessage(
         chatId,
-        `✅ Username successfully changed to **${finalUsername}**`,
-        { parse_mode: "Markdown" }
+        `✅ Username successfully changed to <b>${finalUsername}</b>`,
+        { parse_mode: "HTML" }
       );
     }
 
@@ -458,7 +466,7 @@ bot.on("message", async (msg) => {
             }
             // Save recipient details to state and move to the next step
             userStates[chatId] = { step: "waitingForTransferAmount", recipientId: recipient.telegramId, recipientPhone: recipient.phoneNumber };
-            bot.sendMessage(chatId, `Found user: **${recipient.username}**. How much do you want to transfer?`, { parse_mode: 'Markdown' });
+        bot.sendMessage(chatId, `Found user: <b>${recipient.username}</b>. How much do you want to transfer?`, { parse_mode: 'HTML' });
         } catch (error) {
             console.error("Error finding recipient:", error);
             bot.sendMessage(chatId, "An error occurred. Please try again later.");
@@ -500,8 +508,8 @@ bot.on("message", async (msg) => {
             
             await Promise.all([sender.save(), recipient.save()]);
 
-            bot.sendMessage(chatId, `✅ Successfully transferred **${amount}** birr to **${recipient.username}**! Your new balance is ${sender.Wallet} Birr.`, { parse_mode: 'Markdown' });
-            bot.sendMessage(recipientId, `🎉 You have received **${amount}** birr from **${sender.username}**! Your new balance is ${recipient.Wallet} Birr.`, { parse_mode: 'Markdown' });
+           bot.sendMessage(chatId, `✅ Successfully transferred <b>${amount}</b> birr to <b>${recipient.username}</b>! Your new balance is ${sender.Wallet} Birr.`, { parse_mode: 'HTML' });
+bot.sendMessage(recipientId, `🎉 You have received <b>${amount}</b> birr from <b>${sender.username}</b>! Your new balance is ${recipient.Wallet} Birr.`, { parse_mode: 'HTML' });
         } catch (error) {
             console.error("Error performing transfer:", error);
             bot.sendMessage(chatId, "An error occurred during the transfer. Please try again later.");
@@ -591,16 +599,19 @@ const txType = userStates[chatId].method;
         type: userStates[chatId].method
      
       });
+
 const withdrawalId = res.data.withdrawalId;
       bot.sendMessage(chatId, res.data.message || "✅ Withdrawal successful!");
-      const adminAlert = ` 🏦 **WITHDRAWAL ALERT** 🏦 ━━━━━━━━━━━━━━━━━━ 
-      👤 **User:** ${user.username} 
-      📱 **Phone:** \`${user.phoneNumber}\`
-       🆔 **Withdrawal ID:** \`WD${withdrawalId}\`
-      💵 **Amount:** \`${amount}\` Birr 🏛️ **Bank:** ${(userStates[chatId].method || 'N/A').toUpperCase()} 🕒 **Time:** ${new Date().toLocaleString()} ━━━━━━━━━━━━━━━━━━`;
+    const adminAlert = ` 🏦 <b>WITHDRAWAL ALERT</b> 🏦 ━━━━━━━━━━━━━━━━━━ 
+👤 <b>User:</b> ${escapeHtml(user.username)} 
+📱 <b>Phone:</b> <code>${escapeHtml(user.phoneNumber)}</code>
+🆔 <b>Withdrawal ID:</b> <code>WD${escapeHtml(withdrawalId)}</code>
+💵 <b>Amount:</b> <code>${escapeHtml(amount)}</code> Birr 
+🏛️ <b>Bank:</b> ${escapeHtml((userStates[chatId].method || 'N/A').toUpperCase())} 
+🕒 <b>Time:</b> ${new Date().toLocaleString()}
+━━━━━━━━━━━━━━━━━━`;
      
-      await adminBot.sendMessage(ADMIN_ID, adminAlert, { parse_mode: 'MarkdownV2' });
-
+     await adminBot.sendMessage(ADMIN_ID, adminAlert, { parse_mode: 'HTML' });
     } catch (err) {
       bot.sendMessage(chatId, err.response?.data?.message || "❌ Withdrawal failed.");
     }
@@ -766,6 +777,10 @@ bot.on('callback_query', async (callbackQuery) => {
    case "deposit_telebirr":
 case "deposit_cbebirr":
     const depositMethod = data.split("_")[1];
+      if (!userStates[chatId]) {
+        bot.sendMessage(chatId, "Please start a deposit first by using /deposit.");
+        return;
+    }
     const amountDep = userStates[chatId]?.amount || "N/A";
 
     let instructionsMsg = "";
@@ -867,12 +882,12 @@ Account: \`${process.env.CBE_ACCOUNT}\`
         
         // Send success message
         bot.sendMessage(chatId, 
-          `🎉 Success! **${formatBalance(roundedCoins)} Coins** converted to Wallet.
+          `🎉 Success!  <b>${formatBalance(roundedCoins)} Coins</b> converted to Wallet.
           
 New balances:
-💰 Wallet: **${formatBalance(newWalletBalance)} Birr**
-🪙 Coins: **${formatBalance(newCoinBalance)} Coins**`, 
-          { parse_mode: 'Markdown' }
+💰 Wallet: <b>${formatBalance(newWalletBalance)} Birr</b>
+🪙 Coins: <b>${formatBalance(newCoinBalance)} Coins</b>`, 
+         { parse_mode: 'HTML' }
         );
 
       } catch (error) {
@@ -895,8 +910,8 @@ case "room_10":
   const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;
   
   // ✅ Corrected Markdown: Added a closing *
-  bot.sendMessage(chatId, `🎮 *play ${stake} ETB*`, {
-    parse_mode: "Markdown",
+  bot.sendMessage(chatId, `🎮 <i>play ${stake} ETB</i>`, {
+   parse_mode: "HTML",
     reply_markup: {
       inline_keyboard: [
         [{
@@ -983,30 +998,24 @@ case "referral":
     const botProfilePictureId = 'AgACAgQAAxkBAAIK7mjE1Y1VX0ivUkBQGwJsXW08-92LAAKm0DEb55coUv1XJCHTpYurAQADAgADeAADNgQ'; 
     
     // Use the [Text](URL) format to create a clickable link
-    const captionText = `
-*Here is your personal referral link!*
+const captionText = `
+<i>Here is your personal referral link!</i>
     
 ከታች ያለውን ሊንክ ለወዳጆቾ በመጋበዝ የጋበዟቸው ደንበኞች ከሚያስቀምጡት ዲፖዛት የማያቋርጥ የ10% ባለድርሻ ይሁኑ.
     
-🔗 [Click Here to Invite](${referralLink})
+🔗 <a href="${referralLink}">Click Here to Invite</a>
     
 እየተዝናን አብረን  እንስራ
 `;
+bot.sendPhoto(chatId, botProfilePictureId, { caption: captionText, parse_mode: 'HTML' });
     
-    bot.sendPhoto(
-        chatId,
-        botProfilePictureId, 
-        {
-            caption: captionText,
-            parse_mode: 'Markdown'
-        }
-    );
+    
     break;
  case "top":
         const topUsersUrl = `${process.env.FRONTEND_URL}/TopUsers`;
         
-        bot.sendMessage(chatId, `🏆 *View the Leaders Board!*`, {
-            parse_mode: "Markdown",
+        bot.sendMessage(chatId, `🏆 <i>View the Leaders Board!</i>`, {
+             parse_mode: "HTML",
             reply_markup: {
                 inline_keyboard: [
                     [{
