@@ -735,7 +735,7 @@ return (
               onClick={() => handleButtonClick(index)}
               className="cartela"
               style={{
-                background: isSelectedByOthers ? "#e73110dc" : isSelectedByMe ? "green" : "#f32626ed",
+                background: isSelectedByOthers ? "#f52622" : isSelectedByMe ? "green" : "#ead4bd94",
                 color: isSelectedByOthers || isSelectedByMe ? "white" : "black",
                 cursor: isSelectedByOthers || activeGame ? "not-allowed" : "pointer",
               }}
