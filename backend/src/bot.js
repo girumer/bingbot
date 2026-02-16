@@ -497,7 +497,7 @@ bot.on("message", async (msg) => {
                 return;
             }
               const depositTransactions = await Transaction.find({
-            phoneNumber: user.phoneNumber,
+            phoneNumber: sender.phoneNumber,
             method: 'deposit' // Make sure this matches your model field
         });
             const totalDeposits = depositTransactions.reduce((sum, tx) => sum + tx.amount, 0);
