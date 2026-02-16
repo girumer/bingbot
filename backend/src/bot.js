@@ -496,7 +496,12 @@ bot.on("message", async (msg) => {
                 bot.sendMessage(chatId, "User not found. Please try again.");
                 return;
             }
-            
+              const depositTransactions = await Transaction.find({
+            phoneNumber: user.phoneNumber,
+            method: 'deposit' // Make sure this matches your model field
+        });
+            const totalDeposits = depositTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+            if (totalDeposits < 50) { bot.sendMessage(chatId, `❌ You must deposit at least 50 Birr before transferring funds. Your total deposit so far is ${totalDeposits} Birr.`); return; }
             if (sender.Wallet < amount) {
                 bot.sendMessage(chatId, `❌ You have insufficient funds. Your current balance is ${sender.Wallet} ETB.`);
                 return;
