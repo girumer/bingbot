@@ -251,7 +251,7 @@ function startInjectionMonitor(rId, initiatorClientId) {
     // Clear the existing interval/timeout before starting a new one
     if (room.injectInterval) clearTimeout(room.injectInterval);
 
-    console.log(`[INJECT MONITOR] Starting 2s sequential cartela injection for room ${rId}.`);
+    //console.log(`[INJECT MONITOR] Starting 2s sequential cartela injection for room ${rId}.`);
     
     const activeBots = forcedPlayersData.filter(player => player.clientId !== initiatorClientId);
     let currentBotIndex = 0;
@@ -261,7 +261,7 @@ function startInjectionMonitor(rId, initiatorClientId) {
     const runInjectionCycle = async () => {
         // --- 1. Cleanup Check ---
         if (!rooms[rId] || rooms[rId].activeGame) {
-            console.log(`[INJECT MONITOR] Cleared monitor for room ${rId} (Game started or room closed).`);
+           // console.log(`[INJECT MONITOR] Cleared monitor for room ${rId} (Game started or room closed).`);
             room.injectInterval = null; // Mark as cleared
             return;
         }
@@ -286,7 +286,7 @@ function startInjectionMonitor(rId, initiatorClientId) {
         ).length;
         
         if (!room.timer && playersWithCartela >= 2) {
-            console.log(`[INJECT TRIGGER] ${playersWithCartela} players now have cartelas. Starting 45s countdown.`);
+          //  console.log(`[INJECT TRIGGER] ${playersWithCartela} players now have cartelas. Starting 45s countdown.`);
             startCountdown(rId, 30);
         }
 
@@ -353,14 +353,14 @@ function startInjectionMonitor(rId, initiatorClientId) {
                 // Select a random bot to be the "initiator"
                 const initiatorBot = forcedPlayersData[Math.floor(Math.random() * forcedPlayersData.length)];
                 
-                console.log(`[AUTO-START] Room ${rId} is idle. Forcing start via bot ${initiatorBot.username}.`);
+               // console.log(`[AUTO-START] Room ${rId} is idle. Forcing start via bot ${initiatorBot.username}.`);
                 
                 // Call the original injection function to force the room state to start the process.
                 // This will kick off the countdown when the first bot buys its ticket.
                 startInjectionMonitor(rId, initiatorBot.clientId);
             }
         }
-    }, 5000); // Check every 5 seconds (adjust as needed)
+    }, 3000); // Check every 5 seconds (adjust as needed)
 }
 
 // =========================================================================
@@ -449,7 +449,7 @@ socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
     if (!room || !room.activeGame || !room.playerCartelas[clientId] || room.playerCartelas[clientId].length === 0) {
         // Player is not in an active game or has no cartelas, so they should go to the selection page.
         socket.emit("playerStatus", { inGame: false });
-        console.log(`Player ${clientId} is not in an active game in room ${roomId}.`);
+        //console.log(`Player ${clientId} is not in an active game in room ${roomId}.`);
         return;
     }
 
@@ -670,7 +670,7 @@ function startNumberGenerator(roomId) {
   }
 
   // MOVED LOG: Now it shows the real random order in your PM2 logs
-  console.log(`[Room ${roomId}] REAL Shuffled numbers:`, numbers);
+ // console.log(`[Room ${roomId}] REAL Shuffled numbers:`, numbers);
   
   room.numberInterval = setInterval(() => {
     try {
