@@ -397,10 +397,20 @@ exports.depositAmount = async (req, res) => {
         if (!user) {
             return res.status(404).json({ error: "User not found. Please register or provide a valid phone number." });
         }
-        const BONUS_PERCENTAGE = 0.10; // 10%
+       /*   const BONUS_PERCENTAGE = 0.10; 
         const bonusAmount = finalAmount * BONUS_PERCENTAGE;
-        // Total amount credited = 100 + (100 * 0.10) = 110
-        const totalCreditedAmount = finalAmount + bonusAmount;
+      
+        const totalCreditedAmount = finalAmount + bonusAmount;  */
+        const BONUS_PERCENTAGE = 0.10; // 10%
+         let bonusAmount = 0;
+
+        if (finalAmount < 301) {
+          bonusAmount = finalAmount * BONUS_PERCENTAGE;
+             }
+
+const totalCreditedAmount = finalAmount + bonusAmount;
+
+
         // Step 4: Find the PENDING transaction using the provided transactionNumber.
         // This is where the core security check happens. It ensures a pending deposit exists for this transaction ID.
         const updatedTx = await Transaction.findOne({
