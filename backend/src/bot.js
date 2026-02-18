@@ -82,7 +82,7 @@ else {
 
 // Admin bot and IDs (these don't use polling, so they are fine on all cores)
 
-const adminBot = new TelegramBot(process.env.ADMIN_BOT_TOKEN); 
+const adminBot = new TelegramBot(process.env.ADMIN_BOT_TOKEN, { polling: false });
 const ADMIN_ID = process.env.ADMIN_CHAT_ID;
 
 async function ensureUser(chatId) { 
