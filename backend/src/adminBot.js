@@ -1,4 +1,4 @@
-require('dotenv').config();
+/* require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 const mongoose = require('mongoose'); // Needed to talk to your DB
@@ -77,4 +77,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("🚀 Bot is running and ready for withdrawals...");
+console.log("🚀 Bot is running and ready for withdrawals..."); */

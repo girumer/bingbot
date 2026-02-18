@@ -15,13 +15,27 @@ process.on('unhandledRejection', (reason, promise) => {
  // adminBot.sendMessage(ADMIN_ID, `⚠️ Unhandled Rejection:\n${reason}`);
 });
 
+
 process.on('uncaughtException', (err) => {
   console.error('💥 Uncaught Exception:', err);
   // Optionally notify admin
   //adminBot.sendMessage(ADMIN_ID, `💥 Uncaught Exception:\n${err.message}`);
 });
-
-
+// 1. Event loop lag monitor
+let lastCheck = Date.now();
+setInterval(() => {
+  const now = Date.now();
+  const lag = now - lastCheck - 1000;
+  if (lag > 300) {
+    console.error(`⚠️ Event loop lag detected: ${lag}ms`);
+  }
+  lastCheck = now;
+}, 1000);
+// 2. Memory usage monitor (every 5 minutes)
+setInterval(() => {
+  const mem = process.memoryUsage();
+  console.log(`[MEMORY] RSS=${Math.round(mem.rss/1024/1024)}MB, HeapUsed=${Math.round(mem.heapUsed/1024/1024)}MB`);
+}, 300000);
 async function generateUniqueUsername(baseName, maxRetries = 5) {
   let attempt = 0;
   let username;
@@ -82,7 +96,7 @@ else {
 
 // Admin bot and IDs (these don't use polling, so they are fine on all cores)
 
-const adminBot = new TelegramBot(process.env.ADMIN_BOT_TOKEN, { polling: false });
+const adminBot = new TelegramBot(process.env.ADMIN_BOT_TOKEN);
 const ADMIN_ID = process.env.ADMIN_CHAT_ID;
 
 async function ensureUser(chatId) { 
@@ -1040,4 +1054,3 @@ bot.sendPhoto(chatId, botProfilePictureId, { caption: captionText, parse_mode: '
 // TEMPORARY CODE TO GET PHOTO FILE_ID
 
 });
-module.exports = bot;

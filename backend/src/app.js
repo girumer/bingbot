@@ -174,7 +174,7 @@ async function processNextBotCartelaSequential(rId, player) {
     // 1. Check if bot is already fully injected
     const currentCartelas = room.playerCartelas[clientId]?.length || 0;
     if (currentCartelas >= NUM_CARTELAS_PER_PLAYER) {
-        return 'COMPLETE';
+        return 'COMPLETEds';
     }
 
     // --- CRITICAL FIX: Use try/catch over the entire async block ---
