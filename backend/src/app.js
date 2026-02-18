@@ -245,80 +245,63 @@ async function processNextBotCartelaSequential(rId, player) {
 function startInjectionMonitor(rId, initiatorClientId) {
     const room = rooms[rId];
     if (!room) return;
+    if (room.activeGame) return;
 
-    if (room.activeGame) return; 
-    
-    // Clear the existing interval/timeout before starting a new one
     if (room.injectInterval) clearTimeout(room.injectInterval);
 
-    //console.log(`[INJECT MONITOR] Starting 2s sequential cartela injection for room ${rId}.`);
-    
     const activeBots = forcedPlayersData.filter(player => player.clientId !== initiatorClientId);
     let currentBotIndex = 0;
-    const DELAY_MS = 1000; // 2 seconds
+    const DELAY_MS = 1000;
+    const MAX_CYCLES = activeBots.length * 2; // e.g., try each bot twice
+    let cycleCount = 0;
 
-    // Use a self-invoking, named async function for sequential processing
     const runInjectionCycle = async () => {
-        // --- 1. Cleanup Check ---
+        // Cleanup check
         if (!rooms[rId] || rooms[rId].activeGame) {
-           // console.log(`[INJECT MONITOR] Cleared monitor for room ${rId} (Game started or room closed).`);
-            room.injectInterval = null; // Mark as cleared
-            return;
-        }
-        
-        // --- 2. Completion Check (BOTS ONLY) ---
-        const maxBotCartelas = activeBots.length * NUM_CARTELAS_PER_PLAYER; 
-        const currentBotCartelas = activeBots.reduce((sum, bot) => {
-            return sum + (room.playerCartelas[bot.clientId]?.length || 0);
-        }, 0);
-
-        if (currentBotCartelas >= maxBotCartelas) { 
-            console.log(`[INJECT MONITOR] Cleared monitor for room ${rId} (All ${maxBotCartelas} bot cartelas selected).`);
             room.injectInterval = null;
             return;
         }
 
-        // --- 3. Start Countdown Check (No change here) ---
-        // ... (Your existing countdown check logic) ...
+        const maxBotCartelas = activeBots.length * NUM_CARTELAS_PER_PLAYER;
+        const currentBotCartelas = activeBots.reduce((sum, bot) => sum + (room.playerCartelas[bot.clientId]?.length || 0), 0);
 
-        const playersWithCartela = Object.values(room.playerCartelas).filter(
-            (arr) => arr.length > 0
-        ).length;
-        
+        // Stop if all bots succeeded OR max cycles reached
+        if (currentBotCartelas >= maxBotCartelas || cycleCount >= MAX_CYCLES) {
+            if (cycleCount >= MAX_CYCLES) {
+                console.log(`[INJECT MONITOR] Room ${rId} stopped after ${MAX_CYCLES} cycles. Some bots may have failed.`);
+            }
+            room.injectInterval = null;
+            // Optionally force-start countdown if enough players have cartelas
+            const playersWithCartela = Object.values(room.playerCartelas).filter(arr => arr.length > 0).length;
+            if (!room.timer && playersWithCartela >= 2) {
+                startCountdown(rId, 30);
+            }
+            return;
+        }
+
+        // Countdown check (same as before)
+        const playersWithCartela = Object.values(room.playerCartelas).filter(arr => arr.length > 0).length;
         if (!room.timer && playersWithCartela >= 2) {
-          //  console.log(`[INJECT TRIGGER] ${playersWithCartela} players now have cartelas. Starting 45s countdown.`);
             startCountdown(rId, 30);
         }
 
-
-        // --- 4. Sequential Injection Logic ---
+        // Inject next bot
         const botToInject = activeBots[currentBotIndex];
-        
         if (botToInject) {
             const botCartelaCount = room.playerCartelas[botToInject.clientId]?.length || 0;
-
             if (botCartelaCount < NUM_CARTELAS_PER_PLAYER) {
-                // 🚀 AWAIT HERE! Execution pauses until this is complete.
-                await processNextBotCartelaSequential(rId, botToInject); 
-                
-                // Always cycle to the next bot after processing attempt
-                currentBotIndex = (currentBotIndex + 1) % activeBots.length;
-            } else {
-                // This bot is full, skip them and check the next one immediately
-                currentBotIndex = (currentBotIndex + 1) % activeBots.length;
+                await processNextBotCartelaSequential(rId, botToInject);
             }
+            currentBotIndex = (currentBotIndex + 1) % activeBots.length;
         } else {
-            // Should not happen if activeBots is populated, but cycle safely
             currentBotIndex = (currentBotIndex + 1) % activeBots.length;
         }
 
-        // 5. Schedule the next run *after* the current task is complete
+        cycleCount++;
         room.injectInterval = setTimeout(runInjectionCycle, DELAY_MS);
     };
 
-    // Start the cycle
     room.injectInterval = setTimeout(runInjectionCycle, DELAY_MS);
-    // You should use clearTimeout(room.injectInterval) instead of clearInterval when stopping it.
 }
     function startRoomMonitor() {
     // Run this check every 5 seconds
@@ -1354,7 +1337,13 @@ app.post("/login", async (req, res) => {
   }
 });
 
-
+// Add this near the end of your file, after all handlers but before the listen block
+setInterval(() => {
+    const roomCount = Object.keys(rooms).length;
+    const activeInjections = Object.values(rooms).filter(r => r.injectInterval).length;
+    const totalCartelas = Object.values(rooms).reduce((sum, r) => sum + r.selectedIndexes.length, 0);
+    console.log(`[MONITOR] Rooms: ${roomCount}, Active injections: ${activeInjections}, Total cartelas: ${totalCartelas}`);
+}, 60000);
 
 app.post("/gameid",async(req,res)=>{
  

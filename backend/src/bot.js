@@ -529,7 +529,7 @@ if (step === "depositAmount") {
         return;
     }
     userStates[chatId].amount = amount;
-
+    
     // ✅ New Logic: Directly present the deposit method options
     bot.sendMessage(chatId, "Choose your deposit method:", {
         reply_markup: {
@@ -786,6 +786,7 @@ case "deposit_cbebirr":
         bot.sendMessage(chatId, "Please start a deposit first by using /deposit.");
         return;
     }
+    userStates[chatId].depositMethod = depositMethod;
     const amountDep = userStates[chatId]?.amount || "N/A";
 
     let instructionsMsg = "";
