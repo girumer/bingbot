@@ -1,6 +1,7 @@
 const BingoBord = require('../Models/BingoBord');
 const  Transaction=require('../Models/Transaction');
 const bcrypt = require('bcryptjs');
+const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const { secretkey } = require('../config/jwtconfig');
 //const bot = require("../src/bot");
@@ -128,21 +129,16 @@ exports.registerUser = async (req, res) => {
 };
 
 
- exports.broadcastToAllCustomers = async (req, res) => {
+exports.broadcastToAllCustomers = async (req, res) => {
     try {
-        // Assume BingoBord is a Mongoose model
         const allUsers = await BingoBord.find({}, 'telegramId');
-          const imageUrl= process.env.BROADCAST_IMAGE_URL;
-        // The text message to broadcast (using Markdown V2 format for bold/links)
-        // Ensure that process.env.SUPPORT_GROUP and process.env.SUPPORT_USERNAME are defined.
-        // NOTE: Telegram requires specific link formatting for Markdown V2 or HTML.
-        // If 'Markdown' fails, try 'HTML' or 'MarkdownV2'
+        const token = process.env.BOT_TOKEN; // main bot token
         const message = `🔥🔥🔥አደይ ቢንጎ❗❗❗ በአዲስ ነገር መጣ ❗❗❗ዲፖሲት ሲያረጉ ተጨማሪ 10% ቦንስ ብር 
                   🎡🎡🎡🎡🎡🎡የስፒን ጌም ጨዋታ ከ 1 ብር ጀምሮ🎡🎡🎡🎡🎡🎡
                         🏆🏆🏆🏆🏆ሲያሸንፉ🪙🪙🪙1 ኮየን ሽልማት ያን ኮይን ወደ 1 ብር መቀየር ይችላሉ
         🥇🥇🥇🥇🥇በሳምንት ሁለት ቀን ብዙ ኮይን ለሰበስቡ 5 አሸናፊዎች ልዩ ሽልማት
         በሪፍራል ሊነክ ሲያስመዝግቡ የሚያሰመዝገቡት ስው ከሚያስግባው ዲፖዚት የማያቋርጥ 10% ኮሚሽን 
-እስከ 4 ካርቴላ መምርጥ እንድሚችሉ ሳይዘነጋ
+እስከ 4 ካርቴላ መምርጥ �ንድሚችሉ ሳይዘነጋ
 ለዲፖዚት እና ዊዝድሮዋል መመርያ
 [እዚህ ይጫኑ](${process.env.SUPPORT_GROUP}) 
 ለበለጠ መረጃ ከታች ባለው ቻናላችን ያናግሩን በተጨማሪም
@@ -154,32 +150,31 @@ exports.registerUser = async (req, res) => {
         for (const user of allUsers) {
             if (user.telegramId) {
                 try {
-                    // CRITICAL FIX: Add parse_mode: 'Markdown' so links render correctly.
-                    await bot.sendMessage(user.telegramId, message, {
-                        parse_mode: 'Markdown' 
+                    await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
+                        chat_id: user.telegramId,
+                        text: message,
+                        parse_mode: 'Markdown'
                     });
                     successCount++;
                 } catch (error) {
-                    console.error(`Failed to send message to user ${user.telegramId}:`, error.message);
+                    console.error(`Failed to send to ${user.telegramId}:`, error.response?.data || error.message);
                     failCount++;
                 }
-                
-                // IMPORTANT: Add a small delay to avoid hitting Telegram's rate limits.
+                // Small delay to avoid hitting rate limits
                 await new Promise(resolve => setTimeout(resolve, 50));
             }
         }
 
-        console.log(`Broadcast completed. Messages sent to ${successCount} users, failed for ${failCount} users.`);
-
+        console.log(`Broadcast completed. Sent to ${successCount}, failed for ${failCount}.`);
         return res.status(200).json({
-            message: `Broadcast initiated. Messages sent to ${successCount} users, failed for ${failCount}.`
+            message: `Broadcast sent to ${successCount} users, failed for ${failCount}.`
         });
 
     } catch (err) {
         console.error("Broadcast failed:", err);
         return res.status(500).json({ error: "Failed to broadcast message." });
     }
-}; 
+};
 // Register user (admin can choose role)
 /* exports.broadcastToAllCustomers = async (req, res) => {
   try {
