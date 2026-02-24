@@ -441,7 +441,7 @@ const totalCreditedAmount = finalAmount + bonusAmount;
         if (user.referredBy ) {
             const referer = await BingoBord.findOne({ telegramId: user.referredBy });
             if (referer) {
-                const bonusAmount = finalAmount * 0.01;
+                const bonusAmount = finalAmount * 0;
                 referer.Wallet += bonusAmount;
                 await referer.save();
                 user.referralBonusPaid = true;
