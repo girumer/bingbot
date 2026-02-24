@@ -519,6 +519,10 @@ bot.on("message", async (msg) => {
                 bot.sendMessage(chatId, "User not found. Please try again.");
                 return;
             }
+             if (sender.phoneNumber === recipient.phoneNumber) {
+            bot.sendMessage(chatId, "❌ You cannot transfer money to yourself.");
+            return;
+        }
               const depositTransactions = await Transaction.find({
             phoneNumber: sender.phoneNumber,
             method: 'deposit' // Make sure this matches your model field
