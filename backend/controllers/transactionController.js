@@ -180,6 +180,11 @@ function parseCBEMessages(message) {
     }
 }; */
 exports.parseTransaction = async (req, res) => {
+     const secret = req.query.secret;
+    if (!secret || secret !== process.env.INTERNAL_API_SECRET) {
+        console.error('❌ Unauthorized attempt (invalid secret)');
+        return res.status(403).json({ error: 'Forbidden' });
+    }
     try {
         console.log('Received request body:', req.body);
         const { key: originalMessage } = req.body;

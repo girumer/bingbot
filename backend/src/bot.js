@@ -113,6 +113,15 @@ async function ensureUser(chatId) {
       }
       return null; 
     } 
+  console.log(`Checking block for user: ${user.phoneNumber}`);
+     const db = mongoose.connection.db;
+    const blocked = await db.collection('blockednumbers').findOne({ phoneNumber: user.phoneNumber });
+    if (blocked) {
+      try {
+        await bot.sendMessage(chatId, "⛔ Your account has been blocked due to suspicious activity. Contact support if you believe this is an error.");
+      } catch (e) {}
+      return null;
+    }
     return user; 
   } catch (error) {
     console.error("Error in ensureUser:", error);
@@ -680,6 +689,14 @@ bot.on("contact", async (msg) => {
   const state = userStates[chatId];
 
   if (state && state.step === "waitingForContact") {
+    console.log(`Contact phone raw: "${contact.phone_number}"`);
+    const db = mongoose.connection.db;
+   let cleanPhone = contact.phone_number.replace(/^\+/, '');
+   const blocked = await db.collection('blockednumbers').findOne({ phoneNumber: cleanPhone });
+    if (blocked) {
+      bot.sendMessage(chatId, "⛔ This phone number is not allowed to register. Contact support if you believe this is an error.");
+      delete userStates[chatId];
+      return;}
     // Check if this telegramId is already registered
     let existingUser = await BingoBord.findOne({ telegramId: chatId });
     if (existingUser) {
