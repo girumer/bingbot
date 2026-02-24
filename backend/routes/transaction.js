@@ -3,7 +3,7 @@ const router = express.Router();
 const transactionController = require("../controllers/transactionController");
 
 // parse SMS (existing)
-router.post("/parse-transaction", transactionController.parseTransaction);
+router.post("/parseytytyttransaction", transactionController.parseTransaction);
 
 // manual deposit approval
 router.post("/deposit", transactionController.depositAmount);

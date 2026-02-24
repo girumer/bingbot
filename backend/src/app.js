@@ -562,6 +562,9 @@ socket.on("disconnect", () => {
     // We only delete the player if the game is NOT currently running.
     // If room.activeGame is true, we keep the data so you can win during refresh.
     if (!room.activeGame) {
+
+
+      
       delete room.playerCartelas[clientId];
       delete room.players[clientId];
 

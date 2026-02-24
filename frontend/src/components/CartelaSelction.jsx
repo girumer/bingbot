@@ -188,7 +188,7 @@ const [otherUsersCartelas, setOtherUsersCartelas] = useState([]); // Cartelas se
 
         if (!telegramIdParam) {
 
-  console.warn("No telegramIdParam available to fetch wallet.");
+  //console.warn("No telegramIdParam available to fetch wallet.");
 
   return 0;
 

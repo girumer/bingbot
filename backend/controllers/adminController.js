@@ -157,8 +157,13 @@ exports.broadcastToAllCustomers = async (req, res) => {
                     });
                     successCount++;
                 } catch (error) {
-                    console.error(`Failed to send to ${user.telegramId}:`, error.response?.data || error.message);
-                    failCount++;
+                     if (error.response?.data?.error_code === 403) {
+        // Silently skip blocked users (or log once at the end)
+        failCount++;
+    } else {
+        console.log(`Failed to send to ${user.telegramId}:`, error.response?.data || error.message);
+        failCount++;
+    }
                 }
                 // Small delay to avoid hitting rate limits
                 await new Promise(resolve => setTimeout(resolve, 50));
