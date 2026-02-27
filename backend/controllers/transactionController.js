@@ -35,7 +35,9 @@ function parseTelebirrMessage(message) {
     return transactions;
 }
 
-
+function roundTwo(num) {
+    return Math.round(num * 100) / 100;
+}
 
 
 
@@ -410,10 +412,11 @@ exports.depositAmount = async (req, res) => {
          let bonusAmount = 0;
 
         if (finalAmount < 301) {
-          bonusAmount = finalAmount * BONUS_PERCENTAGE;
+         bonusAmount = roundTwo(finalAmount * BONUS_PERCENTAGE);
              }
 
-const totalCreditedAmount = finalAmount + bonusAmount;
+const totalCreditedAmount = roundTwo(finalAmount + bonusAmount);
+
 
 
         // Step 4: Find the PENDING transaction using the provided transactionNumber.
@@ -432,7 +435,8 @@ const totalCreditedAmount = finalAmount + bonusAmount;
         // The rest of the code is secure because it's based on a pending transaction created by your admin.
 
         // Step 5: Process the transaction and handle referral bonus.
-        user.Wallet += totalCreditedAmount;
+       user.Wallet = roundTwo(user.Wallet + totalCreditedAmount);
+
          const newTransaction = new Transaction({
            
             phoneNumber,

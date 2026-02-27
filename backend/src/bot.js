@@ -65,8 +65,7 @@ async function generateUniqueUsername(baseName, maxRetries = 5) {
   });
 }
 const formatBalance = (amount) => {
-    // Added || 0 fallback to prevent issues if 'amount' is null, undefined, or empty string
-    return parseFloat(amount || 0).toFixed(2);
+    return Number(parseFloat(amount || 0).toFixed(2));
 };
 mongoose.connect(process.env.DATABASE_URL, {
   useNewUrlParser: true,
@@ -500,7 +499,7 @@ bot.on("message", async (msg) => {
 
     // NEW: Transfer Amount logic
     if (step === "waitingForTransferAmount") {
-        const amount = parseFloat(text);
+         const amount = parseFloat(text);
         const recipientId = userStates[chatId].recipientId;
         const recipientPhone = userStates[chatId].recipientPhone;
 
@@ -535,8 +534,9 @@ bot.on("message", async (msg) => {
             }
             
             // Perform the transfer
-            sender.Wallet -= amount;
-            recipient.Wallet += amount;
+           
+            sender.Wallet = Number((sender.Wallet -amount).toFixed(2));
+            recipient.Wallet = Number((recipient.Wallet + amount).toFixed(2));
             
             await Promise.all([sender.save(), recipient.save()]);
 
@@ -608,7 +608,7 @@ if (amount < 50) {
             delete userStates[chatId];
             return;
         }
-         const maxWithdrawalAmount = user.Wallet - MIN_REMAINING_BALANCE;
+       const maxWithdrawalAmount = Number((user.Wallet - MIN_REMAINING_BALANCE).toFixed(2));
          if (maxWithdrawalAmount < 0) {
             // User's balance is already below 50 (e.g., balance is 40).
             bot.sendMessage(chatId, `❌ Your current balance (${user.Wallet} Birr) is less than the required minimum play balance of ${MIN_REMAINING_BALANCE} Birr. You cannot withdraw.`);
