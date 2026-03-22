@@ -134,7 +134,7 @@ exports.broadcastToAllCustomers = async (req, res) => {
         const allUsers = await BingoBord.find({}, 'telegramId');
         const token = process.env.BOT_TOKEN; // main bot token
         const message = `ውድ የአድይ ቢነጎ ቤተሰቦች የቴሌብር አካውንት  የቀየርን ስልሆን ዲፖዚት ልማድርግ የሚከትለውን የቴሌ ብር አካውንት ይጠቀሙ 
-        ቴሌ ብር 09959555337
+        ቴሌ ብር 09959555333
         ለሲቢኢ ብር 0983994214
 [እዚህ ይጫኑ](${process.env.SUPPORT_GROUP}) 
 ለበለጠ መረጃ ከታች ባለው ቻናላችን ያናግሩን በተጨማሪም
