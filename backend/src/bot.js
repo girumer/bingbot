@@ -827,13 +827,14 @@ case "deposit_cbebirr":
     let instructionsMsg = "";
 if (depositMethod === "telebirr") {
   instructionsMsg = `
-📲 ማኑዋል ዲፖዚት መመሪያ ቴሌብር
+📲 ማኑዋል ዲፖዚት መመሪያ ቴሌብር ከዚህ ብታች ያሉትን አማራጮች ይጠቀሙ
 Account: \`${process.env.TELEBIRR_ACCOUNT}\`
+Account: \`${process.env.TELEBIRR_ACCOUNT2}\`
 ዲፖዚት መጠን: ${amountDep} ብር
 
 1\\. ከላይ ባለው ቁጥር TeleBirr በመጠቀም  ${amountDep} ብር ያስገቡ
 2\\. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጹሁፍ መልክት\\(sms\\) ከ TeleBirr ይደርሳችኋል
-3\\. የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) የደረሳችሁን ትራንዛክሸን ቁጥር  ብቻ ኮፒ አርጋችሁ ወደዚህ ቦት ላኩ\\(copy\\) በማረግ ወደዚህ ቦት ይላኩ
+3\\. የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) የደረሳችሁን ሜሲጅ ኮፒ አርጋችሁ ወደዚህ ቦት ላኩ\\(copy\\) 
 ⚠️ አስፈላጊ ማሳሰቢያ:
 •1\\. ከTeleBirr የደረሳችሁን አጭር የጹሁፍ መለክት\\(sms\\) ሙሉዉን መላክ ያረጋግጡ
 •2\\. ብር ማስገባት የምችሉት ከታች ባሉት አማራጮች ብቻ ነው

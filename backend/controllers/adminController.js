@@ -133,9 +133,7 @@ exports.broadcastToAllCustomers = async (req, res) => {
     try {
         const allUsers = await BingoBord.find({}, 'telegramId');
         const token = process.env.BOT_TOKEN; // main bot token
-        const message = `ውድ የአድይ ቢነጎ ቤተሰቦች የቴሌብር አካውንት  የቀየርን ስልሆን ዲፖዚት ልማድርግ የሚከትለውን የቴሌ ብር አካውንት ይጠቀሙ 
-        ቴሌ ብር 09959555333
-        ለሲቢኢ ብር 0983994214
+        const message = `ውድ የአደይ ቢነጎ ቤተሰቦች ትላንት የቴሌብር አካውንት ላይ ባጋጠመን ችግር ይቅርታ እየጠየቅን ከዛሬ ጀምሮ ግን የገጠመው ችግር ተቀርፎ እየሰራ መሆኑን ለማሳወቅ እንውዳለን 
 [እዚህ ይጫኑ](${process.env.SUPPORT_GROUP}) 
 ለበለጠ መረጃ ከታች ባለው ቻናላችን ያናግሩን በተጨማሪም
 ለእገዛ [እዚህ ይጫኑ](${process.env.SUPPORT_USERNAME})`;
