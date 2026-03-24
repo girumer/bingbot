@@ -133,9 +133,13 @@ exports.broadcastToAllCustomers = async (req, res) => {
     try {
         const allUsers = await BingoBord.find({}, 'telegramId');
         const token = process.env.BOT_TOKEN; // main bot token
-        const message = `ውድ የአደይ ቢነጎ ቤተሰቦች ትላንት የቴሌብር አካውንት ላይ ባጋጠመን ችግር ይቅርታ እየጠየቅን ከዛሬ ጀምሮ ግን የገጠመው ችግር ተቀርፎ እየሰራ መሆኑን ለማሳወቅ እንውዳለን 
+        const message = `🏆🏆በአደይ ቢንጎ እየተዝናኑ ይሸለሙ🏆🏆
+        💰💰ሲመዝገቡ ነጻ መጫወቻ ቦነስ💰💰
+        🎁🎁ዲፖዚት ሲያርጉ 10% ተጨማሪ ቦነስ🎁🎁
+        💸💸 ባሸነፉ ቁጥር የኮይን ሽልማት ኮይኑን ወድ ብር  ወደያው መቀየር ሚችሉበት 💸 💸
+ሳፖርት ግሩፑን ለመቀላቀል
 [እዚህ ይጫኑ](${process.env.SUPPORT_GROUP}) 
-ለበለጠ መረጃ ከታች ባለው ቻናላችን ያናግሩን በተጨማሪም
+ለበለጠ መረጃ እና
 ለእገዛ [እዚህ ይጫኑ](${process.env.SUPPORT_USERNAME})`;
 
         let successCount = 0;
