@@ -829,7 +829,7 @@ if (depositMethod === "telebirr") {
   instructionsMsg = `
 📲 ማኑዋል ዲፖዚት መመሪያ ቴሌብር ከዚህ ብታች ያሉትን አማራጮች ይጠቀሙ
 Account: \`${process.env.TELEBIRR_ACCOUNT}\`
-Account: \`${process.env.TELEBIRR_ACCOUNT2}\`
+
 ዲፖዚት መጠን: ${amountDep} ብር
 
 1\\. ከላይ ባለው ቁጥር TeleBirr በመጠቀም  ${amountDep} ብር ያስገቡ
