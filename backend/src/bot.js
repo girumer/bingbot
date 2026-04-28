@@ -246,7 +246,7 @@ bot.onText(/\/(balance|play|deposit|history|help|withdraw|coins)/, async (msg, m
           reply_markup: {
             inline_keyboard: [
               [
-                { text: "Room 5 (Stake 5)", callback_data: "room_5" },
+                { text: "Room 7 (Stake 7)", callback_data: "room_7" },
                 { text: "Room 10 (Stake 10)", callback_data: "room_10" },
               ]
             ]
@@ -725,7 +725,7 @@ bot.on("contact", async (msg) => {
       telegramId: chatId,
       username: uniqueUsername,
       phoneNumber: contact.phone_number,
-      Wallet: 5,
+      Wallet: 7,
       gameHistory: [],
       referredBy: state.referrerId || null,
       referralBonusPaid: false,
@@ -771,7 +771,7 @@ bot.on('callback_query', async (callbackQuery) => {
         
         inline_keyboard: [
   [
-    { text: "Room 5 (Stake 5)", callback_data: "room_5" },
+    { text: "Room 7 (Stake 7)", callback_data: "room_7" },
     { text: "Room 10 (Stake 10)", callback_data: "room_10" },]
 ]
 
