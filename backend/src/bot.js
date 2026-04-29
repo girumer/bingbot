@@ -937,7 +937,7 @@ New balances:
         answerQuery("❌ Transfer failed due to a database error.", true);
       }
       break;
-case "room_5":
+case "room_7":
 case "room_10":
 
   const stake = parseInt(data.split("_")[1]);
