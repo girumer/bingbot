@@ -133,14 +133,15 @@ exports.broadcastToAllCustomers = async (req, res) => {
     try {
         const allUsers = await BingoBord.find({}, 'telegramId');
         const token = process.env.BOT_TOKEN; // main bot token
-        const message = `🏆🏆በአደይ ቢንጎ እየተዝናኑ ይሸለሙ🏆🏆
-        💰💰ሲመዝገቡ ነጻ መጫወቻ ቦነስ💰💰
+        const message = `🏆🏆ውድ የአደይ ቢንጎ ቤተሰቦች 🏆🏆
+         🎁🎁በደንበኞቻችን ተደጋጋሚ ጥያቄ መሰረት የደራሹን መጠን ለመጨመር ሲባል 5 ብር የነበረውን መደብ ወደ 7 ብር  ያሳደግን  መሆኑን ለመግለጽ እንወዳልን🎁🎁
+        💸💸 አደይ በምን ይለያል? 💸 💸
+         💰💰ሲመዝገቡ ነጻ መጫወቻ ቦነስ💰💰
         🎁🎁ዲፖዚት ሲያርጉ 10% ተጨማሪ ቦነስ🎁🎁
         💸💸 ባሸነፉ ቁጥር የኮይን ሽልማት ኮይኑን ወድ ብር  ወደያው መቀየር ሚችሉበት 💸 💸
 ሳፖርት ግሩፑን ለመቀላቀል
 [እዚህ ይጫኑ](${process.env.SUPPORT_GROUP}) 
-ለበለጠ መረጃ እና
-ለእገዛ [እዚህ ይጫኑ](${process.env.SUPPORT_USERNAME})`;
+`;
 
         let successCount = 0;
         let failCount = 0;
