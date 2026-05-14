@@ -155,6 +155,16 @@ const forcedPlayersData = [
     { username: 'ermii', clientId: 'client-tariku-bot' },
     { username: 'salim', clientId: 'client-cita-bot' },
     { username: 'admas', clientId: 'client-chkuni-bot' },
+    {username: "telila_65432",clientId: '200037x'},
+    {username: "medi23",clientId: '200035x'},
+    {username: "redwan_45655",clientId: '200034x'},
+     {username: "tsegihshmuze",clientId: '200033x'},
+     {username: "jemal_76545",clientId: '200032x'},
+     {username: "kida",clientId: '200031x'},
+     {username: "ali_9876",clientId: '200030x'},
+    
+
+    
 ];
 // Note: clientId must be unique strings for the game logic to work correctly.
 const NUM_CARTELAS_PER_PLAYER = 1;
