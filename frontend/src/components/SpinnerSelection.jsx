@@ -84,11 +84,11 @@ const probabilities = {
   25:0,
   20: 0, // 20% chance
   15:0,
-  12:1,
-  10: 1, // 20% chance
-  5:6,
-  1: 30, // 25% chance
-  0: 62, // 20% chance
+  12:0,
+  10: 0, // 20% chance
+  5: 0,   //6,
+  1:0, //30, // 25% chance
+  0: 100, // 20% chance
 };
 
   const username = searchParams.get("username");
