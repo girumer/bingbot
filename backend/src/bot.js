@@ -949,8 +949,9 @@ case "room_10":
   
   await user.save();
 
-  const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;
-  
+ // const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&roomId=${stake}&stake=${stake}`;
+  //const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction`;   // clean URL
+  const webAppUrl = `${process.env.FRONTEND_URL}/CartelaSelction?roomId=${stake}`;
   // ✅ Corrected Markdown: Added a closing *
   bot.sendMessage(chatId, `🎮 <i>play ${stake} ETB</i>`, {
    parse_mode: "HTML",

@@ -107,8 +107,41 @@ const router = express.Router();
 
 // Example: fetch all transactions with pagination
 
+function parseInitData(initData) {
+  return Object.fromEntries(new URLSearchParams(initData));
+}
+function serializeInitData(initDataObject) {
+  return Object.keys(initDataObject)
+    .filter((key) => key !== "hash")
+    .sort()
+    .map((key) => `${key}=${initDataObject[key]}`)
+    .join("\n");
+}
+function verifyTelegramInitData(initData, botToken) {
+  const parsed = parseInitData(initData);
+  const receivedHash = parsed.hash;
+  if (!receivedHash) return null;
 
+  const dataCheckString = serializeInitData(parsed);
+  const secretKey = crypto
+    .createHmac("sha256", "WebAppData")
+    .update(botToken)
+    .digest();
 
+  const expectedHash = crypto
+    .createHmac("sha256", secretKey)
+    .update(dataCheckString)
+    .digest("hex");
+
+  if (receivedHash !== expectedHash) return null;
+
+  // Optional: check auth_date (e.g., not older than 1 hour)
+  const authDate = parseInt(parsed.auth_date, 10);
+  const now = Math.floor(Date.now() / 1000);
+  if (now - authDate > 3600) return null; // expired
+
+  return parsed;
+}
 
 // Enable handling of OPTIONS requests (for preflight)
 // Automatically handle OPTIONS requests
@@ -360,176 +393,195 @@ function startInjectionMonitor(rId, initiatorClientId) {
 const rooms = {}; // rooms = { roomId: { players, selectedIndexes, playerCartelas, ... } }
 const socketIdToClientId = new Map();
 const clientIdToSocketId = new Map();
+const authenticatedSockets = new Map();
  startRoomMonitor();
 io.on("connection", (socket) => {
   //console.log("New connection:", socket.id);
 // Add this block inside your main io.on("connection", (socket) => { ... });
 
 // --- SPINNER GAME HANDLER ---
+// --- AUTHENTICATION ---
+socket.on("authenticate", async ({ initData }) => {
+  if (!initData) {
+    socket.emit("auth_error", { message: "Missing initData" });
+    return;
+  }
 
-  // --- JOIN ROOM ---
-  socket.on("joinRoom", ({ roomId, username, telegramId, clientId }) => {
-    const rId = String(roomId);
-    socket.join(rId);
+  const verified = verifyTelegramInitData(initData, process.env.BOT_TOKEN);
+  if (!verified) {
+    socket.emit("auth_error", { message: "Invalid or expired initData" });
+    return;
+  }
 
-    // ✅ Map socketId to clientId
-    socketIdToClientId.set(socket.id, clientId);
-    clientIdToSocketId.set(clientId, socket.id);
+  try {
+    const userData = JSON.parse(verified.user);
+    const telegramId = userData.id;
+    const username = userData.username || userData.first_name;
 
-    if (!rooms[rId]) {
-      rooms[rId] = {
-        players: {},
-        selectedIndexes: [],
-        playerCartelas: {},
-        timer: null,
-        calledNumbers: [],
-       timerInterval: null,    // for countdown
-       numberInterval: null,
-       injectInterval: null,
-        alreadyWon: [],
-        totalAward: 0,
-        gameId: null,
-      };
-      console.log(`Room created: ${rId}`);
+    // Verify user exists in DB
+    const user = await BingoBord.findOne({ telegramId });
+    if (!user) {
+      socket.emit("auth_error", { message: "User not registered. Use /start on Telegram." });
+      return;
     }
 
-    // ✅ Use clientId as the key for all player info
-   rooms[rId].players[clientId] = username || `Guest-${clientId}`;
- 
-
-    // ✅ Ensure player has a cartela slot
-    if (!rooms[rId].playerCartelas[clientId]) {
-      rooms[rId].playerCartelas[clientId] = [];
-    }
-    const myCartelas = rooms[rId].playerCartelas[clientId];
-
-    // ✅ Emit state to this player
-    socket.emit("currentGameState", {
-      calledNumbers: rooms[rId].calledNumbers,
-      myCartelas,
-      selectedIndexes: rooms[rId].selectedIndexes,
-      lastNumber: rooms[rId].calledNumbers.slice(-1)[0] || null,
-      timer: rooms[rId].timer,
-      totalAward: rooms[rId].totalAward,
-      totalPlayers: Object.values(rooms[rId].playerCartelas).reduce(
-    (sum, arr) => sum + arr.length,
-    0
-  ),
-      activeGame: rooms[rId].activeGame || false,
-       gameId: rooms[rId].gameId || null
+    // Store authentication info for this socket
+    authenticatedSockets.set(socket.id, {
+      telegramId: user.telegramId,
+      username: user.username,
+      clientId: `tg_${user.telegramId}`   // consistent clientId
     });
 
-    // ✅ Broadcast updated player count
-   /*  const activePlayers = Object.values(rooms[rId].playerCartelas).filter(
-      (arr) => arr.length > 0
-    ).length;
-    io.to(rId).emit("playerCount", { totalPlayers: activePlayers });
- */
-const activePlayers = Object.values(rooms[rId].playerCartelas)
-  .reduce((sum, arr) => sum + arr.length, 0);
+    socket.emit("auth_success", { message: "Authenticated", user: { username: user.username, wallet: user.Wallet } });
+    console.log(`✅ Socket ${socket.id} authenticated as ${user.username}`);
+  } catch (err) {
+    console.error("Authentication error:", err);
+    socket.emit("auth_error", { message: "Server error" });
+  }
+});
+  // --- JOIN ROOM ---
+  socket.on("joinRoom", ({ roomId }) => {   // <-- only roomId from client
+  const auth = authenticatedSockets.get(socket.id);
+  if (!auth) {
+    socket.emit("error", { message: "Not authenticated. Please authenticate first." });
+    return;
+  }
 
-io.to(rId).emit("playerCount", { totalPlayers: activePlayers });
+  const { telegramId, username, clientId } = auth;
+  const rId = String(roomId);
+  socket.join(rId);
 
-   // console.log(`New connection: ${socket.id}, username=${username}, telegramId=${telegramId}, clientId=${clientId}`);
+  // Store mappings (optional for backwards compatibility)
+  socketIdToClientId.set(socket.id, clientId);
+  clientIdToSocketId.set(clientId, socket.id);
+
+  if (!rooms[rId]) {
+    rooms[rId] = {
+      players: {},
+      selectedIndexes: [],
+      playerCartelas: {},
+      timer: null,
+      calledNumbers: [],
+      timerInterval: null,
+      numberInterval: null,
+      injectInterval: null,
+      alreadyWon: [],
+      totalAward: 0,
+      gameId: null,
+    };
+    console.log(`Room created: ${rId}`);
+  }
+
+  // Use clientId as key
+  rooms[rId].players[clientId] = username;
+
+  if (!rooms[rId].playerCartelas[clientId]) {
+    rooms[rId].playerCartelas[clientId] = [];
+  }
+  const myCartelas = rooms[rId].playerCartelas[clientId];
+
+  socket.emit("currentGameState", {
+    calledNumbers: rooms[rId].calledNumbers,
+    myCartelas,
+    selectedIndexes: rooms[rId].selectedIndexes,
+    lastNumber: rooms[rId].calledNumbers.slice(-1)[0] || null,
+    timer: rooms[rId].timer,
+    totalAward: rooms[rId].totalAward,
+    totalPlayers: Object.values(rooms[rId].playerCartelas).reduce((sum, arr) => sum + arr.length, 0),
+    activeGame: rooms[rId].activeGame || false,
+    gameId: rooms[rId].gameId || null
   });
+
+  const activePlayers = Object.values(rooms[rId].playerCartelas).reduce((sum, arr) => sum + arr.length, 0);
+  io.to(rId).emit("playerCount", { totalPlayers: activePlayers });
+});
 // --- CHECK PLAYER STATUS ---
-socket.on("checkPlayerStatus", ({ roomId, clientId }) => {
-    const room = rooms[String(roomId)];
+socket.on("checkPlayerStatus", ({ roomId }) => {   // no clientId from client
+  const auth = authenticatedSockets.get(socket.id);
+  if (!auth) {
+    socket.emit("playerStatus", { inGame: false });
+    return;
+  }
+  const { clientId } = auth;
+  const room = rooms[String(roomId)];
 
-    // 1. Check if the room exists.
-    // 2. Check if there's an active game in the room.
-    // 3. Check if this specific player has selected cartelas.
-    if (!room || !room.activeGame || !room.playerCartelas[clientId] || room.playerCartelas[clientId].length === 0) {
-        // Player is not in an active game or has no cartelas, so they should go to the selection page.
-        socket.emit("playerStatus", { inGame: false });
-        //console.log(`Player ${clientId} is not in an active game in room ${roomId}.`);
-        return;
-    }
+  if (!room || !room.activeGame || !room.playerCartelas[clientId] || room.playerCartelas[clientId].length === 0) {
+    socket.emit("playerStatus", { inGame: false });
+    return;
+  }
 
-    // Player is already in an active game with selected cartelas.
-    const selectedCartelas = room.playerCartelas[clientId];
-    socket.emit("playerStatus", { inGame: true, selectedCartelas });
-   // console.log(`Player ${clientId} is already in game in room ${roomId}.`);
+  const selectedCartelas = room.playerCartelas[clientId];
+  socket.emit("playerStatus", { inGame: true, selectedCartelas });
 });
   // --- SELECT CARTELA ---
   socket.on("selectCartela", async ({ roomId, cartelaIndex }) => {
-    const rId = String(roomId);
-    
-    // ✅ CORRECT: Get clientId from the global map using the socket.id
-    const clientId = socketIdToClientId.get(socket.id);
-    if (!clientId) {
-      socket.emit("cartelaRejected", { message: "Client ID not found. Please refresh." });
+  const auth = authenticatedSockets.get(socket.id);
+  if (!auth) {
+    socket.emit("cartelaRejected", { message: "Not authenticated" });
+    return;
+  }
+  const { clientId, username } = auth;
+  const rId = String(roomId);
+
+  if (!rooms[rId] || rooms[rId].selectedIndexes.includes(cartelaIndex)) {
+    socket.emit("cartelaRejected", {
+      message: "Cartela already taken or room not found",
+    });
+    return;
+  }
+
+  try {
+    // Get username from rooms (it should match auth.username)
+    const roomUsername = rooms[rId].players[clientId];
+    if (!roomUsername) {
+      socket.emit("cartelaRejected", { message: "User not found in room" });
       return;
     }
 
-    if (!rooms[rId] || rooms[rId].selectedIndexes.includes(cartelaIndex)) {
+    const user = await BingoBord.findOne({ username: roomUsername });
+    const stake = Number(rId);
+
+    if (!user || user.Wallet < stake) {
+      socket.emit("cartelaRejected", { message: "Insufficient balance or user not found" });
+      return;
+    }
+
+    if (!rooms[rId].playerCartelas[clientId])
+      rooms[rId].playerCartelas[clientId] = [];
+    const userCartelas = rooms[rId].playerCartelas[clientId];
+
+    if (rooms[rId].activeGame || (rooms[rId].timer !== null && rooms[rId].timer <= 4)) {
       socket.emit("cartelaRejected", {
-        message: "Cartela already taken or room not found",
+        message: "The game is about to start or is already active. Cartela selection is closed."
       });
       return;
     }
 
-    try {
-      // ✅ CORRECT: Get username directly from the rooms object using clientId
-      const username = rooms[rId].players[clientId];
-      if (!username) {
-        socket.emit("cartelaRejected", { message: "User not found in room" });
-        return;
-      }
-
-      const user = await BingoBord.findOne({ username });
-      const stake = Number(rId);
-
-      if (!user || user.Wallet < stake) {
-        socket.emit("cartelaRejected", { message: "Insufficient balance or user not found" });
-        return;
-      }
-
-      // ✅ Use clientId to get cartela array
-      if (!rooms[rId].playerCartelas[clientId])
-        rooms[rId].playerCartelas[clientId] = [];
-      const userCartelas = rooms[rId].playerCartelas[clientId];
-        if (rooms[rId].activeGame || (rooms[rId].timer !== null && rooms[rId].timer <= 4)) {
-        socket.emit("cartelaRejected", {
-            message: "The game is about to start or is already active. Cartela selection is closed."
-        });
-        return;
+    if (userCartelas.length >= 4) {
+      socket.emit("cartelaRejected", { message: "You can only select up to 4 cartelas" });
+      return;
     }
-      // Limit per user to 4 cartelas
-      if (userCartelas.length >= 4) {
-        socket.emit("cartelaRejected", { message: "You can only select up to 4 cartelas" });
-        return;
-      }
-        
-      user.Wallet -= stake;
-      
-      await user.save();
 
-      userCartelas.push(cartelaIndex);
-      rooms[rId].selectedIndexes.push(cartelaIndex);
+    // Deduct wallet
+    user.Wallet -= stake;
+    await user.save();
 
-      socket.emit("cartelaAccepted", { cartelaIndex, Wallet: user.Wallet });
-     // console.log("caretela accepted now");
-      io.to(rId).emit("updateSelectedCartelas", {
-        selectedIndexes: rooms[rId].selectedIndexes,
-      });
-if (userCartelas.length === 1) { 
-        // This will inject the 4 players and then automatically check and start the countdown
-        // inside the injector function itself.
-       startInjectionMonitor(rId, clientId);
-     }
-  /*     const playersWithCartela = Object.values(rooms[rId].playerCartelas).filter(
-        (arr) => arr.length > 0
-      ).length;
-      if (!rooms[rId].timer && playersWithCartela >= 2) {
-         //injectAndSelectForForcedPlayers(rId, clientId);
-        startCountdown(rId, 45);
-      } */
-    } catch (err) {
-      console.error("Error selecting cartela:", err);
-      socket.emit("cartelaRejected", { message: "Server error" });
+    userCartelas.push(cartelaIndex);
+    rooms[rId].selectedIndexes.push(cartelaIndex);
+
+    socket.emit("cartelaAccepted", { cartelaIndex, Wallet: user.Wallet });
+    io.to(rId).emit("updateSelectedCartelas", {
+      selectedIndexes: rooms[rId].selectedIndexes,
+    });
+
+    if (userCartelas.length === 1) {
+      startInjectionMonitor(rId, clientId);
     }
-  });
+  } catch (err) {
+    console.error("Error selecting cartela:", err);
+    socket.emit("cartelaRejected", { message: "Server error" });
+  }
+});
 
 
   // --- CALL NUMBER ---
@@ -558,6 +610,7 @@ if (userCartelas.length === 1) {
 // --- DISCONNECT ---
 socket.on("disconnect", () => {
   const clientId = socketIdToClientId.get(socket.id);
+   authenticatedSockets.delete(socket.id);
   if (!clientId) return;
 
   // Clean up maps
@@ -953,6 +1006,44 @@ await Promise.all(Object.entries(room.players).map(async ([clientId, username]) 
   app.get('/api', (req, res) => {
     res.send('API is working!');
   });
+  // ========== TELEGRAM INITDATA VERIFICATION ENDPOINT ==========
+app.post("/api/verify-init-data", async (req, res) => {
+  const { initData } = req.body;
+  if (!initData) {
+    return res.status(400).json({ error: "Missing initData" });
+  }
+
+  const verified = verifyTelegramInitData(initData, process.env.BOT_TOKEN);
+  if (!verified) {
+    return res.status(403).json({ error: "Invalid or expired initData" });
+  }
+
+  try {
+    const userData = JSON.parse(verified.user);
+    const telegramId = userData.id;
+    const username = userData.username || userData.first_name;
+
+    // Optional: find or create user in your DB
+    let user = await BingoBord.findOne({ telegramId });
+    if (!user) {
+      // If user doesn't exist, you may want to create a placeholder
+      // But usually registration already happened via /start command
+      return res.status(404).json({ error: "User not registered. Use /start on Telegram." });
+    }
+
+    return res.json({
+      success: true,
+      user: {
+        telegramId: user.telegramId,
+        username: user.username,
+        wallet: user.Wallet
+      }
+    });
+  } catch (err) {
+    console.error("InitData user parse error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
   app.get('/api/test-endpoint', (req, res) => {
   res.json({ message: "API is working!" });
 });
