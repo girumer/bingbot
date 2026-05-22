@@ -23,8 +23,9 @@ function CartelaSelction() {
   })();
 
   // ---------- 2. Get initData from Telegram WebApp ----------
-  const tg = window.Telegram?.WebApp;
-  const initData = tg?.initData;   // signed string – the only thing we trust
+ const tg = window.Telegram?.WebApp;
+if (tg) tg.ready();        // ← IMPORTANT: tell Telegram the app is ready
+const initData = tg?.initData; // signed string – the only thing we trust
 
   // ---------- 3. States (existing + new for authentication) ----------
   const [selectedCartelas, setSelectedCartelas] = useState([]);
