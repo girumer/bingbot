@@ -1006,6 +1006,18 @@ await Promise.all(Object.entries(room.players).map(async ([clientId, username]) 
   app.get('/api', (req, res) => {
     res.send('API is working!');
   });
+  // Helper to generate a unique username (copied from bot)
+const generateUniqueUsername = async (baseName) => {
+  let username = baseName;
+  let attempt = 0;
+  while (attempt < 5) {
+    const existing = await BingoBord.findOne({ username });
+    if (!existing) return username;
+    username = `${baseName}_${Math.floor(1000 + Math.random() * 9000)}`;
+    attempt++;
+  }
+  return `${baseName}_${Date.now()}`;
+};
   // ========== TELEGRAM INITDATA VERIFICATION ENDPOINT ==========
 app.post("/api/verify-init-data", async (req, res) => {
   const { initData } = req.body;
@@ -1020,15 +1032,26 @@ app.post("/api/verify-init-data", async (req, res) => {
 
   try {
     const userData = JSON.parse(verified.user);
-    const telegramId = userData.id;
+    const telegramId = userData.id;       // number
     const username = userData.username || userData.first_name;
 
-    // Optional: find or create user in your DB
-    let user = await BingoBord.findOne({ telegramId });
+    // Try to find user by telegramId (as number)
+    let user = await BingoBord.findOne({ telegramId: Number(telegramId) });
+
     if (!user) {
-      // If user doesn't exist, you may want to create a placeholder
-      // But usually registration already happened via /start command
-      return res.status(404).json({ error: "User not registered. Use /start on Telegram." });
+      // Auto‑create user with default values
+      const finalUsername = await generateUniqueUsername(username);
+      user = new BingoBord({
+        telegramId: Number(telegramId),
+        username: finalUsername,
+        phoneNumber: `telegram_${telegramId}`,   // temporary, bot will update later
+        Wallet: 7,          // default starting balance
+        gameHistory: [],
+        referredBy: null,
+        referralBonusPaid: false,
+      });
+      await user.save();
+      console.log(`[AUTH] Auto‑created user for telegramId ${telegramId} (${finalUsername})`);
     }
 
     return res.json({
