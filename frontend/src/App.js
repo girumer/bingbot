@@ -1,6 +1,6 @@
 // import './App.css'
 import React from 'react';
-import { useState,useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import socket from "./socket";
 import "react-toastify/dist/ReactToastify.css";
 import Mainmenu from "./components/Mainmenu";
@@ -25,20 +25,16 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AdminPasswordReset from './components/AdminPasswordReset';
 import SpinnerSelection from './components/SpinnerSelection';
 import ProtectedRoute from './components/ProtectedRoute';
-import axios from "axios"
-function App() {
-  
+import axios from "axios";
 
-  
-   
-    const token = localStorage.getItem('accesstoken');
-     
+function App() {
+  const token = localStorage.getItem('accesstoken');
 
   return (
     <div className="App">
-       <ToastContainer
+      <ToastContainer
         position="top-center"
-        autoClose={3000} // 3 seconds
+        autoClose={3000}
         hideProgressBar={false}
         newestOnTop={true}
         closeOnClick
@@ -47,40 +43,38 @@ function App() {
         draggable
         pauseOnHover
       />
-   
+
       <Router>
         <Routes>
-        
-          <Route path="/" element={<Logins/>}/>
-         
-          <Route path="/qazxsw" element={<AdminSignup/>}/>
-           <Route path="/AdminPasswordReset" element={<AdminPasswordReset/>}/>
-            <Route path="/Adminsu" element={<AdminSignup/>}/>
-          <Route path="/Logins"  element={<Logins/>}/>
-          <Route path="/signups" element={<Signups /> }/>
+          {/* Public routes */}
+          <Route path="/" element={<Logins />} />
+          <Route path="/qazxsw" element={<AdminSignup />} />
+          <Route path="/AdminPasswordReset" element={<AdminPasswordReset />} />
+          <Route path="/Adminsu" element={<AdminSignup />} />
+          <Route path="/Logins" element={<Logins />} />
+          <Route path="/signups" element={<Signups />} />
           <Route path="/admines" element={<AdminLogin />} />
-          <Route element={<ProtectedAdminRoute />}>
-  <Route path="/AdminDashboard" element={<AdminDashboard />} />
-   
-</Route>
 
-          {/* protected toutes*/ }
-          <Route element={<ProtectedRoute/>}>
-          <Route path="/Dashbord" element={<Dashbord/>}/>
-           
-            <Route path="/wallet" element={<WalletPage/>}/>
-          <Route path="/Report" element={<Report />} />
-          <Route path="/mainmenu" element={<Mainmenu/>}/>
-           <Route path="/GameHistory" element={<GameHistory/>}/>
-          <Route path="/transhistory" element={< TransactionHistoryPage/>}/>
-           
-            <Route  path="/deposit" element={<DepositPage/>}/>
-          <Route path="/AdminDashboard" element={<AdminDashboard />} />
-         
-          <Route path="/TopUsers"  element={<TopUsers/>}/>
-         <Route path="/CartelaSelction" element={<CartelaSelction/>}/>
-      <Route path="/SpinnerSelection" element={<SpinnerSelection />} />
-           <Route path="/BingoBoard" element={<BingoBoard/>}/>
+          {/* Admin protected route */}
+          <Route element={<ProtectedAdminRoute />}>
+            <Route path="/AdminDashboard" element={<AdminDashboard />} />
+          </Route>
+
+          {/* ⭐ GAME ROUTES – moved outside ProtectedRoute (use initData, not token) */}
+          <Route path="/CartelaSelction" element={<CartelaSelction />} />
+          <Route path="/SpinnerSelection" element={<SpinnerSelection />} />
+          <Route path="/BingoBoard" element={<BingoBoard />} />
+          <Route path="/TopUsers" element={<TopUsers />} />
+
+          {/* Protected user routes (require token) */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/Dashbord" element={<Dashbord />} />
+            <Route path="/wallet" element={<WalletPage />} />
+            <Route path="/Report" element={<Report />} />
+            <Route path="/mainmenu" element={<Mainmenu />} />
+            <Route path="/GameHistory" element={<GameHistory />} />
+            <Route path="/transhistory" element={<TransactionHistoryPage />} />
+            <Route path="/deposit" element={<DepositPage />} />
           </Route>
         </Routes>
       </Router>
