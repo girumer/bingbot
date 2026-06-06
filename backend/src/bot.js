@@ -623,15 +623,15 @@ if (amount < 50) {
             return;
         }
 const txType = userStates[chatId].method; 
-      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/transactions/withdraw`, {
-        username: user.username,
-        phoneNumber: user.phoneNumber,
-        amount,
-        method: 'withdrawal', // <-- This is the transaction type
-        type: userStates[chatId].method
-     
-      });
-
+    const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/transactions/withdraw`, {
+  username: user.username,
+  phoneNumber: user.phoneNumber,
+  amount,
+  method: 'withdrawal',
+  type: userStates[chatId].method
+}, {
+  headers: { 'x-api-key': process.env.INTERNAL_API_SECRET }
+});
 const withdrawalId = res.data.withdrawalId;
       bot.sendMessage(chatId, res.data.message || "✅ Withdrawal successful!");
     const adminAlert = ` 🏦 <b>WITHDRAWAL ALERT</b> 🏦 ━━━━━━━━━━━━━━━━━━ 
@@ -984,7 +984,7 @@ case "room_10":
     return;
   }
 
-  const spinnerUrl = `${process.env.FRONTEND_URL}/SpinnerSelection?username=${encodeURIComponent(user.username)}&telegramId=${user.telegramId}&stake=${spinStake}`;
+const spinnerUrl = `${process.env.FRONTEND_URL}/SpinnerSelection?stake=${spinStake}`;
 
   bot.sendMessage(chatId, `🎯 Ready to spin for ${spinStake} ETB! Click below to continue:`, {
     reply_markup: {

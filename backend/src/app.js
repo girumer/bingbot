@@ -1195,7 +1195,11 @@ app.get("/admin/deposit",  async (req, res) => {
 });
 
 app.post("/admin/confirm-withdrawal", async (req, res) => {
-  const {withdrawalId} = req.body;
+  const apiKey = req.headers['x-api-key'];
+  if (apiKey !== process.env.INTERNAL_API_SECRET) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+    const { withdrawalId } = req.body;
   try {
     const transaction = await Transaction.findOne({withdrawalId});
     if (!transaction) {
@@ -1294,71 +1298,40 @@ app.post("/loginacess",getUsernameFromToken,(req,res)=>{
   res.json({ valid: true, username: req.username,role:req.role,phoneNumber:req.phoneNumber });
 }
 ) 
- app.post("/depositcheckB", async (req, res) => {
-    const { telegramId } = req.body;
-    console.log("Checking balance for Telegram ID:", telegramId);
+app.post("/depositcheckB", async (req, res) => {
+  const { initData } = req.body;   // ← CHANGE: read initData, not telegramId
+  if (!initData) {
+    return res.status(401).json({ error: "Missing authentication" });
+  }
+  const verified = verifyTelegramInitData(initData, process.env.BOT_TOKEN);
+  if (!verified) {
+    return res.status(403).json({ error: "Invalid authentication" });
+  }
+  const userData = JSON.parse(verified.user);
+  const telegramId = userData.id;   // ← REAL user, not from request body
 
-    if (!telegramId) {
-        return res.status(400).json({ error: "Telegram ID is required." });
-    }
-
-    try {
-        // Correctly find the user using the unique telegramId
-        const data1 = await BingoBord.findOne({ telegramId: telegramId });
-
-        if (data1) {
-            const depo1 = parseInt(data1.Wallet);
-            res.json( depo1 ); // Corrected line
-            console.log("User found. Balance is:", depo1);
-        } else {
-            // Send a specific message if the user is not found
-            res.status(404).json({ error: "User not found." });
-            console.log("User with Telegram ID", telegramId, "not found.");
-        }
-    } catch (e) {
-        console.error("Error during balance check:", e);
-        res.status(500).json({ error: "Internal server error." });
-    }
+  const user = await BingoBord.findOne({ telegramId });
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+  res.json({ wallet: user.Wallet });
 });
 app.post('/update-wallet', async (req, res) => {
-  const { telegramId, amount } = req.body;
+  const { initData, amount } = req.body;   // ✅ read initData, not telegramId
+  if (!initData) return res.status(401).json({ error: "Missing authentication" });
+  const verified = verifyTelegramInitData(initData, process.env.BOT_TOKEN);
+  if (!verified) return res.status(403).json({ error: "Invalid" });
+  const userData = JSON.parse(verified.user);
+  const telegramId = userData.id;   // ✅ REAL user
 
-  if (!telegramId || typeof amount !== 'number') {
-    return res.status(400).json({ error: 'Invalid telegramId or amount.' });
+  const user = await BingoBord.findOne({ telegramId });
+  if (!user) return res.status(404).json({ error: "User not found" });
+  if (user.Wallet + amount < 0) {
+    return res.status(402).json({ error: "Insufficient funds" });
   }
-
-  try {
-    // First, check if user exists
-    const user = await BingoBord.findOne({ telegramId });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found.' });
-    }
-
-    // Prevent negative balance
-    if (user.Wallet + amount < 0) {
-      return res.status(402).json({
-        error: 'Insufficient funds.',
-        wallet: user.Wallet
-      });
-    }
-
-    // Atomic update
-    const updatedUser = await BingoBord.findOneAndUpdate(
-      { telegramId },
-      { $inc: { Wallet: amount } },
-      { new: true }
-    );
-
-    res.status(200).json({
-      message: 'Wallet updated successfully.',
-      wallet: updatedUser.Wallet,
-      telegramId
-    });
-  } catch (err) {
-    console.error('Wallet update error:', err);
-    res.status(500).json({ error: 'Server error.' });
-  }
+  user.Wallet += amount;
+  await user.save();
+  res.json({ wallet: user.Wallet });
 });
 app.get("/dashboard", verfyuser, async (req, res) => {
   console.log("Dashboard route hit");
@@ -1450,7 +1423,35 @@ let depo1 = (check.gameHistory.length > 0)
       }
   }
 });
+app.post("/api/spin", async (req, res) => {
+  const { initData, stake } = req.body;
+  if (!initData) return res.status(401).json({ error: "Missing authentication" });
+  const verified = verifyTelegramInitData(initData, process.env.BOT_TOKEN);
+  if (!verified) return res.status(403).json({ error: "Invalid authentication" });
+  const userData = JSON.parse(verified.user);
+  const user = await BingoBord.findOne({ telegramId: userData.id });
+  if (!user) return res.status(404).json({ error: "User not found" });
+  if (user.Wallet < stake) {
+    return res.status(400).json({ error: "Insufficient balance", newBalance: user.Wallet, winAmount: 0 });
+  }
 
+  // Deduct stake
+  user.Wallet -= stake;
+
+  // --- Determine win amount (you can set your own probabilities) ---
+  let winAmount = 0;
+  const random = Math.random() * 100;
+  if (random < 5) winAmount = 50;
+  else if (random < 15) winAmount = 30;
+  else if (random < 30) winAmount = 20;
+  else if (random < 50) winAmount = 10;
+  // else winAmount = 0
+
+  user.Wallet += winAmount;
+  await user.save();
+
+  res.json({ winAmount, newBalance: user.Wallet });
+});
 app.post("/login", async (req, res) => {
   const { username, password, } = req.body;
 

@@ -1,106 +1,55 @@
-import React, { useState, useEffect,useMemo , useRef } from "react";
-import {  useNavigate, useSearchParams,useOutletContext } from "react-router-dom";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import axios from "axios";
-
 import { toast, ToastContainer } from "react-toastify";
-
-import socket from "../socket";
 
 const SpinnerSelection = () => {
   const [searchParams] = useSearchParams();
   const [selectedNumbers, setSelectedNumbers] = useState([]);
-  const stakeValue=1;
-    const [wallet, setWallet] = useState(0);
-    const [isLoading, setIsLoading] = useState(true);
- // State to control wheel rotation
-const segmentThemes = [
-  // Value 0 is the lowest prize/loss
-  { value: 0, theme: 'Cabbage', color: '#6AA84F', icon: '🥬' }, // Cabbage (Green)
-  { value: 1, theme: 'Lemon', color: '#FFD966', icon: '🍋' }, // Lemon (Yellow)
-  { value: 5, theme: 'Orange', color: '#FFA500', icon: '🍊' }, // Orange (Orange)
-  { value: 10, theme: 'Apple', color: '#CC0000', icon: '🍎' }, // Apple (Red)
-  { value: 12, theme: 'Papaya', color: '#FF6347', icon: '🍈' }, // Papaya (Tomato Red)
-  { value: 15, theme: 'Cinnamon', color: '#D2691E', icon: '🌰' }, // Cinnamon (Brown)
-  { value: 20, theme: 'Banana', color: '#FFE599', icon: '🍌' }, // Banana (Light Yellow)
-  { value: 25, theme: 'Pineapple', color: '#FFD700', icon: '🍍' }, // Pineapple (Gold)
-  { value: 30, theme: 'Mango', color: '#F6B26B', icon: '🥭' }, // Mango (Orange)
-  { value: 50, theme: 'Bonus', color: '#4A86E8', icon: '✨' }, // Bonus (Blue)
-];
-const ctx = useOutletContext() || {};
-const search = new URLSearchParams(window.location.search);
-const qp = {
+  const stakeValue = 1;
+  const [wallet, setWallet] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
- username: search.get("username"),
+  // ---------- SECURE: Get initData from Telegram WebApp ----------
+  const tg = window.Telegram?.WebApp;
+  if (tg) tg.ready();
+  const initData = tg?.initData;
 
-telegramId: search.get("telegramId"),
+  // ---------- Wheel configuration (unchanged) ----------
+  const segmentThemes = [
+    { value: 0, theme: 'Cabbage', color: '#6AA84F', icon: '🥬' },
+    { value: 1, theme: 'Lemon', color: '#FFD966', icon: '🍋' },
+    { value: 5, theme: 'Orange', color: '#FFA500', icon: '🍊' },
+    { value: 10, theme: 'Apple', color: '#CC0000', icon: '🍎' },
+    { value: 12, theme: 'Papaya', color: '#FF6347', icon: '🍈' },
+    { value: 15, theme: 'Cinnamon', color: '#D2691E', icon: '🌰' },
+    { value: 20, theme: 'Banana', color: '#FFE599', icon: '🍌' },
+    { value: 25, theme: 'Pineapple', color: '#FFD700', icon: '🍍' },
+    { value: 30, theme: 'Mango', color: '#F6B26B', icon: '🥭' },
+    { value: 50, theme: 'Bonus', color: '#4A86E8', icon: '✨' },
+  ];
 
- 
+  const numbers = segmentThemes.map(t => t.value);
+  const segmentCount = numbers.length;
+  const segmentAngle = 360 / segmentCount;
 
- stake: search.get("stake"),
+  const probabilities = {
+    50: 0,
+    30: 0,
+    25: 0,
+    20: 0,
+    15: 0,
+    12: 0,
+    10: 0,
+    5: 0,
+    1: 0,
+    0: 100,
+  };
 
-};
-const cx = {
-
- username: ctx.usernameFromUrl,
-
- telegramId: ctx.telegramIdFromUrl,
-
-
-
- stake: ctx.stakeFromUrl,
-
-};
-const ls = {
-
- username: localStorage.getItem("username") || undefined,
-
- telegramId: localStorage.getItem("telegramId") || undefined,
-
- 
-
- stake: localStorage.getItem("stake") || undefined,
-
-};
-const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-const tg = {
-
- username: tgUser?.username || undefined,
-
- telegramId: tgUser?.id ? String(tgUser.id) : undefined,
-
-};
-const usernameParam = qp.username || cx.username || tg.username || ls.username || "";
-
-const telegramIdParam = qp.telegramId || cx.telegramId || tg.telegramId || ls.telegramId || "";
-
-const numbers = segmentThemes.map(t => t.value);
-const segmentCount = numbers.length;
-const segmentAngle = 360 / segmentCount; // 60 degrees
-
-// These probabilities make the 50 point segment much rarer (5%)
-const probabilities = {
-  50: 0, // 5% chance
-  30: 0, // 10% chance
-  25:0,
-  20: 0, // 20% chance
-  15:0,
-  12:0,
-  10: 0, // 20% chance
-  5: 0,   //6,
-  1:0, //30, // 25% chance
-  0: 100, // 20% chance
-};
-
-  const username = searchParams.get("username");
-  const telegramId = searchParams.get("telegramId");
-  const stake = searchParams.get("stake");
-  const navigate = useNavigate();
-
-  // Spinner values from your ORIGINAL code: 200, 150, 100, 50, 5, "Sad"
-  
- const [spinning, setSpinning] = useState(false);
+  const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState(null);
   const wheelRef = useRef(null);
+
   const conicGradient = useMemo(() => {
     const stops = segmentThemes.map((theme, index) => {
       const start = index * segmentAngle;
@@ -109,6 +58,8 @@ const probabilities = {
     }).join(', ');
     return `conic-gradient(${stops})`;
   }, []);
+
+  // ---------- Helper: get a random number (NOT used for actual win – only for animation fallback) ----------
   const getWeightedRandomNumber = () => {
     const random = Math.random() * 100;
     let cumulative = 0;
@@ -116,11 +67,9 @@ const probabilities = {
       cumulative += probabilities[number];
       if (random <= cumulative) return number;
     }
-    // Fallback in case of rounding errors, should return the highest probability item (e.g., 5)
     return numbers.sort((a, b) => probabilities[b] - probabilities[a])[0];
   };
 
-  // Function to get result message based on the result value
   const getResultMessage = (resultValue) => {
     if (resultValue === 0) {
       return "💔 You lost! Better luck next time! 💔";
@@ -131,203 +80,88 @@ const probabilities = {
     }
   };
 
-  const spinWheel  = async () => {
-   if (spinning || wallet < stakeValue) {
-        if (wallet < stakeValue) {
-            toast.error(`Insufficient balance! You need ${stakeValue} to spin.`);
-        }
-        return;
+  // ---------- SECURE: Fetch wallet using initData ----------
+  const fetchWallet = async () => {
+    if (!initData) return 0;
+    try {
+      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/depositcheckB`, { initData });
+      setWallet(res.data.wallet);
+      return res.data.wallet;
+    } catch (err) {
+      toast.error("Failed to load balance");
+      return 0;
+    }
+  };
+
+  // ---------- SECURE: Spin – calls backend endpoint ----------
+  const spinWheel = async () => {
+    if (spinning || wallet < stakeValue) {
+      if (wallet < stakeValue) {
+        toast.error(`Insufficient balance! You need ${stakeValue} to spin.`);
+      }
+      return;
     }
     setSpinning(true);
     setResult(null);
-const deduction = -stakeValue;
-   // const newWalletAfterDeduction = await updateWallet(deduction);
-    setWallet(prev => prev + deduction);
-    await updateWallet(deduction);
-    const winningNumber = getWeightedRandomNumber();
-    const segmentIndex = numbers.indexOf(winningNumber);
 
-    // Calculate the angle to the CENTER of the winning segment
-    const centerAngleOfWinningSegment = segmentIndex * segmentAngle + (segmentAngle / 2);
-  //console.log("center",centerAngleOfWinningSegment);
-    // The wheel rotates CLOCKWISE. We want the center of the winning segment 
-    // to stop at the pointer (which is at the top, or 0 degrees).
-    // Rotation required: 360 - center angle
-    const segmentTargetRotation = 360 - (centerAngleOfWinningSegment+36);
-  // console.log("segment is ",segmentTargetRotation);
-    // Add full spins (5-9 spins) for a smooth, exciting animation
-    const spins = 5 + Math.floor(Math.random() * 5);
-    const targetRotation = (spins * 360) + segmentTargetRotation;
+    try {
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/spin`, {
+        initData,
+        stake: stakeValue,
+      });
+      const { winAmount, newBalance } = response.data;
 
-    if (wheelRef.current) {
-      // Apply transition for the spin duration
-      wheelRef.current.style.transition = 'transform 4s cubic-bezier(0.2, 0.8, 0.3, 1)';
-      wheelRef.current.style.transform = `rotate(${targetRotation}deg)`;
-    }
+      setWallet(newBalance);
+      setResult(winAmount);
 
-    // Set result after the spin animation completes
-   setTimeout(async () => {
-      setSpinning(false);
-      setResult(winningNumber);
-      const winAmount = winningNumber;
+      // Animate wheel to the winning segment (same logic as before)
+      const segmentIndex = numbers.indexOf(winAmount);
+      const centerAngleOfWinningSegment = segmentIndex * segmentAngle + (segmentAngle / 2);
+      const segmentTargetRotation = 360 - (centerAngleOfWinningSegment + 36);
+      const spins = 5 + Math.floor(Math.random() * 5);
+      const targetRotation = (spins * 360) + segmentTargetRotation;
 
-      if (winAmount > 0) {
-       // showToast(`🥳 You won ${winAmount} ETB!`, 'success');
-        // Update wallet with the win amount
-        await updateWallet(winAmount);
-      } else {
-        // If winAmount is 0 (or 5), the stake was already recorded as a net loss.
-       // showToast(getResultMessage(winningNumber), winAmount === 0 ? 'error' : 'info');
-        // No further wallet update needed for a net loss/break-even
+      if (wheelRef.current) {
+        wheelRef.current.style.transition = 'transform 4s cubic-bezier(0.2, 0.8, 0.3, 1)';
+        wheelRef.current.style.transform = `rotate(${targetRotation}deg)`;
       }
-    }, 4000);
+
+      setTimeout(() => {
+        setSpinning(false);
+        if (winAmount > 0) toast.success(`🎉 You won ${winAmount} ETB!`);
+        else toast.error("💔 You lost!");
+      }, 4000);
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Spin failed");
+      setSpinning(false);
+    }
   };
 
   const resetWheel = () => {
     if (wheelRef.current) {
-      // Reset transform immediately without transition
       wheelRef.current.style.transition = 'none';
       wheelRef.current.style.transform = 'rotate(0deg)';
     }
     setResult(null);
     setSpinning(false);
   };
+
+  // ---------- SECURE: Initialise – fetch wallet once ----------
   useEffect(() => {
-    if (window.Telegram && window.Telegram.WebApp) {
-      window.Telegram.WebApp.ready();
-      window.Telegram.WebApp.expand();
-    //  console.log("Telegram WebApp isinitialized");
-    }
-
-    if (username && telegramId && stake) {
-      const clientId = `${telegramId}-spinner`;
-      socket.emit("joinSpinnerRoom", {
-       
-        username,
-        telegramId,
-        clientId,
-      });
-    }
-  }, [username, telegramId, stake]);
-
- 
-
-// Restore confirmed cartelas from localStorage after refresh
-
- const fetchWalletData = async () => {
-
- if (!telegramIdParam) {
-
- console.warn("No telegramIdParam available to fetch wallet.");
-
- return 0;
-
-}
-
- try {
-
- //console.log("Fetching wallet data for Telegram ID is:", telegramIdParam);
-
-const response = await axios.post(
-
- `${process.env.REACT_APP_BACKEND_URL}/depositcheckB`,
-
- { telegramId: telegramIdParam}
-
-
-
- );
-
-
- let walletValue;
-
- if (typeof response.data === 'object' && response.data !== null) {
-
- walletValue = response.data.wallet || response.data.balance || 0;
-
- } else if (typeof response.data === 'number') {
-
- walletValue = response.data;
-
- } else if (typeof response.data === 'string' && !isNaN(response.data)) {
-
- walletValue = parseFloat(response.data);
-
- } else {
-
- console.error("Unexpected response format:", response.data);
-
- walletValue = 0;
-
- }
-
- setWallet(walletValue);
-
- return walletValue;
-
- } catch (err) {
-
- console.error("Failed to fetch wallet data:", err.response ? err.response.data : err.message);
-
- toast.error("Failed to load wallet data.");
-
- return 0; }
-
- };
-useEffect(() => {
-  const init = async () => {
-    if (!usernameParam || !telegramIdParam) {
-     // console.log("Waiting for all required URL parameters...");
+    const init = async () => {
+      await fetchWallet();
       setIsLoading(false);
-      return;
-    }
+    };
+    init();
+  }, [initData]);
 
-    try {
-      // Fetch wallet data
-      await fetchWalletData();
-      // Join the game room (if needed)
-    } catch (err) {
-      console.error("Failed to initialize:", err);
-      toast.error("Failed to initialize game. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // ---------- Render – unchanged ----------
+  if (isLoading) {
+    return null;
+  }
 
-  init();
-}, [ usernameParam, telegramIdParam,  stake]);
-
-
-  const updateWallet = async (amount) => {
-    if (!telegramIdParam) return;
-
-    try {
-        const response = await axios.post(
-            `${process.env.REACT_APP_BACKEND_URL}/update-wallet`, // **CHANGE THIS URL to your actual endpoint**
-            { 
-                telegramId: telegramIdParam, 
-                amount: amount // Positive for win, negative for loss/stake
-            }
-        );
-        // Assuming your backend returns the new balance
-        const newBalance = response.data.wallet || response.data.balance || 0;
-        setWallet(newBalance);
-        return newBalance;
-    } catch (err) {
-        console.error("Failed to update wallet:", err.response ? err.response.data : err.message);
-        toast.error("Failed to update wallet balance.");
-        // Re-fetch current wallet state if update failed
-        fetchWalletData(); 
-        return wallet; // Return current state as a fallback
-    }
-};
-
- 
   return (
-    
-   <div className="spinner-container">
-      {/* -------------------- Custom Styles Block (Merged from your CSS) -------------------- */}
-      
+    <div className="spinner-container">
       <style>
         {`
         /* Load Inter font */
@@ -341,7 +175,7 @@ useEffect(() => {
           justify-content: center;
           min-height: 100vh;
           background: linear-gradient(135deg, #dacfe6 0%, #03173aff 100%);
-          font-family: 'Inter', sans-serif; /* Changed to Inter */
+          font-family: 'Inter', sans-serif;
           color: white;
           padding: 20px;
           box-sizing: border-box;
@@ -368,35 +202,27 @@ useEffect(() => {
           position: relative;
           box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
           border: 10px solid #fff;
-          
-          /* IMPORTANT: Transition is applied dynamically in JS */
           transition: transform 4s cubic-bezier(0.2, 0.8, 0.3, 1);
           transform: rotate(0deg);
           transform-origin: center center;
-          overflow: hidden; /* To keep labels inside */
+          overflow: hidden;
         }
-        
-        /* Segment labels are now handled by this class */
+
         .segment-label {
-          /* Positioning the label */
           position: absolute;
           width: 50%;
           height: 50%;
           top: 0;
           left: 50%;
-          transform-origin: 0% 100%; /* Anchor at the center of the wheel */
-          
-          /* Content container to move the number/icon outward */
+          transform-origin: 0% 100%;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding-left: 10px; /* Push content away from the center */
+          padding-left: 10px;
         }
-        
-        /* Inner container to hold text/icon and counter-rotate it */
+
         .segment-content {
-          /* Counter-rotate the text to make it level on the screen */
-          transform: rotate(-${segmentAngle / 2}deg); 
+          transform: rotate(-${segmentAngle / 2}deg);
           display: flex;
           align-items: center;
           color: white;
@@ -428,16 +254,14 @@ useEffect(() => {
 
         .pointer {
           position: absolute;
-          /* Position above the wheel */
-          top: -30px; 
+          top: -30px;
           left: 50%;
           transform: translateX(-50%);
           width: 0;
           height: 0;
-          /* Triangle shape */
           border-left: 20px solid transparent;
           border-right: 20px solid transparent;
-          border-top: 30px solid #ff4757; 
+          border-top: 30px solid #ff4757;
           z-index: 10;
           box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
         }
@@ -523,107 +347,79 @@ useEffect(() => {
           }
         }
 
-        /* Responsive design */
         @media (max-width: 480px) {
           .wheel-container {
             width: 300px;
             height: 300px;
           }
-          
           .number {
             font-size: 20px;
           }
-          
           .segment-label {
             padding-left: 5px;
           }
-
-          .segment-content {
-             /* Adjust counter rotation for smaller screen if needed */
-          }
-          
           .center-circle {
             width: 60px;
             height: 60px;
           }
-          
           .spin-button {
             padding: 15px 40px;
             font-size: 18px;
           }
-          
           h1 {
             font-size: 2rem;
           }
         }
         `}
       </style>
-      {/* -------------------/*    <h3 className="text-4xl font-black tracking-wide">Prize Wheel of Fortune</h1> -------------------- */}
 
-  
-    <h2 style={{
-  fontSize: '2rem',
-  fontWeight: 'bold',
-  color: '#4e2b03e5',
-  textShadow: '0 0 10px #282e2dff, 0 0 20px #292f2eff',
-  background: 'rgba(0, 0, 0, 0.3)',
-  padding: '15px 25px',
-  borderRadius: '12px',
-  backdropFilter: 'blur(6px)',
-  margin: '20px 0',
-  textAlign: 'center'
-}}>
-    Your balance: {Math.floor(wallet)}
-</h2>
+      <h2 style={{
+        fontSize: '2rem',
+        fontWeight: 'bold',
+        color: '#4e2b03e5',
+        textShadow: '0 0 10px #282e2dff, 0 0 20px #292f2eff',
+        background: 'rgba(0, 0, 0, 0.3)',
+        padding: '15px 25px',
+        borderRadius: '12px',
+        backdropFilter: 'blur(6px)',
+        margin: '20px 0',
+        textAlign: 'center'
+      }}>
+        Your balance: {Math.floor(wallet)}
+      </h2>
 
-     
       <div className="wheel-container">
-        
-        {/* The wheel now uses the conicGradient for seamless colors */}
         <div
           className="wheel"
           ref={wheelRef}
-          style={{ 
-            background: conicGradient,
-          }}
+          style={{ background: conicGradient }}
         >
-          {/* Map through segments to position the text and icons */}
           {segmentThemes.map((theme, index) => {
             const rotation = index * segmentAngle;
-            
             return (
               <div
                 key={index}
                 className="segment-label"
-                // Rotate the label container to its position on the wheel
-                style={{
-                  transform: `rotate(${rotation}deg)`,
-                }}
+                style={{ transform: `rotate(${rotation}deg)` }}
               >
-                {/* Content is counter-rotated to stay upright */}
                 <div className="segment-content">
-                  <span className="segment-icon">
-                    {theme.icon}
-                  </span>
-                  <span className="number">
-                    {theme.value}
-                  </span>
+                  <span className="segment-icon">{theme.icon}</span>
+                  <span className="number">{theme.value}</span>
                 </div>
               </div>
             );
           })}
         </div>
-        
         <div className="pointer"></div>
         <div className="center-circle"></div>
       </div>
 
       <div className="controls">
-      {result === null && (
-  <button onClick={spinWheel} disabled={spinning} className="spin-button">
-    {spinning ? 'Spinning...' : 'SPIN'}
-  </button>
-)}
+        {result === null && (
+          <button onClick={spinWheel} disabled={spinning} className="spin-button">
+            {spinning ? 'Spinning...' : 'SPIN'}
+          </button>
+        )}
         {result !== null && (
           <div className="result">
             <h2>{getResultMessage(result)}</h2>
@@ -631,6 +427,7 @@ useEffect(() => {
           </div>
         )}
       </div>
+      <ToastContainer />
     </div>
   );
 };

@@ -11,16 +11,23 @@ const Counter=require('../Models/CounterSchema');
 // Withdraw route
 // Withdraw route
 router.post("/withdraw", async (req, res) => {
+  // 🔐 1. API Key Check – only the bot can call this endpoint
+  const apiKey = req.headers['x-api-key'];
+  if (apiKey !== process.env.INTERNAL_API_SECRET) {
+    return res.status(401).json({ message: "Unauthorized – invalid API key" });
+  }
+
   const { username, amount, phoneNumber, type } = req.body;
 
   try {
-    // 1. --- Input Validation (moved to the top) ---
+    // 2. Input Validation
     if (!username || !amount || !phoneNumber || !type) {
       return res.status(400).json({ message: "Username, amount, phoneNumber, and type are all required." });
     }
     if (!["telebirr", "cbebirr"].includes(type)) {
       return res.status(400).json({ message: `Valid type (telebirr or cbebirr) is required.` });
     }
+    
     const user = await BingoBord.findOne({ username });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -29,7 +36,7 @@ router.post("/withdraw", async (req, res) => {
       return res.status(400).json({ message: "Insufficient balance" });
     }
 
-    // 2. --- Generate a unique withdrawal ID ---
+    // 3. Generate a unique withdrawal ID
     const counter = await Counter.findOneAndUpdate(
       { _id: "withdrawalId" },
       { $inc: { seq: 1 } },
@@ -40,19 +47,19 @@ router.post("/withdraw", async (req, res) => {
     }
     const withdrawalId = counter.seq;
 
-    // 3. --- Create and save the transaction record FIRST (safest approach) ---
+    // 4. Create and save the transaction record
     const newTx = new Transaction({
-      transactionNumber: `WD${withdrawalId}`, // Use the generated ID for consistency
+      transactionNumber: `WD${withdrawalId}`,
       phoneNumber,
       method: "withdrawal",
       type,
       amount,
-      status: "pending", // Add a status field to track withdrawals
+      status: "pending",
       rawMessage: `Withdrawal via ${type}`,
     });
-    await newTx.save(); // This will throw an error if the save fails
+    await newTx.save();
 
-    // 4. --- If the transaction save succeeded, update the user's wallet ---
+    // 5. Deduct from user's wallet
     user.Wallet -= amount;
     await user.save();
 
@@ -67,7 +74,6 @@ router.post("/withdraw", async (req, res) => {
     res.status(500).json({ message: "Server error occurred. Please contact support." });
   }
 });
-
 
 // Get transaction history
 router.get("/history/:username", async (req, res) => {
