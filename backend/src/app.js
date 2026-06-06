@@ -1440,11 +1440,7 @@ app.post("/api/spin", async (req, res) => {
 
   // --- Determine win amount (you can set your own probabilities) ---
   let winAmount = 0;
-  const random = Math.random() * 100;
-  if (random < 5) winAmount = 50;
-  else if (random < 15) winAmount = 30;
-  else if (random < 30) winAmount = 20;
-  else if (random < 50) winAmount = 10;
+  
   // else winAmount = 0
 
   user.Wallet += winAmount;
