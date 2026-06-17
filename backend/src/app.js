@@ -267,7 +267,6 @@ async function injectImmediateBots(rId, room) {
 
     if (botsToInject.length === 0) {
         console.log(`[INJECT] Room ${rId} - All immediate bots already have cartelas`);
-        // Start monitoring for delayed bots
         startDelayedBotMonitor(rId);
         return;
     }
@@ -283,6 +282,25 @@ async function injectImmediateBots(rId, room) {
             
             // Start monitoring for delayed bots
             startDelayedBotMonitor(rId);
+            
+            // ✅ FIX: Start countdown after 10 seconds if no real players
+            // This prevents the room from being stuck forever
+            setTimeout(() => {
+                const roomNow = rooms[rId];
+                if (!roomNow) return;
+                
+                const realCartelas = countRealCartelas(roomNow);
+                const totalPlayers = Object.values(roomNow.playerCartelas).reduce((sum, arr) => sum + arr.length, 0);
+                
+                // If less than 12 real cartelas AND game hasn't started yet, start countdown
+                if (realCartelas < 12 && totalPlayers >= 2 && !roomNow.timer && !roomNow.activeGame) {
+                    console.log(`[INJECT] Room ${rId} - Less than 12 real cartelas after 10s, starting countdown with ${totalPlayers} total players`);
+                    startCountdown(rId, 30);
+                } else if (realCartelas >= 12) {
+                    console.log(`[INJECT] Room ${rId} - 12+ real cartelas reached, waiting for delayed bots`);
+                }
+            }, 10000); // Wait 10 seconds for real players
+            
             return;
         }
 
@@ -348,7 +366,7 @@ function startDelayedBotMonitor(rId) {
             room.delayedBotMonitor = null;
             console.log(`[MONITOR] Room ${rId} - Timeout waiting for 12 real cartelas`);
         }
-    }, 100); // Check every 1 second
+    }, 1000); // Check every 1 second
 }
 async function injectDelayedBots(rId, room) {
     const botsToInject = delayedPlayersData.filter(player => {
