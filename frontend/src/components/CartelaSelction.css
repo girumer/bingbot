@@ -419,5 +419,74 @@
 .wallet-stake-buttons button:nth-child(3) {
     flex: 3; /* 3 parts */
 }
+/* Add this at the very end of your CSS file */
 
+/* Enable vertical scrolling for 200 cartelas */
+.Cartelacontainer-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden; /* Prevent double scrollbars */
+}
+
+.Cartelacontainer {
+  overflow-y: auto; /* Enable vertical scrolling */
+  flex: 1; /* Take remaining space */
+  align-content: start; /* Align items to top */
+  max-height: calc(100vh - 180px); /* Adjust based on header height */
+  padding-bottom: 10px;
+}
+
+/* Optional: Style the scrollbar for better UX */
+.Cartelacontainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.Cartelacontainer::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.1);
+  border-radius: 10px;
+}
+
+.Cartelacontainer::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.Cartelacontainer::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Make cartela buttons smaller to fit 200 in view */
+.cartela {
+  height: 30px;
+  font-size: 0.7rem;
+  min-width: 25px;
+  padding: 2px;
+}
+
+/* Ensure timer and wallet display stay fixed */
+.wallet-stake-display {
+  flex-shrink: 0;
+}
+
+.timer-display {
+  flex-shrink: 0;
+}
+
+.selection-controls-area {
+  flex-shrink: 0;
+}
+
+/* Mobile adjustments for 200 cartelas */
+@media (max-width: 480px) {
+  .Cartelacontainer {
+    max-height: calc(100vh - 160px);
+  }
+  
+  .cartela {
+    height: 25px;
+    font-size: 0.6rem;
+    min-width: 20px;
+  }
+}
 /* Mobile adjustments */
