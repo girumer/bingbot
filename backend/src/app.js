@@ -169,7 +169,7 @@ function verifyTelegramInitData(initData, botToken) {
 
 // Define the players you want to inject
 // Define the players you want to inject
-/* const forcedPlayersData = [
+const forcedPlayersData = [
     { username: 'amanu', clientId: 'tg_amanu_fake' },
     
     { username: 'soloman', clientId: '200003x' },
@@ -195,228 +195,10 @@ function verifyTelegramInitData(initData, botToken) {
      {username: "jemal_76545",clientId: '200032x'},
      {username: "kida_25133",clientId: '200031x'},
      {username: "ali_987630",clientId: '200030x'},
-
-     {username: "wonde_ty4",clientId: '2000455x'},
-     {username: "turi_su",clientId: '2000967x'},
-     {username: "alexsuckss",clientId: '200033x'},
-     {username: "jamiks",clientId: '200059x'},
-     {username: "habiboo",clientId: '2000345x'},
-      {username: "fitse_23434",clientId: '200035sx'},
-       {username: "maamokacha",clientId: '200037sx'},
-        {username: "fillimoon",clientId: '2000337x'},
-         {username: "sabirlove2",clientId: '200037fx'},
-          {username: "burabu_3456",clientId: '200037bx'},
-           {username: "mastushewa",clientId: '200037gx'},
-            {username: "gerekirkose",clientId: '200037jx'},
-             
-
-]; */
-const immediatePlayersData = [
-    { username: 'amanu', clientId: 'tg_amanu_fake' },
-    { username: 'soloman', clientId: '200003x' },
-    { username: 'adisu', clientId: '200014x' },
-    { username: 'mesi', clientId: '200015x' },
-    { username: 'ruth', clientId: '200016x' },
-    { username: 'markose', clientId: '2000787x' },
-    { username: 'yosi', clientId: '200019x' },
-    { username: 'sisco', clientId: '200020x' },
-    { username: 'yaredo', clientId: '200021x' },
-    { username: 'derara', clientId: '200017x' },
-    { username: 'suura', clientId: '200018x' },
-    { username: 'ermii', clientId: 'client-tariku-bot' },
-    { username: 'salim', clientId: 'client-cita-bot' },
-    { username: 'admas', clientId: 'client-chkuni-bot' },
-    { username: "telila_65432", clientId: '200037x' },
-    { username: "medi_4563", clientId: '200035x' },
-    { username: "redwan_45655", clientId: '200034x' },
-    { username: "tsegihshmuze", clientId: '200033x' },
-    { username: "jemal_76545", clientId: '200032x' },
-    { username: "kida_25133", clientId: '200031x' },
-    { username: "ali_987630", clientId: '200030x' }
-];
-const delayedPlayersData = [
-    { username: "wonde_ty4", clientId: '2000455x' },
-    { username: "turi_su", clientId: '2000967x' },
-    { username: "alexsuckss", clientId: '200033x' },
-    { username: "jamiks", clientId: '200059x' },
-    { username: "habiboo", clientId: '2000345x' },
-    { username: "fitse_23434", clientId: '200035sx' },
-    { username: "maamokacha", clientId: '200037sx' },
-    { username: "fillimoon", clientId: '2000337x' },
-    { username: "sabirlove2", clientId: '200037fx' },
-    { username: "burabu_3456", clientId: '200037bx' },
-    { username: "mastushewa", clientId: '200037gx' },
-    { username: "gerekirkose", clientId: '200037jx' }
-];
-const forcedPlayersData = [...immediatePlayersData, ...delayedPlayersData];
-function countRealCartelas(room) {
-    let count = 0;
-    for (const clientId in room.playerCartelas) {
-        const isBot = forcedPlayersData.some(bot => bot.clientId === clientId);
-        if (!isBot) {
-            count += room.playerCartelas[clientId]?.length || 0;
-        }
-    }
-    return count;
-}
-async function injectImmediateBots(rId, room) {
-    const botsToInject = immediatePlayersData.filter(player => {
-        const botCartelaCount = room.playerCartelas[player.clientId]?.length || 0;
-        return botCartelaCount < NUM_CARTELAS_PER_PLAYER;
-    });
-
-    if (botsToInject.length === 0) {
-        console.log(`[INJECT] Room ${rId} - All immediate bots already have cartelas`);
-        startDelayedBotMonitor(rId);
-        return;
-    }
-
-    console.log(`[INJECT] Room ${rId} - Starting immediate injection of ${botsToInject.length} bots`);
-
-    let index = 0;
     
-    const intervalId = setInterval(async () => {
-        if (index >= botsToInject.length) {
-            clearInterval(intervalId);
-            console.log(`[INJECT] Room ${rId} - All immediate bots injected`);
-            
-            // Start monitoring for delayed bots
-            startDelayedBotMonitor(rId);
-            
-            // ✅ FIX: Start countdown after 10 seconds if no real players
-            // This prevents the room from being stuck forever
-            setTimeout(() => {
-                const roomNow = rooms[rId];
-                if (!roomNow) return;
-                
-                const realCartelas = countRealCartelas(roomNow);
-                const totalPlayers = Object.values(roomNow.playerCartelas).reduce((sum, arr) => sum + arr.length, 0);
-                
-                // If less than 12 real cartelas AND game hasn't started yet, start countdown
-                if (realCartelas < 12 && totalPlayers >= 2 && !roomNow.timer && !roomNow.activeGame) {
-                    console.log(`[INJECT] Room ${rId} - Less than 12 real cartelas after 10s, starting countdown with ${totalPlayers} total players`);
-                    startCountdown(rId, 30);
-                } else if (realCartelas >= 12) {
-                    console.log(`[INJECT] Room ${rId} - 12+ real cartelas reached, waiting for delayed bots`);
-                }
-            }, 10000); // Wait 10 seconds for real players
-            
-            return;
-        }
 
-        const bot = botsToInject[index];
-        const result = await processNextBotCartelaSequential(rId, bot);
-        
-        if (result === 'SUCCESS') {
-            console.log(`[INJECT] Room ${rId} - Immediate bot ${bot.username} injected (${index + 1}/${botsToInject.length})`);
-        } else {
-            console.log(`[INJECT] Room ${rId} - Immediate bot ${bot.username} injection failed: ${result}`);
-        }
-        
-        index++;
-    }, 100); // 0.1 second interval
-
-    room.botInjectionInterval = intervalId;
-}
-function startDelayedBotMonitor(rId) {
-    const room = rooms[rId];
-    if (!room) return;
-    if (room.activeGame) return;
-
-    // Clear any existing monitor
-    if (room.delayedBotMonitor) {
-        clearInterval(room.delayedBotMonitor);
-        room.delayedBotMonitor = null;
-    }
-
-    // Check if delayed bots are already injected
-    const delayedBotsInjected = delayedPlayersData.every(player => {
-        return (room.playerCartelas[player.clientId]?.length || 0) >= NUM_CARTELAS_PER_PLAYER;
-    });
-
-    if (delayedBotsInjected) {
-        console.log(`[MONITOR] Room ${rId} - Delayed bots already injected`);
-        return;
-    }
-
-    console.log(`[MONITOR] Room ${rId} - Monitoring for 12 real cartelas to inject delayed bots`);
-
-    let checkCount = 0;
-    const MAX_CHECKS = 600; // 10 minutes
-
-    room.delayedBotMonitor = setInterval(() => {
-        checkCount++;
-        
-        if (!rooms[rId] || rooms[rId].activeGame) {
-            clearInterval(room.delayedBotMonitor);
-            room.delayedBotMonitor = null;
-            return;
-        }
-
-        const realCartelas = countRealCartelas(room);
-        console.log(`[MONITOR] Room ${rId} - Real cartelas: ${realCartelas}/12 (check ${checkCount})`);
-
-        if (realCartelas >= 12) {
-            clearInterval(room.delayedBotMonitor);
-            room.delayedBotMonitor = null;
-            console.log(`[MONITOR] Room ${rId} - 12+ real cartelas reached, injecting delayed bots`);
-            injectDelayedBots(rId, room);
-        } else if (checkCount >= MAX_CHECKS) {
-            clearInterval(room.delayedBotMonitor);
-            room.delayedBotMonitor = null;
-            console.log(`[MONITOR] Room ${rId} - Timeout waiting for 12 real cartelas`);
-        }
-    }, 1000); // Check every 1 second
-}
-async function injectDelayedBots(rId, room) {
-    const botsToInject = delayedPlayersData.filter(player => {
-        const botCartelaCount = room.playerCartelas[player.clientId]?.length || 0;
-        return botCartelaCount < NUM_CARTELAS_PER_PLAYER;
-    });
-
-    if (botsToInject.length === 0) {
-        console.log(`[INJECT] Room ${rId} - All delayed bots already have cartelas`);
-        // Check if we should start countdown
-        const totalPlayers = Object.values(room.playerCartelas).reduce((sum, arr) => sum + arr.length, 0);
-        if (!room.timer && totalPlayers >= 2) {
-            console.log(`[INJECT] Room ${rId} - Starting countdown`);
-            startCountdown(rId, 30);
-        }
-        return;
-    }
-
-    console.log(`[INJECT] Room ${rId} - Starting delayed injection of ${botsToInject.length} bots`);
-
-    let index = 0;
     
-    const intervalId = setInterval(async () => {
-        if (index >= botsToInject.length) {
-            clearInterval(intervalId);
-            console.log(`[INJECT] Room ${rId} - All delayed bots injected`);
-            
-            // Start countdown
-            const totalPlayers = Object.values(room.playerCartelas).reduce((sum, arr) => sum + arr.length, 0);
-            if (!room.timer && totalPlayers >= 2) {
-                console.log(`[INJECT] Room ${rId} - Starting countdown`);
-                startCountdown(rId, 30);
-            }
-            return;
-        }
-
-        const bot = botsToInject[index];
-        const result = await processNextBotCartelaSequential(rId, bot);
-        
-        if (result === 'SUCCESS') {
-            console.log(`[INJECT] Room ${rId} - Delayed bot ${bot.username} injected (${index + 1}/${botsToInject.length})`);
-        } else {
-            console.log(`[INJECT] Room ${rId} - Delayed bot ${bot.username} injection failed: ${result}`);
-        }
-        
-        index++;
-    }, 100); // 0.1 second interval
-
-    room.botInjectionInterval = intervalId;
-}
+];
 // Note: clientId must be unique strings for the game logic to work correctly.
 const NUM_CARTELAS_PER_PLAYER = 1;
 
@@ -508,29 +290,61 @@ function startInjectionMonitor(rId, initiatorClientId) {
     if (!room) return;
     if (room.activeGame) return;
 
-    // ✅ ADD THIS CHECK - Prevent multiple injections
-    if (room.injectionStarted) {
-        console.log(`[INJECT] Room ${rId} - Injection already started, skipping`);
-        return;
-    }
+    if (room.injectInterval) clearTimeout(room.injectInterval);
 
-    // Clear any existing intervals
-    if (room.injectInterval) {
-        clearTimeout(room.injectInterval);
-        room.injectInterval = null;
-    }
-    if (room.botInjectionInterval) {
-        clearInterval(room.botInjectionInterval);
-        room.botInjectionInterval = null;
-    }
-    if (room.delayedBotMonitor) {
-        clearInterval(room.delayedBotMonitor);
-        room.delayedBotMonitor = null;
-    }
-    
-    room.injectionStarted = true;  // ← Mark as started
-    // Start injecting immediate bots only
-    injectImmediateBots(rId, room);
+    const activeBots = forcedPlayersData.filter(player => player.clientId !== initiatorClientId);
+    let currentBotIndex = 0;
+    const DELAY_MS = 1000;
+    const MAX_CYCLES = activeBots.length * 2; // e.g., try each bot twice
+    let cycleCount = 0;
+
+    const runInjectionCycle = async () => {
+        // Cleanup check
+        if (!rooms[rId] || rooms[rId].activeGame) {
+            room.injectInterval = null;
+            return;
+        }
+
+        const maxBotCartelas = activeBots.length * NUM_CARTELAS_PER_PLAYER;
+        const currentBotCartelas = activeBots.reduce((sum, bot) => sum + (room.playerCartelas[bot.clientId]?.length || 0), 0);
+
+        // Stop if all bots succeeded OR max cycles reached
+        if (currentBotCartelas >= maxBotCartelas || cycleCount >= MAX_CYCLES) {
+            if (cycleCount >= MAX_CYCLES) {
+                console.log(`[INJECT MONITOR] Room ${rId} stopped after ${MAX_CYCLES} cycles. Some bots may have failed.`);
+            }
+            room.injectInterval = null;
+            // Optionally force-start countdown if enough players have cartelas
+            const playersWithCartela = Object.values(room.playerCartelas).filter(arr => arr.length > 0).length;
+            if (!room.timer && playersWithCartela >= 2) {
+                startCountdown(rId, 30);
+            }
+            return;
+        }
+
+        // Countdown check (same as before)
+        const playersWithCartela = Object.values(room.playerCartelas).filter(arr => arr.length > 0).length;
+        if (!room.timer && playersWithCartela >= 2) {
+            startCountdown(rId, 30);
+        }
+
+        // Inject next bot
+        const botToInject = activeBots[currentBotIndex];
+        if (botToInject) {
+            const botCartelaCount = room.playerCartelas[botToInject.clientId]?.length || 0;
+            if (botCartelaCount < NUM_CARTELAS_PER_PLAYER) {
+                await processNextBotCartelaSequential(rId, botToInject);
+            }
+            currentBotIndex = (currentBotIndex + 1) % activeBots.length;
+        } else {
+            currentBotIndex = (currentBotIndex + 1) % activeBots.length;
+        }
+
+        cycleCount++;
+        room.injectInterval = setTimeout(runInjectionCycle, DELAY_MS);
+    };
+
+    room.injectInterval = setTimeout(runInjectionCycle, DELAY_MS);
 }
     function startRoomMonitor() {
     // Run this check every 5 seconds
@@ -643,29 +457,27 @@ socket.on("authenticate", async ({ initData }) => {
 
   if (!rooms[rId]) {
     rooms[rId] = {
-        players: {},
-        selectedIndexes: [],
-        playerCartelas: {},
-        timer: null,
-        calledNumbers: [],
-        timerInterval: null,
-        numberInterval: null,
-        injectInterval: null,
-        botInjectionInterval: null,    // ← ADD THIS
-        delayedBotMonitor: null,   
-          injectionStarted: false,     // ← ADD THIS
-        alreadyWon: [],
-        totalAward: 0,
-        gameId: null,
+      players: {},
+      selectedIndexes: [],
+      playerCartelas: {},
+      timer: null,
+      calledNumbers: [],
+      timerInterval: null,
+      numberInterval: null,
+      injectInterval: null,
+      alreadyWon: [],
+      totalAward: 0,
+      gameId: null,
     };
-}
+    console.log(`Room created: ${rId}`);
+  }
+
   // Use clientId as key
   rooms[rId].players[clientId] = username;
 
   if (!rooms[rId].playerCartelas[clientId]) {
     rooms[rId].playerCartelas[clientId] = [];
   }
-  startInjectionMonitor(rId, clientId);
   const myCartelas = rooms[rId].playerCartelas[clientId];
 
   socket.emit("currentGameState", {
@@ -763,7 +575,7 @@ socket.on("checkPlayerStatus", ({ roomId }) => {   // no clientId from client
     });
 
     if (userCartelas.length === 1) {
-   //   startInjectionMonitor(rId, clientId);
+      startInjectionMonitor(rId, clientId);
     }
   } catch (err) {
     console.error("Error selecting cartela:", err);
@@ -848,47 +660,38 @@ socket.on("disconnect", () => {
 });
 
 function resetRoom(roomId) {
-    const room = rooms[roomId];
-    if (!room) return;
+  const room = rooms[roomId];
+  if (!room) return;
 
-    // Clear all intervals
-    if (room.timerInterval) {
-        clearInterval(room.timerInterval);
-        room.timerInterval = null;
-    }
-    if (room.numberInterval) {
-        clearInterval(room.numberInterval);
-        room.numberInterval = null;
-    }
-    if (room.injectInterval) {
+  // Clear all intervals
+  if (room.timerInterval) {
+    clearInterval(room.timerInterval);
+    room.timerInterval = null;
+  }
+  if (room.numberInterval) {
+    clearInterval(room.numberInterval);
+    room.numberInterval = null;
+  }
+if (room.injectInterval) {
         clearTimeout(room.injectInterval);
         room.injectInterval = null;
     }
-    if (room.botInjectionInterval) {      // ← ADD THIS
-        clearInterval(room.botInjectionInterval);
-        room.botInjectionInterval = null;
-    }
-    if (room.delayedBotMonitor) {          // ← ADD THIS
-        clearInterval(room.delayedBotMonitor);
-        room.delayedBotMonitor = null;
-    }
+  // Reset room state but keep players
+  room.activeGame = false;
+  room.selectedIndexes = [];
+  room.calledNumbers = [];
+  room.alreadyWon = [];
+  room.totalAward = 0;
+  room.gameId = null;
+  room.timer = null;
 
-    // Reset room state but keep players
-    room.activeGame = false;
-    room.selectedIndexes = [];
-    room.calledNumbers = [];
-    room.alreadyWon = [];
-    room.totalAward = 0;
-    room.gameId = null;
-    room.timer = null;
- room.injectionStarted = false; 
-    // Reset player cartelas but keep players
-    for (const clientId in room.playerCartelas) {
-        room.playerCartelas[clientId] = [];
-    }
+  // Reset player cartelas but keep players
+  for (const clientId in room.playerCartelas) {
+    room.playerCartelas[clientId] = [];
+  }
 
-    io.to(roomId).emit("roomAvailable");
-    io.to(roomId).emit("resetRoom");
+  io.to(roomId).emit("roomAvailable");
+  io.to(roomId).emit("resetRoom");
 }
 
 
