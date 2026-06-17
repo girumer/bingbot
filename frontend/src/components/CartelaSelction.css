@@ -1,35 +1,38 @@
-/* Wrapper for horizontal scrolling */
-
+/* Wrapper for vertical scrolling */
 .Cartelacontainer-wrapper {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
-  background-color: #dbaff8a5; /* solid background */
+  height: 100vh;
+  background-color: #dbaff8a5;
   margin: 0;
-  padding: 5px;              /* match the working page */
+  padding: 5px;
   box-sizing: border-box;
+  overflow: hidden; /* Prevent double scrollbars */
 }
 
 .Cartelacontainer-wrapper > .wallet-stake-display {
-  margin-top: 0;             /* remove top margin */
-  margin-bottom: 0px;       /* keep spacing below update one */
-  padding-top: 0px;          /* internal spacing */
+  margin-top: 0;
+  margin-bottom: 0px;
+  padding-top: 0px;
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 /* Top display buttons */
 .wallet-stake-display {
-    display: flex;                   /* use flexbox */
-    justify-content: space-between;  /* spread buttons evenly */
-    width: 100%;
-    gap: 5px;                        /* small gap between buttons update two */
-    margin: 0px 0;
-    flex-wrap: nowrap;                /* prevent wrapping */
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 5px;
+  margin: 0px 0;
+  flex-wrap: nowrap;
 }
-
 
 .display-btn {
   flex: 1 1 30%;
   margin: 0.4rem;
   padding: 0.6rem;
-    max-width: 120px;
+  max-width: 120px;
   min-width: 80px;
   background-color: #e0e5ea;
   color: rgb(35, 17, 17);
@@ -39,405 +42,37 @@
   box-shadow: 0px 2px 5px rgba(0,0,0,0.2);
 }
 
-
-.display-btn1 {
-  flex: 1 1 30%;
-  margin: 0.4rem;
-  max-width: 90px;
-  min-width: 80px;
-  padding: 0.6rem;
-  background-color: #de4a10;
-  color: white;
-  font-weight: bold;
-  text-align: center;
-  border-radius: 4px;
-  box-shadow: 0px 2px 5px rgba(0,0,0,0.2);
-}
-/* Cartela container (grid of 10 rows) */
-.Cartelacontainer {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr); /* 10 columns */
-  gap: 8px;
-  margin-top: 1rem;
-}
-
-/* Individual cartela buttons */
-.cartela {
-  padding: 0.8rem;
-  border-radius: 6px;
-  border: 1px solid #121111;
-  font-weight: bold;
-  transition: 0.2s;
-}
-
-.cartela:hover {
-  transform: scale(1.05);
-}
+/* Timer display */
 .timer-display {
   font-size: 1.5rem;
   font-weight: bold;
   color: #962706;
   text-align: center;
   animation: pulse 1.5s infinite;
+  flex-shrink: 0;
 }
+
 @keyframes pulse {
   0%   { opacity: 1; transform: scale(1); }
   50%  { opacity: 0.6; transform: scale(1.1); }
   100% { opacity: 1; transform: scale(1); }
 }
-/* Grid for buttons */
+
+/* Cartela container - SCROLLABLE */
 .Cartelacontainer {
-    display: grid;
-    grid-template-columns: repeat(10, 1fr); /* 10 columns per row */
-    gap: 5px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.cartela {
-    width: 100%; /* fill grid cell */
-    height: 35px;
-    min-width: 30px; /* minimum width for mobile */
-    background-color: #16e916ed;
-    color: rgb(180, 29, 29);
-    border: none;
-    cursor: pointer;
-    text-align: center;
-    font-size: 0.8rem;
-    border-radius: 5px;
-    transition: transform 0.2s;
-}
-
-.cartela:active {
-    transform: scale(0.95);
-}
-
-/* Command board for controls */
-.cartelacomand_bord {
-    background-color: rgba(49, 114, 227, 0.974);
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    padding: 10px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-/* Game start button */
-.game_start {
-    background-color: rgb(135, 58, 65);
-    width: 100%;
-    height: 50px;
-    margin: 20px auto;
-    border-radius: 25px;
-    color: white;
-    font-size: large;
-    display: block;
-}
-
-/* Dropdowns and stake */
-.Stakeplace,
-.dropdown-cartela1 {
-    width: 90%;
-    max-width: 300px;
-    margin: 10px auto;
-    font-family: Arial, sans-serif;
-}
-
-.dropdown-header-cartela1 {
-    padding: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 20px;
-    background-color: #e24f4f;
-    cursor: pointer;
-}
-
-.dropdown-list-cartela {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: #0e0e0e;
-    border-radius: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    z-index: 1000;
-}
-
-
-
-.dropdown-item-cartela:hover {
-    background-color: #ec3636;
-    border-radius: 20px;
-}
-
-.arrow {
-    width: 0;
-    height: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #12024c;
-    transition: transform 0.2s;
-}
-
-.arrow.open {
-    transform: rotate(180deg);
-}
-
-/* Stake values grid */
-.stakevalue {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
-    gap: 10px;
-    font-size: large;
-}
-
-.stakevalue label {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.cartela-cell1 {
-  display: inline-block;
-  width: 35px;
-  height: 35px;
-  line-height: 35px;
-  text-align: center;
-  border: 1px solid #333;
-  margin: 2px;
-  border-radius: 6px;
-  background: #0f0f0e;
-  color:white;
-  transition: 0.3s;
-}
-
-.cartela-cell1.taken {
-  background: red;
-  color: rgb(190, 70, 30);
-  font-weight: bold;
-}
-
-.cartela-display1.pending {
-  transition: opacity 0.5s ease;
-  opacity: 1;
-}
-
-.cartela-display1.pending.fade-out {
-  opacity: 0;
-}
-
-/* Mobile responsiveness */
-/* Container that holds both the card and the buttons */
-.selection-controls-area {
-  display: flex;
-  flex-direction: row;      /* Horizontal layout */
-  justify-content: center;  /* Center the group */
-  align-items: center;      /* Align middle vertically */
-  gap: 15px;                /* Space between card and buttons */
-  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr); /* 10 columns */
+  gap: 5px;
   width: 100%;
-}
-
-/* Container for the two buttons on the right */
-.side-button-container {
-  display: flex;
-  flex-direction: column;   /* Vertical stack */
-  gap: 8px;                 /* Space between Confirm and Cancel */
-}
-/* Make sure the buttons aren't too wide so they fit on mobile screens */
-.side-button-container .game_start, 
-.side-button-container .game_start1 {
-  width: 110px;             
-  height: 45px;
-  margin: 0;                /* Remove all old auto-margins */
-  font-size: 14px;
-}
-
-/* Ensure the preview card doesn't take up too much width */
-.pending-cartelas {
-    margin: 0;
-}
-
-.cartela-cell1 {
-    width: 25px; /* Slightly smaller cells to save horizontal space */
-    height: 25px;
-    font-size: 0.7rem;
-}
-
-/* Mobile Tweak: If the screen is too narrow, stack them back up */
-@media (max-width: 360px) {
-    .selection-controls-area {
-        flex-direction: column;
-    }
-    .side-button-container {
-        flex-direction: row;
-    }
-}
-.selected-cartela {
-    display: flex;
-    justify-content: center; /* center the card horizontally */
-    margin: 20px 0;
-}
-
-.cartela-display1 {
-    display: flex;
-    flex-direction: column;
-    gap: 5px; /* space between rows */
-    background: transparent !important;
-    padding: 15px;
-    border-radius: 0px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.cartela-row1 {
-    display: flex;
-    gap: 5px; /* space between cells */
-    justify-content: center;
-}
-
-.cartela-cell1 {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid #333;
-    border-radius: 5px;
-    font-weight: bold;
-    background-color: #ffb46494;
-    color:black;
-    cursor: default; /* change to pointer if you want clickable cells */
-    transition: background-color 0.3s, color 0.3s;
-}
-
-/* Example hover effect */
-.cartela-cell1:hover {
-    background-color: #a6a398;
-    color: #f3fbff;
-}
-.buttonconfirm {
-    display: flex;           /* use flexbox */
-    flex-direction: row;     /* horizontal layout */
-    justify-content: center; /* center buttons horizontally */
-    gap: 20px;               /* space between buttons */
-    margin: 20px 0;
-}
-
-.game_start1 {
-    width: 150px; 
-    height: 50px;           /* button width */
-    padding: 12px 0;         /* vertical padding */
-    font-size: 16px;
-    font-weight: bold;
-    border: none;
-    margin-top: 10px;
-    border-radius: 8px;
-    background-color: #ff4000;
-    color: #f4f6f6;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-.loading{
-    display: none;
-}
-.game_start {
-    width: 150px; 
-    height: 50px;            /* button width */
-    padding: 12px 0;         /* vertical padding */
-    font-size: 16px;
-    font-weight: bold;
-    margin-top: 10px;
-    border: none;
-    border-radius: 8px;
-    background-color: #375516;
-    color: #fff;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.game_start:disabled {
-    background-color: #935353;
-    cursor: not-allowed;
-}
-
-.game_start:hover:not(:disabled) {
-    background-color: #0056b3;
-}
-.game_start1:disabled {
-    background-color: #935353;
-    cursor: not-allowed;
-}
-
-.game_start1:hover:not(:disabled) {
-    background-color: #ff4000;
-}
-
-@media (max-width: 480px) {
-    .cartela {
-        height: 28px;
-        font-size: 0.65rem;
-    }
-
-    .stakevalue {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-/* Top three buttons horizontal full width, like 10 columns */
-/* Top three buttons horizontal full width, exactly filling 10 columns */
-/* Container for top three buttons */
-/* Top three buttons horizontal full width */
-.wallet-stake-buttons {
-    display: flex;
-    justify-content: space-between; /* spread buttons evenly */
-    width: 100%;
-    gap: 5px; /* space between buttons */
-    margin-bottom: 10px;
-    flex-wrap: nowrap; /* prevent wrapping */
-}
-
-/* Each button proportional width */
-.wallet-stake-buttons button {
-    flex: 1; /* default equal width */
-    padding: 0.8rem;
-    font-size: 0.9rem;
-    text-align: center;
-    border-radius: 6px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    cursor: pointer;
-}
-
-/* Proportional widths for desktop */
-.wallet-stake-buttons button:nth-child(1) {
-    flex: 3; /* 3 parts */
-}
-.wallet-stake-buttons button:nth-child(2) {
-    flex: 4; /* 4 parts */
-}
-.wallet-stake-buttons button:nth-child(3) {
-    flex: 3; /* 3 parts */
-}
-/* Add this at the very end of your CSS file */
-
-/* Enable vertical scrolling for 200 cartelas */
-.Cartelacontainer-wrapper {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow: hidden; /* Prevent double scrollbars */
-}
-
-.Cartelacontainer {
-  overflow-y: auto; /* Enable vertical scrolling */
+  box-sizing: border-box;
   flex: 1; /* Take remaining space */
+  overflow-y: auto; /* Enable vertical scrolling */
   align-content: start; /* Align items to top */
-  max-height: calc(100vh - 180px); /* Adjust based on header height */
-  padding-bottom: 10px;
+  max-height: calc(100vh - 200px); /* Adjust based on header height */
+  padding: 5px 5px 10px 5px;
 }
 
-/* Optional: Style the scrollbar for better UX */
+/* Custom scrollbar */
 .Cartelacontainer::-webkit-scrollbar {
   width: 6px;
 }
@@ -456,31 +91,162 @@
   background: #555;
 }
 
-/* Make cartela buttons smaller to fit 200 in view */
+/* Individual cartela buttons - smaller for 200 */
 .cartela {
+  width: 100%;
   height: 30px;
-  font-size: 0.7rem;
   min-width: 25px;
+  background-color: #16e916ed;
+  color: rgb(180, 29, 29);
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  font-size: 0.7rem;
+  border-radius: 5px;
   padding: 2px;
+  transition: transform 0.2s;
 }
 
-/* Ensure timer and wallet display stay fixed */
-.wallet-stake-display {
-  flex-shrink: 0;
+.cartela:active {
+  transform: scale(0.95);
 }
 
-.timer-display {
-  flex-shrink: 0;
-}
-
+/* Selection controls area */
 .selection-controls-area {
-  flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 10px;
+  width: 100%;
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
-/* Mobile adjustments for 200 cartelas */
+/* Container for the two buttons on the right */
+.side-button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.side-button-container .game_start, 
+.side-button-container .game_start1 {
+  width: 110px;
+  height: 45px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.pending-cartelas {
+  margin: 0;
+}
+
+.cartela-cell1 {
+  width: 25px;
+  height: 25px;
+  font-size: 0.7rem;
+  display: inline-block;
+  line-height: 25px;
+  text-align: center;
+  border: 1px solid #333;
+  margin: 2px;
+  border-radius: 6px;
+  background: #0f0f0e;
+  color: white;
+  transition: 0.3s;
+}
+
+.cartela-display1 {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: transparent !important;
+  padding: 15px;
+  border-radius: 0px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.cartela-row1 {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+}
+
+.cartela-cell1 {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #333;
+  border-radius: 5px;
+  font-weight: bold;
+  background-color: #ffb46494;
+  color: black;
+  cursor: default;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.cartela-cell1:hover {
+  background-color: #a6a398;
+  color: #f3fbff;
+}
+
+/* Button styles */
+.game_start {
+  width: 150px;
+  height: 50px;
+  padding: 12px 0;
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  background-color: #375516;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.game_start:disabled {
+  background-color: #935353;
+  cursor: not-allowed;
+}
+
+.game_start:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.game_start1 {
+  width: 150px;
+  height: 50px;
+  padding: 12px 0;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  margin-top: 10px;
+  border-radius: 8px;
+  background-color: #ff4000;
+  color: #f4f6f6;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.game_start1:disabled {
+  background-color: #935353;
+  cursor: not-allowed;
+}
+
+.game_start1:hover:not(:disabled) {
+  background-color: #ff4000;
+}
+
+/* Mobile responsiveness */
 @media (max-width: 480px) {
   .Cartelacontainer {
-    max-height: calc(100vh - 160px);
+    max-height: calc(100vh - 180px);
+    gap: 3px;
   }
   
   .cartela {
@@ -488,5 +254,20 @@
     font-size: 0.6rem;
     min-width: 20px;
   }
+  
+  .cartela-cell1 {
+    width: 20px;
+    height: 20px;
+    font-size: 0.6rem;
+    line-height: 20px;
+  }
 }
-/* Mobile adjustments */
+
+@media (max-width: 360px) {
+  .selection-controls-area {
+    flex-direction: column;
+  }
+  .side-button-container {
+    flex-direction: row;
+  }
+}
