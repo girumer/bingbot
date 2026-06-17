@@ -166,19 +166,19 @@
 }
 
 .cartela-cell1 {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid #333;
   border-radius: 5px;
   font-weight: bold;
-  background-color: #ffb46494;
+  background-color: #d3c6b794;
   color: black;
   cursor: default;
   transition: background-color 0.3s, color 0.3s;
-  font-size: 0.7rem;
+  font-size: 0.9rem;
 }
 
 .cartela-cell1:hover {

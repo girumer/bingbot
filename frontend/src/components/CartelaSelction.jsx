@@ -92,7 +92,7 @@ const initData = tg?.initData; // signed string – the only thing we trust
       return walletValue;
     } catch (err) {
       console.error("Failed to fetch wallet data:", err.response ? err.response.data : err.message);
-      toast.error("Failed to load wallet data.");
+//toast.error("Failed to load wallet data.");
       return 0;
     }
   };
