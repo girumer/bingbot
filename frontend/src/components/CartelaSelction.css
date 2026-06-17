@@ -1,4 +1,6 @@
-/* Wrapper - NO flex, use block layout */
+/* ==========================================================================
+   1. Layout Wrapper
+   ========================================================================== */
 .Cartelacontainer-wrapper {
   min-height: 100vh;
   background-color: #dbaff8a5;
@@ -14,7 +16,9 @@
   padding-top: 0px;
 }
 
-/* Top display buttons */
+/* ==========================================================================
+   2. Top Display Buttons (Wallet, Active Game, Stake)
+   ========================================================================== */
 .wallet-stake-display {
   display: flex;
   justify-content: space-between;
@@ -38,7 +42,9 @@
   box-shadow: 0px 2px 5px rgba(0,0,0,0.2);
 }
 
-/* Timer display */
+/* ==========================================================================
+   3. Timer Display & Pulse Animation
+   ========================================================================== */
 .timer-display {
   font-size: 1.5rem;
   font-weight: bold;
@@ -53,25 +59,28 @@
   100% { opacity: 1; transform: scale(1); }
 }
 
-/* Cartela container - FIXED HEIGHT for Telegram */
-/* Cartela container - FIXED HEIGHT for Telegram */
+/* ==========================================================================
+   4. Cartela Grid Container (Enables clean scrolling for 200 items)
+   ========================================================================== */
 .Cartelacontainer {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
+  grid-auto-rows: minmax(32px, auto); /* Keeps rows visible so all 200 items fit */
   gap: 4px;
   width: 100%;
   box-sizing: border-box;
-  overflow-y: auto;
+  overflow-y: auto;                 /* Standard scrolling mechanism */
   align-content: start;
-  height: 55vh; /* 55% of viewport height */
+  height: 52vh;                     /* Relative height to fit bottom preview area */
   max-height: 520px;
   min-height: 280px;
   padding: 5px;
-  -webkit-overflow-scrolling: touch;
+  -webkit-overflow-scrolling: touch; /* Butter-smooth scrolling on mobile WebApps */
   background: rgba(255,255,255,0.05);
   border-radius: 6px;
 }
-/* Custom scrollbar - works in Telegram */
+
+/* Custom Scrollbar for Telegram */
 .Cartelacontainer::-webkit-scrollbar {
   width: 4px;
 }
@@ -86,13 +95,14 @@
   border-radius: 10px;
 }
 
-/* Individual cartela buttons */
+/* ==========================================================================
+   5. Individual Cartela Buttons (State Color Changes Handled by React)
+   ========================================================================== */
 .cartela {
   width: 100%;
   height: 28px;
   min-width: 20px;
-  background-color: #16e916ed;
-  color: rgb(180, 29, 29);
+  /* Removed hardcoded background-color to let React's dynamic colors work properly */
   border: none;
   cursor: pointer;
   text-align: center;
@@ -100,14 +110,16 @@
   border-radius: 4px;
   padding: 2px;
   transition: transform 0.2s;
-  -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .cartela:active {
   transform: scale(0.95);
 }
 
-/* Selection controls area */
+/* ==========================================================================
+   6. Selection Controls Area (Confirm / Cancel)
+   ========================================================================== */
 .selection-controls-area {
   display: flex;
   flex-direction: row;
@@ -136,7 +148,7 @@
   margin: 0;
 }
 
-/* Preview card styles */
+/* Preview Card Styles */
 .cartela-display1 {
   display: flex;
   flex-direction: column;
@@ -174,7 +186,9 @@
   color: #f3fbff;
 }
 
-/* Button styles */
+/* ==========================================================================
+   7. Game Action Button States
+   ========================================================================== */
 .game_start {
   width: 150px;
   height: 50px;
@@ -223,10 +237,13 @@
   background-color: #ff4000;
 }
 
-/* Mobile responsiveness for Telegram */
+/* ==========================================================================
+   8. Mobile Responsiveness For Telegram WebApps
+   ========================================================================== */
 @media (max-width: 480px) {
   .Cartelacontainer {
-    height: 380px; /* Smaller height on mobile */
+    height: 44vh; /* Keeps the container responsive while preserving scroll height */
+    grid-auto-rows: minmax(26px, auto); 
     gap: 3px;
   }
   
@@ -245,7 +262,7 @@
 
 @media (max-width: 360px) {
   .Cartelacontainer {
-    height: 320px;
+    height: 38vh;
     gap: 2px;
   }
   
@@ -258,6 +275,7 @@
   .selection-controls-area {
     flex-direction: column;
   }
+  
   .side-button-container {
     flex-direction: row;
   }
