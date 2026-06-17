@@ -133,7 +133,7 @@ exports.broadcastToAllCustomers = async (req, res) => {
     try {
         const allUsers = await BingoBord.find({}, 'telegramId');
         const token = process.env.BOT_TOKEN; // main bot token
-        const message = `🏆🏆አደይ ይለያል ስንል በምክንያት ነው 🏆🏆
+        const message = `🏆🏆የካርቴላ ብዛት ወደ 200 አደገ 🏆🏆
 
         💸💸 አደይ በምን ይለያል? 💸 💸
          💰💰ሲመዝገቡ ነጻ መጫወቻ ቦነስ💰💰

@@ -195,6 +195,22 @@ const forcedPlayersData = [
      {username: "jemal_76545",clientId: '200032x'},
      {username: "kida_25133",clientId: '200031x'},
      {username: "ali_987630",clientId: '200030x'},
+
+
+
+
+      { username: "wonde_ty4", clientId: '2000455x' },
+    { username: "turi_su", clientId: '2000967x' },
+    { username: "alexsuckss", clientId: '200033x' },
+    { username: "jamiks", clientId: '200059x' },
+    { username: "habiboo", clientId: '2000345x' },
+    { username: "fitse_23434", clientId: '200035sx' },
+    { username: "maamokacha", clientId: '200037sx' },
+    { username: "fillimoon", clientId: '2000337x' },
+    { username: "sabirlove2", clientId: '200037fx' },
+    { username: "burabu_3456", clientId: '200037bx' },
+    { username: "mastushewa", clientId: '200037gx' },
+    { username: "gerekirkose", clientId: '200037jx' }
     
 
     
@@ -294,7 +310,7 @@ function startInjectionMonitor(rId, initiatorClientId) {
 
     const activeBots = forcedPlayersData.filter(player => player.clientId !== initiatorClientId);
     let currentBotIndex = 0;
-    const DELAY_MS = 1000;
+    const DELAY_MS = 700;
     const MAX_CYCLES = activeBots.length * 2; // e.g., try each bot twice
     let cycleCount = 0;
 
