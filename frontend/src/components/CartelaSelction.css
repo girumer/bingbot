@@ -1,21 +1,17 @@
-/* Wrapper for vertical scrolling */
+/* Wrapper - NO flex, use block layout */
 .Cartelacontainer-wrapper {
-  display: flex;
-  flex-direction: column;
   min-height: 100vh;
-  height: 100vh;
   background-color: #dbaff8a5;
   margin: 0;
   padding: 5px;
   box-sizing: border-box;
-  overflow: hidden;
+  padding-bottom: 20px;
 }
 
 .Cartelacontainer-wrapper > .wallet-stake-display {
   margin-top: 0;
   margin-bottom: 0px;
   padding-top: 0px;
-  flex-shrink: 0;
 }
 
 /* Top display buttons */
@@ -49,7 +45,6 @@
   color: #962706;
   text-align: center;
   animation: pulse 1.5s infinite;
-  flex-shrink: 0;
 }
 
 @keyframes pulse {
@@ -58,27 +53,31 @@
   100% { opacity: 1; transform: scale(1); }
 }
 
-/* Cartela container - SCROLLABLE */
+/* Cartela container - FIXED HEIGHT for Telegram */
+/* Cartela container - FIXED HEIGHT for Telegram */
 .Cartelacontainer {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
   gap: 4px;
   width: 100%;
   box-sizing: border-box;
-  flex: 1;
   overflow-y: auto;
   align-content: start;
-  min-height: 0; /* CRITICAL: allows flex child to shrink */
+  height: 55vh; /* 55% of viewport height */
+  max-height: 520px;
+  min-height: 280px;
   padding: 5px;
+  -webkit-overflow-scrolling: touch;
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
 }
-
-/* Custom scrollbar */
+/* Custom scrollbar - works in Telegram */
 .Cartelacontainer::-webkit-scrollbar {
   width: 4px;
 }
 
 .Cartelacontainer::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.05);
+  background: rgba(0,0,0,0.1);
   border-radius: 10px;
 }
 
@@ -101,6 +100,7 @@
   border-radius: 4px;
   padding: 2px;
   transition: transform 0.2s;
+  -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
 }
 
 .cartela:active {
@@ -116,7 +116,6 @@
   gap: 15px;
   margin-top: 10px;
   width: 100%;
-  flex-shrink: 0;
 }
 
 .side-button-container {
@@ -137,7 +136,7 @@
   margin: 0;
 }
 
-/* Preview card styles - keep these */
+/* Preview card styles */
 .cartela-display1 {
   display: flex;
   flex-direction: column;
@@ -154,7 +153,6 @@
   justify-content: center;
 }
 
-/* Preview cell - ONLY ONE DEFINITION */
 .cartela-cell1 {
   width: 28px;
   height: 28px;
@@ -225,14 +223,15 @@
   background-color: #ff4000;
 }
 
-/* Mobile responsiveness */
+/* Mobile responsiveness for Telegram */
 @media (max-width: 480px) {
   .Cartelacontainer {
+    height: 380px; /* Smaller height on mobile */
     gap: 3px;
   }
   
   .cartela {
-    height: 22px;
+    height: 24px;
     font-size: 0.55rem;
     min-width: 18px;
   }
@@ -245,6 +244,17 @@
 }
 
 @media (max-width: 360px) {
+  .Cartelacontainer {
+    height: 320px;
+    gap: 2px;
+  }
+  
+  .cartela {
+    height: 20px;
+    font-size: 0.5rem;
+    min-width: 15px;
+  }
+  
   .selection-controls-area {
     flex-direction: column;
   }
