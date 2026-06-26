@@ -389,7 +389,7 @@ const onAwardUpdate = ({ totalAward }) => {
                 onClick={() => handleButtonClick(index)}
                 className="cartela"
                 style={{
-                  background: isSelectedByOthers ? "#f52622" : isSelectedByMe ? "green" : "#ead4bd94",
+                  background: isSelectedByOthers ? "#f52622" : isSelectedByMe ? "green" : "#76747194",
                   color: isSelectedByOthers || isSelectedByMe ? "white" : "black",
                   cursor: isSelectedByOthers || activeGame ? "not-allowed" : "pointer",
                 }}
