@@ -204,6 +204,9 @@ const onAwardUpdate = ({ totalAward }) => {
    // console.log("🏆 Award update received:", totalAward);
     setTotalAward(totalAward);
 };
+ const onGameStarted = ({ totalAward }) => {
+    setTotalAward(totalAward);
+  };
     const onCountdownEnd = (cartelasFromServer) => {
       if (!cartelasFromServer || cartelasFromServer.length === 0) {
         toast.error("You did not select any cartela. Please select at least one.");
