@@ -189,9 +189,7 @@ const initData = tg?.initData; // signed string – the only thing we trust
     socket.on("walletUpdate", handleWalletUpdate);
     return () => socket.off("walletUpdate", handleWalletUpdate);
   }, []);
-const onGameStarted = ({ totalAward }) => {
-  setTotalAward(totalAward);
-};
+
   // ---------- 10. Other Socket event listeners (modified to remove clientId) ----------
   useEffect(() => {
     const onCartelaAccepted = ({ cartelaIndex, Wallet: updatedWallet }) => {
@@ -202,7 +200,10 @@ const onGameStarted = ({ totalAward }) => {
 
     const onCartelaError = ({ message }) => toast.error(message || "Cartela selection error");
     const onCountdown = (seconds) => setTimer(seconds);
-
+const onAwardUpdate = ({ totalAward }) => {
+   // console.log("🏆 Award update received:", totalAward);
+    setTotalAward(totalAward);
+};
     const onCountdownEnd = (cartelasFromServer) => {
       if (!cartelasFromServer || cartelasFromServer.length === 0) {
         toast.error("You did not select any cartela. Please select at least one.");
@@ -254,6 +255,7 @@ const onGameStarted = ({ totalAward }) => {
 
     socket.on("cartelaAccepted", onCartelaAccepted);
     socket.on("cartelaError", onCartelaError);
+    socket.on("awardUpdate", onAwardUpdate);
     socket.on("startCountdown", onCountdown);
     socket.on("myCartelas", onCountdownEnd);
     socket.on("updateSelectedCartelas", onUpdateSelectedCartelas);
@@ -279,6 +281,7 @@ const onGameStarted = ({ totalAward }) => {
       socket.off("cartelaRejected", onCartelaRejected);
       socket.off("roomAvailable", onRoomAvailable);
        socket.off("gameStarted", onGameStarted);
+       socket.off("awardUpdate", onAwardUpdate);
     };
   }, [navigate, roomId, stake, userInfo, activeGame, myConfirmedCartelas]);
 
