@@ -189,7 +189,9 @@ const initData = tg?.initData; // signed string – the only thing we trust
     socket.on("walletUpdate", handleWalletUpdate);
     return () => socket.off("walletUpdate", handleWalletUpdate);
   }, []);
-
+const onGameStarted = ({ totalAward }) => {
+  setTotalAward(totalAward);
+};
   // ---------- 10. Other Socket event listeners (modified to remove clientId) ----------
   useEffect(() => {
     const onCartelaAccepted = ({ cartelaIndex, Wallet: updatedWallet }) => {
@@ -249,9 +251,7 @@ const initData = tg?.initData; // signed string – the only thing we trust
       setTotalAward(0);
       fetchWalletData(); // refresh wallet
     };
-const onGameStarted = ({ totalAward }) => {
-  setTotalAward(totalAward);
-};
+
     socket.on("cartelaAccepted", onCartelaAccepted);
     socket.on("cartelaError", onCartelaError);
     socket.on("startCountdown", onCountdown);
