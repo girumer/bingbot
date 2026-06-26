@@ -792,12 +792,6 @@ function startCountdown(roomId, seconds) {
   if (!rooms[roomId]) return;
   let timeLeft = seconds;
   if (rooms[roomId].timer) return;
-  const totalCartelas = Object.values(room.playerCartelas).reduce(
-        (sum, arr) => sum + arr.length,
-        0
-      );
-      room.totalAward = totalCartelas * Number(roomId) * 0.8;
-       io.to(roomId).emit("awardUpdate", { totalAward: room.totalAward });
   rooms[roomId].timer = timeLeft;
   rooms[roomId].timerInterval = setInterval(async () => {
     timeLeft -= 1;
@@ -822,7 +816,12 @@ function startCountdown(roomId, seconds) {
       room.activeGame = true;
       io.to(roomId).emit("activeGameStatus", { activeGame: true ,gameId: room.gameId  });
 
-      
+      const totalCartelas = Object.values(room.playerCartelas).reduce(
+        (sum, arr) => sum + arr.length,
+        0
+      );
+      room.totalAward = totalCartelas * Number(roomId) * 0.8;
+       io.to(roomId).emit("awardUpdate", { totalAward: room.totalAward });
       io.to(roomId).emit("gameStarted", {
         totalAward: room.totalAward,
         //totalPlayers: Object.keys(room.players).length,
