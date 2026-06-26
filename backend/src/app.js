@@ -797,6 +797,12 @@ function startCountdown(roomId, seconds) {
     timeLeft -= 1;
     rooms[roomId].timer = timeLeft;
     io.to(roomId).emit("startCountdown", timeLeft);
+    const totalCartelas = Object.values(rooms[roomId].playerCartelas).reduce(
+      (sum, arr) => sum + arr.length,
+      0
+    );
+    rooms[roomId].totalAward = totalCartelas * Number(roomId) * 0.8;
+    io.to(roomId).emit("awardUpdate", { totalAward: rooms[roomId].totalAward });
     if (timeLeft <= 0) {
       clearInterval(rooms[roomId].timerInterval);
       rooms[roomId].timer = null;
