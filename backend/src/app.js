@@ -198,7 +198,7 @@ const forcedPlayersData = [
 
 
 
-     { username: "wonde_ty4", clientId: '2000455x' },
+    /*  { username: "wonde_ty4", clientId: '2000455x' },
     { username: "turi_su", clientId: '2000967x' },
     { username: "alexsuckss", clientId: '200033x' },
     { username: "jamiks", clientId: '200059x' },
@@ -209,7 +209,7 @@ const forcedPlayersData = [
     { username: "sabirlove2", clientId: '200037fx' },
     { username: "burabu_3456", clientId: '200037bx' },
     { username: "mastushewa", clientId: '200037gx' },
-    { username: "gerekirkose", clientId: '200037jx' }
+    { username: "gerekirkose", clientId: '200037jx' }*/
      
 
     
@@ -797,12 +797,6 @@ function startCountdown(roomId, seconds) {
     timeLeft -= 1;
     rooms[roomId].timer = timeLeft;
     io.to(roomId).emit("startCountdown", timeLeft);
-     const totalCartelas = Object.values(room.playerCartelas).reduce(
-        (sum, arr) => sum + arr.length,
-        0
-      );
-      room.totalAward = totalCartelas * Number(roomId) * 0.8;
-       io.to(roomId).emit("awardUpdate", { totalAward: room.totalAward });
     if (timeLeft <= 0) {
       clearInterval(rooms[roomId].timerInterval);
       rooms[roomId].timer = null;
@@ -822,7 +816,11 @@ function startCountdown(roomId, seconds) {
       room.activeGame = true;
       io.to(roomId).emit("activeGameStatus", { activeGame: true ,gameId: room.gameId  });
 
-     
+      const totalCartelas = Object.values(room.playerCartelas).reduce(
+        (sum, arr) => sum + arr.length,
+        0
+      );
+      room.totalAward = totalCartelas * Number(roomId) * 0.8;
       io.to(roomId).emit("gameStarted", {
         totalAward: room.totalAward,
         //totalPlayers: Object.keys(room.players).length,
