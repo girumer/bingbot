@@ -365,7 +365,7 @@ const onAwardUpdate = ({ totalAward }) => {
           <div className="display-btn">Wallet: {Math.floor(wallet)}</div>
 
           <div className="display-btn">Active Game: {activeGame ? "1" : "0"}</div>
-           <div className="display-btn" style={{backgroundColor: '#f5a623', color: '#000', fontWeight: 'bold'}}>Award: {Math.floor(totalAward)} ETB</div>
+           <div className="display-btn" style={{backgroundColor: '#dbaff8a5', color: '#000', fontWeight: 'bold'}}>Award: {Math.floor(totalAward)} ETB</div>
           <div className="display-btn">Stake: {stake} ETB</div>
         </div>
 
