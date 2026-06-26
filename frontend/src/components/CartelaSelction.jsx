@@ -29,6 +29,7 @@ const initData = tg?.initData; // signed string – the only thing we trust
 
   // ---------- 3. States (existing + new for authentication) ----------
   const [selectedCartelas, setSelectedCartelas] = useState([]);
+  const [totalAward, setTotalAward] = useState(0);
   const [finalSelectedCartelas, setFinalSelectedCartelas] = useState([]);
   const [timer, setTimer] = useState(null);
   const [wallet, setWallet] = useState(0);
@@ -245,9 +246,12 @@ const initData = tg?.initData; // signed string – the only thing we trust
       setSelectedCartelas([]);
       setFinalSelectedCartelas([]);
       setTimer(null);
+      setTotalAward(0);
       fetchWalletData(); // refresh wallet
     };
-
+const onGameStarted = ({ totalAward }) => {
+  setTotalAward(totalAward);
+};
     socket.on("cartelaAccepted", onCartelaAccepted);
     socket.on("cartelaError", onCartelaError);
     socket.on("startCountdown", onCountdown);
@@ -256,6 +260,14 @@ const initData = tg?.initData; // signed string – the only thing we trust
     socket.on("activeGameStatus", onActiveGameStatus);
     socket.on("cartelaRejected", onCartelaRejected);
     socket.on("roomAvailable", onRoomAvailable);
+    socket.on("gameStarted", onGameStarted);
+// Add this with your other socket.on calls (around line 140)
+
+
+// Add this with your other socket.on
+
+
+// Add this to cleanup (in the return statement)
 
     return () => {
       socket.off("cartelaAccepted", onCartelaAccepted);
@@ -266,6 +278,7 @@ const initData = tg?.initData; // signed string – the only thing we trust
       socket.off("activeGameStatus", onActiveGameStatus);
       socket.off("cartelaRejected", onCartelaRejected);
       socket.off("roomAvailable", onRoomAvailable);
+       socket.off("gameStarted", onGameStarted);
     };
   }, [navigate, roomId, stake, userInfo, activeGame, myConfirmedCartelas]);
 
@@ -344,7 +357,9 @@ const initData = tg?.initData; // signed string – the only thing we trust
       <div className="Cartelacontainer-wrapper">
         <div className="wallet-stake-display">
           <div className="display-btn">Wallet: {Math.floor(wallet)}</div>
+
           <div className="display-btn">Active Game: {activeGame ? "1" : "0"}</div>
+           <div className="display-btn" style={{backgroundColor: '#f5a623', color: '#000', fontWeight: 'bold'}}>Award: {Math.floor(totalAward)} ETB</div>
           <div className="display-btn">Stake: {stake} ETB</div>
         </div>
 
