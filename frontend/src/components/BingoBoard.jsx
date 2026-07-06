@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate,useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import "./BingoBoard.css";
 import cartela from "./cartela.json";
 import socket from "../socket";
 import { toast, ToastContainer } from "react-toastify";
 
-// Determine prefix letter for a number
 function getBingoLetter(num) {
   if (num >= 1 && num <= 15) return "B";
   if (num >= 16 && num <= 30) return "I";
@@ -15,14 +14,13 @@ function getBingoLetter(num) {
   return "";
 }
 
-// My Cartelas Section
 function MyCartelasSection({
   myCartelas,
   selectedIndexes,
   clickedNumbers,
   toggleNumber,
   winners,
-  highlightCartelas,   // ✅ new prop
+  highlightCartelas,
   allCalledNumbers 
 }) {
   if (!myCartelas || myCartelas.length === 0) return null;
@@ -42,24 +40,16 @@ function MyCartelasSection({
 
     const winner = winners.find((w) => w.cartelaIndex === cartelaIndex);
 
-    // ✅ Fixed winning cell detection
-    // ✅ Fixed winning cell detection
-// ✅ Fixed winning cell detection - compare by number values
-// ✅ Fixed winning cell detection - compare by number values
-const isWinningCell = (cell, rowIndex, cellIndex, pattern) => {
-  if (!pattern) return false;
+    const isWinningCell = (cell, rowIndex, cellIndex, pattern) => {
+      if (!pattern) return false;
+      if (pattern.includes("*") && rowIndex === 2 && cellIndex === 2) return true;
+      const cellNumber = Number(cell);
+      if (pattern.some(p => typeof p === "number" && p === cellNumber)) return true;
+      return false;
+    };
 
-  // Handle wildcard - only match the center cell (position [2,2])
-  if (pattern.includes("*") && rowIndex === 2 && cellIndex === 2) return true;
-
-  // Highlight numbers in pattern
-  const cellNumber = Number(cell);
-  if (pattern.some(p => typeof p === "number" && p === cellNumber)) return true;
-
-  return false;
-};
     return (
-      <div className="cartela-display">
+      <div className="cartela-display" key={idx}>
         <div className="cartela-header">
           {["B", "I", "N", "G", "O"].map((letter, i) => (
             <div key={i} className={`cartela-header-cell ${letter.toLowerCase()}`}>
@@ -76,18 +66,17 @@ const isWinningCell = (cell, rowIndex, cellIndex, pattern) => {
             return (
               <div key={rowIndex} className="cartela-row">
                 {normalizedRow.map((cell, cellIndex) => (
-                 <button
-  key={cellIndex}
-  className={`cartela-cell 
-    ${clickedNumbers.includes(cell) ? "clicked" : ""} 
-    ${highlightCartelas && allCalledNumbers.includes(cell) ? "highlighted" : ""} 
-    ${isWinningCell(cell, rowIndex, cellIndex, winner?.pattern) ? "winner-highlight" : ""}`}
-  onClick={() => cell && toggleNumber(cell)}
-  disabled={!cell}
->
-  {cell || ""}
-</button>
-
+                  <button
+                    key={cellIndex}
+                    className={`cartela-cell 
+                      ${clickedNumbers.includes(cell) ? "clicked" : ""} 
+                      ${highlightCartelas && allCalledNumbers.includes(cell) ? "highlighted" : ""} 
+                      ${isWinningCell(cell, rowIndex, cellIndex, winner?.pattern) ? "winner-highlight" : ""}`}
+                    onClick={() => cell && toggleNumber(cell)}
+                    disabled={!cell}
+                  >
+                    {cell || ""}
+                  </button>
                 ))}
               </div>
             );
@@ -104,7 +93,7 @@ const isWinningCell = (cell, rowIndex, cellIndex, pattern) => {
   };
 
   return (
-    <div className="my-cartelas">
+    <div className="my-cartelas" style={{ width: "100%" }}>
       <div className="cartelas-container-horizontal">
         {myCartelas.map((c, idx) => renderCartela(c, idx))}
       </div>
@@ -126,10 +115,8 @@ const isWinningCell = (cell, rowIndex, cellIndex, pattern) => {
 function BingoBoard() {
   const location = useLocation();
   const navigate = useNavigate();
-const [searchParams] = useSearchParams();
- // const storedCartelas = JSON.parse(localStorage.getItem("myCartelas") || "[]");
-// const { username, roomId, myCartelas: initialCartelas } = location.state || {};
-const usernameFromState = location.state?.username;
+  const [searchParams] = useSearchParams();
+  const usernameFromState = location.state?.username;
   const roomIdFromState = location.state?.roomId;
   const telegramIdFromState = location.state?.telegramId;
   const usernameFromUrl = searchParams.get("username");
@@ -142,10 +129,9 @@ const usernameFromState = location.state?.username;
   const stake = location.state?.stake || stakeFromUrl;
   const storedCartelas = JSON.parse(localStorage.getItem("myCartelas") || "[]");
   const { myCartelas: initialCartelas } = location.state || {};
- //const [myCartelas, setMyCartelas] = useState(initialCartelas || storedCartelas);
   const [totalPlayers, setTotalPlayers] = useState(0);
-  const [ gameId,setGameId]=useState(null);
-    const [highlightCartelas, setHighlightCartelas] = useState(true);
+  const [gameId, setGameId] = useState(null);
+  const [highlightCartelas, setHighlightCartelas] = useState(true);
   const [myCartelas, setMyCartelas] = useState(initialCartelas || storedCartelas);
   const [allCalledNumbers, setAllCalledNumbers] = useState([]);
   const [lastNumber, setLastNumber] = useState(null);
@@ -185,31 +171,28 @@ const usernameFromState = location.state?.username;
     );
   };
   const refreshpg = () => {
-    // This command will reload the entire page from the server
     window.location.reload();
-};
-  // ✅ Corrected code in BingoBoard.js
-// ✅ Corrected reset handler in BingoBoard.js
-useEffect(() => {
-  const handleReset = () => {
-    // Create query string with all necessary parameters
-    const queryString = new URLSearchParams({
-      username,
-      telegramId,
-      roomId: String(roomId),
-      stake: String(stake || 0),
-    }).toString();
-    
-    // Navigate with both state and query parameters
-    navigate(`/CartelaSelction?${queryString}`, {
-      state: { username, telegramId, roomId, stake }
-    });
   };
 
-  socket.on("resetRoom", handleReset);
-  return () => socket.off("resetRoom", handleReset);
-}, [navigate, username, roomId, stake, telegramId]);
-useEffect(() => {
+  useEffect(() => {
+    const handleReset = () => {
+      const queryString = new URLSearchParams({
+        username,
+        telegramId,
+        roomId: String(roomId),
+        stake: String(stake || 0),
+      }).toString();
+      
+      navigate(`/CartelaSelction?${queryString}`, {
+        state: { username, telegramId, roomId, stake }
+      });
+    };
+
+    socket.on("resetRoom", handleReset);
+    return () => socket.off("resetRoom", handleReset);
+  }, [navigate, username, roomId, stake, telegramId]);
+
+  useEffect(() => {
     if (!username || !telegramId) {
       console.error("Missing authentication parameters");
       toast.error("Authentication required. Redirecting...");
@@ -217,14 +200,13 @@ useEffect(() => {
       return;
     }
     
-    // Store parameters for future use
     localStorage.setItem("username", username);
     localStorage.setItem("telegramId", telegramId);
   }, [username, telegramId, navigate]);
-  // --- SOCKETS ---
+
   useEffect(() => {
     if (!roomId) return;
-    socket.emit("joinRoom", { roomId, username, telegramId,clientId });
+    socket.emit("joinRoom", { roomId, username, telegramId, clientId });
 
     const handleGameState = (state) => {
       setAllCalledNumbers(state.calledNumbers || []);
@@ -255,8 +237,7 @@ useEffect(() => {
     return () => socket.off("playerCount", handlePlayerCount);
   }, []);
 
-// In your BingoBoard component
-useEffect(() => {
+  useEffect(() => {
     const handleGameStarted = ({ totalAward, totalPlayers, gameId }) => {
         setTotalAward(totalAward);
         setTotalPlayers(totalPlayers);
@@ -265,7 +246,7 @@ useEffect(() => {
     };
     socket.on("gameStarted", handleGameStarted);
     return () => socket.off("gameStarted", handleGameStarted);
-}, []);
+  }, []);
 
   useEffect(() => {
     const handleWinningPattern = (winnersArr) => {
@@ -303,14 +284,11 @@ useEffect(() => {
     };
   }, []);
 
-
-
   return (
     <div className="bingo-board-wrapper">
       {/* TOP STATS */}
       <div className="top-stats">
          <div className="stat-button">
-            
             GameID {gameId || "Waiting..."}
           </div>
         <div className="stat-button">
@@ -322,33 +300,66 @@ useEffect(() => {
         <div className="stat-button">🔢 {allCalledNumbers.length}/75</div>
       </div>
 
-      {/* MIDDLE NUMBERS GRID */}
-      <div className="numbers-grid-wrapper">
+      {/* CORE DESKTOP AND MOBILE CONTENT SPLIT */}
+    <div className="main-content-layout">
+  
+  {/* LEFT COLUMN: 1 TO 75 GRID SYSTEM + UTILITY PANEL */}
+  {/* LEFT COLUMN: 1 TO 75 GRID SYSTEM + VERTICAL UTILITY PANEL */}
+<div className="left-column-layout">
+  <div className="numbers-grid-wrapper">
+    {letters.map((letter, rowIndex) => {
+      const letterClass = letter.toLowerCase();
+      return (
+        <div key={letter} className="number-column-group">
+          <div className="letter-button">{letter}</div>
+          {numberColumns[rowIndex].map((num) => {
+            const isCalled = highlightedNumbers.includes(num);
+            return (
+              <button
+                key={num}
+                className={`number-button ${isCalled ? `called ${letterClass}` : ""}`}
+                disabled
+              >
+                {num}
+              </button>
+            );
+          })}
+        </div>
+      );
+    })}
+  </div>
 
-        <div className="toggle-container">
-    <span className="toggle-label">AUTO SELECT</span>
-    <label className="toggle-switch">
-      <input
-        type="checkbox"
-        checked={highlightCartelas}
-        onChange={() => setHighlightCartelas(!highlightCartelas)}
-      />
-      <span className="toggle-slider"></span>
-    </label>
-    <div className="stat-button1" onClick={refreshpg}>REFRESH</div>
+  {/* VERTICALLY ALIGNED CONTROLS CONTAINER */}
+  <div className="toggle-container-vertical">
+    <div className="toggle-row-item">
+      <span className="toggle-label">AUTO SELECT</span>
+      <label className="toggle-switch">
+        <input
+          type="checkbox"
+          checked={highlightCartelas}
+          onChange={() => setHighlightCartelas(!highlightCartelas)}
+        />
+        <span className="toggle-slider"></span>
+      </label>
     </div>
+    <button className="refresh-action-button" onClick={refreshpg}>
+      REFRESH GAME
+    </button>
+  </div>
+</div>
+
+  {/* RIGHT COLUMN: REARRANGED BALL BALL DISPLAY AND SCROLLING CARTELAS */}
+  <div className="bottom-panels">
     
-    
+    <div className="fixed-control-header">
+      <div className="last-called-container">
         {lastNumber !== null && (
           <div className="last-called-number">
-             <span 
-      className="last-called-letter" 
-      data-letter={getBingoLetter(lastNumber)}
-    >
-      {getBingoLetter(lastNumber)}-
-    </span>
+            <span className="last-called-letter" data-letter={getBingoLetter(lastNumber)}>
+              {getBingoLetter(lastNumber)}-
+            </span>
             {lastNumber}
-            </div>
+          </div>
         )}
 
         <div className="last-five-display">
@@ -359,107 +370,84 @@ useEffect(() => {
             </div>
           ))}
         </div>
-
-        {letters.map((letter, rowIndex) => (
-          <div key={letter} className="number-row">
-          
-            {numberColumns[rowIndex].map((num) => (
-              <button
-                key={num}
-                className={`number-button ${highlightedNumbers.includes(num) ? "called" : ""}`}
-                disabled
-              >
-                {num}
-              </button>
-            ))}
-          </div>
-        ))}
-        
       </div>
+    </div>
 
-      
-      {/* BOTTOM PANELS */}
-      <div className="bottom-panels">
-        <div className="bottom-left">
-          <div className={`cartelas-container-horizontal ${myCartelas.length === 1 ? "single-cartela" : ""}`}>
-<div className="cartelas-container-horizontal">
+    {/* INDEPENDENT VERTICAL SCROLL VIEWPORT FOR CARDS */}
+    <div className="scrollable-cards-viewport">
+      <div className="bottom-left">
+        <div className={`cartelas-container-horizontal ${myCartelas.length === 1 ? "single-cartela" : ""}`}>
           <MyCartelasSection
             myCartelas={myCartelas}
             selectedIndexes={selectedIndexes}
             clickedNumbers={clickedNumbers}
             toggleNumber={toggleNumber}
             winners={winners}
-             highlightCartelas={highlightCartelas}  // ✅ pass toggle
-             allCalledNumbers={allCalledNumbers} 
+            highlightCartelas={highlightCartelas}
+            allCalledNumbers={allCalledNumbers} 
           />
-          </div>
-          </div>
         </div>
-        
       </div>
+    </div>
+
+  </div>
+
+</div>
 
       {/* WINNER POPUP */}
-    
-{showPopup && (
-  <div className="winner-popup">
-    <h2>{iAmWinner ? "🎉 You won! 🎉" : "Winner(s)!"}</h2>
-    <div className="cartelas-container-horizontal winner-cartelas-container">
-      {winners.map((w, idx) => {
-        const winnerCartela = cartela[w.cartelaIndex];
-        if (!winnerCartela) return null;
+      {showPopup && (
+        <div className="winner-popup">
+          <h2>{iAmWinner ? "🎉 You won! 🎉" : "Winner(s)!"}</h2>
+          <div className="cartelas-container-horizontal winner-cartelas-container">
+            {winners.map((w, idx) => {
+              const winnerCartela = cartela[w.cartelaIndex];
+              if (!winnerCartela) return null;
+              const pattern = w.pattern;
 
-        // ✅ Use the winner's pattern directly
-        const pattern = w.pattern;
+              return (
+                <div key={idx} className="cartela-display winner-cartela">
+                  <div className="cartela-header">
+                    {["B", "I", "N", "G", "O"].map((letter, i) => (
+                      <div key={i} className={`cartela-header-cell ${letter.toLowerCase()}`}>
+                        {letter}
+                      </div>
+                    ))}
+                  </div>
 
-        return (
-          <div key={idx} className="cartela-display winner-cartela">
-            <div className="cartela-header">
-              {["B", "I", "N", "G", "O"].map((letter, i) => (
-                <div key={i} className={`cartela-header-cell ${letter.toLowerCase()}`}>
-                  {letter}
+                  <div className="cartela-rows-container">
+                    {winnerCartela.cart.map((row, rowIndex) => (
+                      <div key={rowIndex} className="cartela-row">
+                        {row.map((cell, cellIndex) => {
+                          const isWinning = pattern && cell && pattern.some((p) => {
+                            if (p === "*" && rowIndex === 2 && cellIndex === 2) return true;
+                            if (typeof p === "number" && Number(cell) === p) return true;
+                            return false;
+                          });
+
+                          return (
+                            <button
+                              key={cellIndex}
+                              className={`cartela-cell ${isWinning ? "winner-highlight" : ""}`}
+                              disabled
+                              style={{ color: cell > 0 ? "black" : "red" }}
+                            >
+                              {cell}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="cartela-index">
+                      Cartela {w.cartelaIndex + 1} - {w.winnerName}
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            <div className="cartela-rows-container">
-              {winnerCartela.cart.map((row, rowIndex) => (
-                <div key={rowIndex} className="cartela-row">
-                  {row.map((cell, cellIndex) => {
-                    // ✅ CORRECTED: Check if this cell is part of the winning pattern
-                    const isWinning = pattern && cell && pattern.some((p) => {
-                      // Handle wildcard - only match the center cell (position [2,2])
-                      if (p === "*" && rowIndex === 2 && cellIndex === 2) return true;
-                      
-                      // Handle numbers
-                      if (typeof p === "number" && Number(cell) === p) return true;
-                      
-                      return false;
-                    });
-
-                    return (
-                      <button
-                        key={cellIndex}
-                        className={`cartela-cell ${isWinning ? "winner-highlight" : ""}`}
-                        disabled
-                        style={{ color: cell > 0 ? "black" : "red" }}
-                      >
-                        {cell}
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-
-           <div className="cartela-index">
-                Cartela {w.cartelaIndex + 1} - {w.winnerName}
-            </div>
+              );
+            })}
           </div>
-        );
-      })}
-    </div>
-  </div>
-)}
+        </div>
+      )}
 
     </div>
   );

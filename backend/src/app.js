@@ -572,8 +572,8 @@ socket.on("checkPlayerStatus", ({ roomId }) => {   // no clientId from client
       return;
     }
 
-    if (userCartelas.length >= 4) {
-      socket.emit("cartelaRejected", { message: "You can only select up to 4 cartelas" });
+    if (userCartelas.length >= 6) {
+      socket.emit("cartelaRejected", { message: "You can only select up to 6 cartelas" });
       return;
     }
 
