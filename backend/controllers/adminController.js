@@ -133,12 +133,12 @@ exports.broadcastToAllCustomers = async (req, res) => {
     try {
         const allUsers = await BingoBord.find({}, 'telegramId');
         const token = process.env.BOT_TOKEN; // main bot token
-        const message = `🏆🏆የካርቴላ ብዛት ወደ 200 አደገ 🏆🏆
+        const message = `🏆🏆አስድሳቸ ዜና ለአደይ ቢንጎ ቤተሰቦች መምርጥ የሚችሉት ካርቴላ ወደ 6 አደገ ክማርኪ ቦንሰ ጋር🏆🏆
 
         💸💸 አደይ በምን ይለያል? 💸 💸
          💰💰ሲመዝገቡ ነጻ መጫወቻ ቦነስ💰💰
         🎁🎁ዲፖዚት ሲያርጉ ዲፖዚት ያረጉትን 10% ተጨማሪ ቦነስ🎁🎁
-        🎁🎁4 ካርቴላ ድረስ መምረጥ የሚችሉብት🎁🎁
+        🎁🎁6 ካርቴላ ድረስ መምረጥ የሚችሉብት🎁🎁
         💸💸 ባሸነፉ ቁጥር የኮይን ሽልማት ኮይኑን ወድ ብር  ወደያው መቀየር ሚችሉበት 💸 💸
 ሳፖርት ግሩፑን ለመቀላቀል
 [እዚህ ይጫኑ](${process.env.SUPPORT_GROUP}) 
