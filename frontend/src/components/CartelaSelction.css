@@ -35,7 +35,6 @@
   max-width: 120px;
   min-width: 80px;
   background-color: #dbaff8a5;
-
   color: rgb(35, 17, 17);
   font-weight: bold;
   text-align: center;
@@ -118,30 +117,54 @@
 }
 
 /* ==========================================================================
-   6. Selection Controls Area (Confirm / Cancel)
+   6. Selection Controls Area (Confirm / Cancel) - FIXED
    ========================================================================== */
 .selection-controls-area {
   display: flex;
-  flex-direction: row;
+  flex-direction: row !important; /* Force row direction */
   justify-content: center;
   align-items: center;
   gap: 15px;
   margin-top: 10px;
   width: 100%;
+  flex-wrap: nowrap !important; /* Prevent wrapping */
 }
 
 .side-button-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row !important; /* Force buttons side by side */
   gap: 8px;
+  align-items: center;
 }
 
+/* Make buttons smaller on very small screens to fit side by side */
 .side-button-container .game_start, 
 .side-button-container .game_start1 {
   width: 110px;
   height: 45px;
   margin: 0;
   font-size: 14px;
+  min-width: 80px; /* Minimum width to maintain readability */
+}
+
+/* For extremely small screens, reduce button size further */
+@media (max-width: 380px) {
+  .side-button-container .game_start, 
+  .side-button-container .game_start1 {
+    width: 80px;
+    height: 40px;
+    font-size: 12px;
+    min-width: 60px;
+    padding: 8px 4px;
+  }
+  
+  .selection-controls-area {
+    gap: 8px;
+  }
+  
+  .side-button-container {
+    gap: 5px;
+  }
 }
 
 .pending-cartelas {
@@ -258,25 +281,18 @@
     height: 30px;
     font-size: 0.8rem;
   }
-}
-
-@media (max-width: 360px) {
-  .Cartelacontainer {
-    height: 42vh;
-    gap: 3px;
-  }
   
-  .cartela {
-    height: 26px;
-    font-size: 0.65rem;
-    min-width: 18px;
-  }
-  
+  /* Ensure selection controls remain side by side on mobile */
   .selection-controls-area {
-    flex-direction: column;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
   }
   
   .side-button-container {
-    flex-direction: row;
+    flex-direction: row !important;
   }
 }
+
+/* Remove the media query that was causing the vertical layout */
+/* The problematic query was at max-width: 360px which changed flex-direction to column */
+/* We've removed that and added better handling for small screens above */
