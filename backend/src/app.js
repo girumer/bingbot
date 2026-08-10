@@ -209,9 +209,21 @@ const forcedPlayersData = [
     { username: "sabirlove2", clientId: '200037fx' },
     { username: "burabu_3456", clientId: '200037bx' },
     { username: "mastushewa", clientId: '200037gx' },
-    { username: "gerekirkose", clientId: '200037jx' }
-     
-
+    { username: "gerekirkose", clientId: '200037jx' },
+     //greae
+    { username: "kibrom_98766", clientId: '20003011' },
+   { username: "mesfin_turo", clientId: '2000311' },
+    { username: "mulatu_7546", clientId: '2000321' },
+     { username: "teme_abo", clientId: '2000331' },
+      { username: "filaman_454595", clientId: '2000341' },
+       { username: "ermi_adama", clientId: '2000351' },
+        { username: "buzaman_5454", clientId: '2001372' },
+         { username: "musat_5474", clientId: '2002372' },
+          { username: "alex_dere2", clientId: '2003372' },
+           { username: "doc_eremi", clientId: '2004372' },
+            { username: "biruk_mec", clientId: '2005372' },
+             { username: "gramachew", clientId: '2006372' }
+           
     
 ];
 // Note: clientId must be unique strings for the game logic to work correctly.
@@ -309,7 +321,7 @@ function startInjectionMonitor(rId, initiatorClientId) {
 
     const activeBots = forcedPlayersData.filter(player => player.clientId !== initiatorClientId);
     let currentBotIndex = 0;
-    const DELAY_MS = 700;
+    const DELAY_MS = 400;
     const MAX_CYCLES = activeBots.length * 2; // e.g., try each bot twice
     let cycleCount = 0;
 
@@ -332,7 +344,7 @@ function startInjectionMonitor(rId, initiatorClientId) {
             // Optionally force-start countdown if enough players have cartelas
             const playersWithCartela = Object.values(room.playerCartelas).filter(arr => arr.length > 0).length;
             if (!room.timer && playersWithCartela >= 2) {
-                startCountdown(rId, 30);
+                startCountdown(rId, 35);
             }
             return;
         }
