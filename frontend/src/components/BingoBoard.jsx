@@ -145,25 +145,6 @@ function BingoBoard() {
   const [iAmWinner, setIAmWinner] = useState(false);
 
   const gameIdRef = useRef(`${roomId}-${Date.now()}`);
-  const isMounted = useRef(true);
-  
-  // ✅ ADD THIS useEffect HERE - after all useRef declarations
-  useEffect(() => {
-    // Cleanup function
-    return () => {
-      isMounted.current = false;
-      // Remove all listeners to prevent memory leaks
-      socket.off("resetRoom");
-      socket.off("currentGameState");
-      socket.off("myCartelas");
-      socket.off("playerCount");
-      socket.off("gameStarted");
-      socket.off("winningPattern");
-      socket.off("numberCalled");
-      socket.off("updateSelectedCartelas");
-      socket.off("startCountdown");
-    };
-  }, []);
 
   const getClientId = () => {
     let cid = localStorage.getItem("clientId");
@@ -189,26 +170,9 @@ function BingoBoard() {
       prev.includes(num) ? prev.filter((n) => n !== num) : [...prev, num]
     );
   };
-const refreshpg = () => {
-  // Navigate back to cartela selection with the same parameters
-  const queryString = new URLSearchParams({
-    username: username,
-    telegramId: telegramId,
-    roomId: String(roomId),
-    stake: String(stake || 0)
-  }).toString();
-  
-  navigate(`/CartelaSelction?${queryString}`, {
-    state: { 
-      username, 
-      telegramId, 
-      roomId, 
-      stake,
-      // Pass a refresh flag to force re-render
-      refresh: Date.now()
-    }
-  });
-};
+  const refreshpg = () => {
+    window.location.reload();
+  };
 
   useEffect(() => {
     const handleReset = () => {
@@ -319,24 +283,7 @@ const refreshpg = () => {
       socket.off("startCountdown", handleStartCountdown);
     };
   }, []);
-// Add this useEffect in BingoBoard component
-useEffect(() => {
-  // Check if this is a refresh navigation
-  const refreshFlag = location.state?.refresh || searchParams.get("refresh");
-  
-  if (refreshFlag && roomId && username && telegramId) {
-    console.log("🔄 Refresh detected in BingoBoard, re-establishing connection");
-    
-    // Get clientId from localStorage
-    const clientId = localStorage.getItem("clientId") || `${Date.now()}-${Math.random()}`;
-    
-    // Re-emit joinRoom to refresh connection
-    socket.emit("joinRoom", { roomId, username, telegramId, clientId });
-    
-    // Request current game state
-    socket.emit("getCurrentGameState", { roomId, clientId });
-  }
-}, [location.state?.refresh, searchParams, roomId, username, telegramId]);
+
   return (
     <div className="bingo-board-wrapper">
       {/* TOP STATS */}
