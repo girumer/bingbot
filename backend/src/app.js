@@ -347,7 +347,7 @@ function startInjectionMonitor(rId, initiatorClientId) {
                 startCountdown(rId, 35);
             }
             return;
-        }
+        }a
 
         // Countdown check (same as before)
         const playersWithCartela = Object.values(room.playerCartelas).filter(arr => arr.length > 0).length;
@@ -425,7 +425,24 @@ const authenticatedSockets = new Map();
 io.on("connection", (socket) => {
   //console.log("New connection:", socket.id);
 // Add this block inside your main io.on("connection", (socket) => { ... });
-
+// In your io.on("connection") handler
+socket.on("getCurrentGameState", ({ roomId, clientId }) => {
+  const room = rooms[String(roomId)];
+  if (!room) return;
+  
+  // Send current state to the requesting client only
+  socket.emit("currentGameState", {
+    calledNumbers: room.calledNumbers || [],
+    myCartelas: room.playerCartelas[clientId] || [],
+    selectedIndexes: room.selectedIndexes || [],
+    lastNumber: room.calledNumbers?.slice(-1)[0] || null,
+    timer: room.timer,
+    totalAward: room.totalAward,
+    totalPlayers: Object.values(room.playerCartelas).reduce((sum, arr) => sum + arr.length, 0),
+    activeGame: room.activeGame || false,
+    gameId: room.gameId || null
+  });
+});
 // --- SPINNER GAME HANDLER ---
 // --- AUTHENTICATION ---
 socket.on("authenticate", async ({ initData }) => {
@@ -830,7 +847,8 @@ function startCountdown(roomId, seconds) {
             }
         }
       }
-        room.gameId =generateGameId();
+        room.gameId = generateGameId(); 
+
       room.activeGame = true;
       io.to(roomId).emit("activeGameStatus", { activeGame: true ,gameId: room.gameId  });
 
@@ -939,72 +957,119 @@ async function checkWinners(roomId, calledNumber) {
 
     const awardPerWinner = Math.floor(room.totalAward / winners.length);
     const winnerUsernames = new Set();
+    const currentGameId = room.gameId || Date.now();
 
     // ✅ Emit winners immediately
     io.to(roomId).emit("winningPattern", winners);
- setTimeout(() => {
+    
+    setTimeout(() => {
       if (rooms[roomId]) {
         resetRoom(roomId);
       }
     }, 6000);
-   // io.to(roomId).emit("roomAvailable");
-//io.to(roomId).emit("resetRoom");
-    // ✅ Update winners in parallel
-   (async () => {
-  // Update winners
-  // REPLACE your winner update block with this:
-await Promise.all(winners.map(async (winner) => {
-    await BingoBord.updateOne(
-        { username: winner.winnerName },
-        { 
-            $inc: { Wallet: awardPerWinner, coins: 1 }, // Updates balance instantly
-            $push: {
-                gameHistory: {
-                    $each: [{
-                        roomId: Number(roomId),
-                        stake: Number(awardPerWinner),
-                        outcome: "win",
-                        timestamp: new Date(),
-                        gameId: room.gameId || Date.now()
-                    }],
-                    $slice: -50 // CRITICAL: This trims the 10,000 items down to 50!
-                }
-            }
-        }
-    ).catch(err => console.error("Winner update failed:", err));
-    winnerUsernames.add(winner.winnerName);
-}));
 
-  // Update losers
-await Promise.all(Object.entries(room.players).map(async ([clientId, username]) => {
-    if (!winnerUsernames.has(username)) {
-      await BingoBord.updateOne(
-        { username },
-        {
-          $push: {
-            gameHistory: {
-              $each: [{ // Use $each to allow for $slice
-                roomId: Number(roomId),
-                stake: Number(stakeAmount),
-                outcome: "loss",
-                timestamp: new Date(),
-                gameId: room.gameId || Date.now(), // Fallback if gameId is missing
-              }],
-              $slice: -50 // ⚡ This keeps history small and fast!
+    // ✅ CRITICAL FIX: Use await properly and handle all updates
+    try {
+      // Update winners
+      for (const winner of winners) {
+        try {
+          const user = await BingoBord.findOne({ username: winner.winnerName });
+          if (!user) {
+            console.error(`[ERROR] Winner ${winner.winnerName} not found in DB`);
+            continue;
+          }
+
+          await BingoBord.updateOne(
+            { username: winner.winnerName },
+            { 
+              $inc: { Wallet: awardPerWinner, coins: 1 },
+              $push: {
+                gameHistory: {
+                  roomId: Number(roomId),
+                  stake: Number(awardPerWinner),
+                  outcome: "win",
+                  timestamp: new Date(),
+                  gameId: currentGameId
+                }
+              }
             }
+          );
+          winnerUsernames.add(winner.winnerName);
+          console.log(`✅ Winner ${winner.winnerName} updated with gameId ${currentGameId}`);
+        } catch (err) {
+          console.error(`[ERROR] Winner update failed for ${winner.winnerName}:`, err);
+        }
+      }
+
+      // Update losers
+      for (const [clientId, username] of Object.entries(room.players)) {
+        if (!winnerUsernames.has(username)) {
+          try {
+            const user = await BingoBord.findOne({ username });
+            if (!user) {
+              console.error(`[ERROR] Loser ${username} not found in DB`);
+              continue;
+            }
+
+            await BingoBord.updateOne(
+              { username },
+              {
+                $push: {
+                  gameHistory: {
+                    roomId: Number(roomId),
+                    stake: Number(stakeAmount),
+                    outcome: "loss",
+                    timestamp: new Date(),
+                    gameId: currentGameId
+                  }
+                }
+              }
+            );
+            console.log(`✅ Loser ${username} updated with gameId ${currentGameId}`);
+          } catch (err) {
+            console.error(`[ERROR] Loser update failed for ${username}:`, err.message);
           }
         }
-      ).catch(err => console.error(`Error updating loser ${username}:`, err.message));
+      }
+    } catch (err) {
+      console.error(`[ERROR] checkWinners update failed:`, err);
     }
-}));
-})();
 
+  } else {
+    // No winners - everyone loses
+    const currentGameId = room.gameId || Date.now();
+    
+    try {
+      for (const [clientId, username] of Object.entries(room.players)) {
+        try {
+          const user = await BingoBord.findOne({ username });
+          if (!user) {
+            console.error(`[ERROR] Player ${username} not found in DB`);
+            continue;
+          }
 
+          await BingoBord.updateOne(
+            { username },
+            {
+              $push: {
+                gameHistory: {
+                  roomId: Number(roomId),
+                  stake: Number(stakeAmount),
+                  outcome: "loss",
+                  timestamp: new Date(),
+                  gameId: currentGameId
+                }
+              }
+            }
+          );
+        } catch (err) {
+          console.error(`[ERROR] Loser update failed for ${username}:`, err.message);
+        }
+      }
+    } catch (err) {
+      console.error(`[ERROR] checkWinners no-winner update failed:`, err);
+    }
   }
-   
-
-    // ✅ Delay backend reset only
-   
 }
 
  app.get('/', (req, res) => {

@@ -353,7 +353,26 @@ const onAwardUpdate = ({ totalAward }) => {
     setSelectedCartelas([]);
   };
 
-  const refreshpg = () => window.location.reload();
+const refreshpg = () => {
+  // Navigate to BingoBoard with refresh flag
+  const queryString = new URLSearchParams({
+    username: userInfo?.username || "",
+    telegramId: userInfo?.telegramId || "",
+    roomId: roomId,
+    stake: stake,
+    refresh: Date.now()
+  }).toString();
+  
+  navigate(`/BingoBoard?${queryString}`, {
+    state: {
+      username: userInfo?.username,
+      roomId,
+      stake,
+      telegramId: userInfo?.telegramId,
+      refresh: Date.now()
+    }
+  });
+};
 
   // ---------- 13. Render (unchanged) ----------
   if (isLoading || !authenticated) return null;

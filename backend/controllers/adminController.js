@@ -133,8 +133,10 @@ exports.broadcastToAllCustomers = async (req, res) => {
     try {
         const allUsers = await BingoBord.find({}, 'telegramId');
         const token = process.env.BOT_TOKEN; // main bot token
-        const message = `🏆🏆አስድሳቸ ዜና ለአደይ ቢንጎ ቤተሰቦች መምርጥ የሚችሉት ካርቴላ ወደ 6 አደገ ክማርኪ ቦንሰ ጋር🏆🏆
 
+        const message = `🌼እንኳዋን ለ2019 አዲስ አመት  በሰላም አደረሳችሁ 🌼
+       
+                        🌼   ስንል በአሉ የሰላም  |እና የጤና |እነዲሆንላችሁ በ፣መመኝት ነው🌼
         💸💸 አደይ በምን ይለያል? 💸 💸
          💰💰ሲመዝገቡ ነጻ መጫወቻ ቦነስ💰💰
         🎁🎁ዲፖዚት ሲያርጉ ዲፖዚት ያረጉትን 10% ተጨማሪ ቦነስ🎁🎁
