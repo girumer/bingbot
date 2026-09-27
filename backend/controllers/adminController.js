@@ -134,7 +134,7 @@ exports.broadcastToAllCustomers = async (req, res) => {
         const allUsers = await BingoBord.find({}, 'telegramId');
         const token = process.env.BOT_TOKEN; // main bot token
 
-        const message = `🌼እንኳዋን ለ2019 አዲስ አመት  በሰላም አደረሳችሁ 🌼
+        const message = `ለመላው የክርስትና እምነት ተከታዮች እንኳን ለመስቀል በአል በሰላም አደረሳችሁ 
        
                         🌼   ስንል በአሉ የሰላም  |እና የጤና |እነዲሆንላችሁ በ፣መመኝት ነው🌼
         💸💸 አደይ በምን ይለያል? 💸 💸
