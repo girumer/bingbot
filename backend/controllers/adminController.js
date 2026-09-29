@@ -134,10 +134,8 @@ exports.broadcastToAllCustomers = async (req, res) => {
         const allUsers = await BingoBord.find({}, 'telegramId');
         const token = process.env.BOT_TOKEN; // main bot token
 
-        const message = `ለመላው የክርስትና እምነት ተከታዮች እንኳን ለመስቀል በአል በሰላም አደረሳችሁ 
-       
-                        🌼   ስንል በአሉ የሰላም  |እና የጤና |እነዲሆንላችሁ በ፣መመኝት ነው🌼
-        💸💸 አደይ በምን ይለያል? 💸 💸
+        const message = `💸💸አደይ ቢንጎ በአዲስ ነገር  መጣ የማይቋርጥ በየ1 ሰአቱ የሚወጣ ማራኪ የጃክፖት ቦነስ ሽልማት ለአሸናፊዎች መሥጠት  ጀመረ💸 💸
+                          💸 💸 ከዚህ በተጨማሪ  💸 💸 
          💰💰ሲመዝገቡ ነጻ መጫወቻ ቦነስ💰💰
         🎁🎁ዲፖዚት ሲያርጉ ዲፖዚት ያረጉትን 10% ተጨማሪ ቦነስ🎁🎁
         🎁🎁6 ካርቴላ ድረስ መምረጥ የሚችሉብት🎁🎁

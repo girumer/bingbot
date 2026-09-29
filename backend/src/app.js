@@ -62,7 +62,11 @@ const io = new Server(server, {
       "http://adeyebingo.com",
       "http://www.adeyebingo.com",
       "http://www.adeyebingo.com",
-      "http://api.adeyebingo.com"
+      "http://api.adeyebingo.com",
+       "http://new.adeyebingo.com",
+      "https://new.adeyebingo.com",
+      "http://www.new.adeyebingo.com",
+      "https://www.new.adeyebingo.com"
     ],
     methods: ["GET", "POST"],
     credentials: true
@@ -82,7 +86,10 @@ const allowedOrigins = [
   // ADD THESE TWO LINES:
   'http://api.adeyebingo.com',    // ← ADD THIS (HTTP)
   'https://api.adeyebingo.com',   // ← YOU ALREADY HAVE THIS
-  
+  'http://new.adeyebingo.com',
+  'https://new.adeyebingo.com',
+  'http://www.new.adeyebingo.com',
+  'https://www.new.adeyebingo.com'
   // ... rest of your origins
 ];
 app.use(cors({
@@ -210,7 +217,7 @@ const forcedPlayersData = [
     { username: "burabu_3456", clientId: '200037bx' },
     { username: "mastushewa", clientId: '200037gx' },
     { username: "gerekirkose", clientId: '200037jx' },
-     //greae
+    //greae
     { username: "kibrom_98766", clientId: '20003011' },
    { username: "mesfin_turo", clientId: '2000311' },
     { username: "mulatu_7546", clientId: '2000321' },
@@ -344,7 +351,7 @@ function startInjectionMonitor(rId, initiatorClientId) {
             // Optionally force-start countdown if enough players have cartelas
             const playersWithCartela = Object.values(room.playerCartelas).filter(arr => arr.length > 0).length;
             if (!room.timer && playersWithCartela >= 2) {
-                startCountdown(rId, 35);
+                startCountdown(rId, 30);
             }
             return;
         }
@@ -415,9 +422,131 @@ function startInjectionMonitor(rId, initiatorClientId) {
         }
     }, 3000); // Check every 5 seconds (adjust as needed)
 }
+// ================= JACK BOT =================
 
+const JACK_AMOUNT = 100;
+const JACK_CYCLE_MS = 60 * 60 * 1000;
+
+// Jack is global and exists only in server memory.
+// It is NOT stored in MongoDB.
+const jackBot = {
+  amount: 0,
+  pending: false,
+  cycleStartedAt: null,
+  cycleEndsAt: null
+};
+
+function initializeJackBot() {
+  const now = Date.now();
+
+  // Start at the current hourly boundary.
+  const cycleStart = Math.floor(now / JACK_CYCLE_MS) * JACK_CYCLE_MS;
+  const cycleEnd = cycleStart + JACK_CYCLE_MS;
+
+  jackBot.amount = JACK_AMOUNT;
+  jackBot.pending = false;
+  jackBot.cycleStartedAt = cycleStart;
+  jackBot.cycleEndsAt = cycleEnd;
+
+  console.log(
+    `[JACK] Started new cycle: ${new Date(cycleStart).toLocaleString()}`
+  );
+}
+
+function getJackState() {
+  const now = Date.now();
+
+  if (!jackBot.cycleStartedAt || !jackBot.cycleEndsAt) {
+    initializeJackBot();
+  }
+
+  const elapsed = now - jackBot.cycleStartedAt;
+
+  let progress = Math.min(
+    100,
+    Math.max(0, (elapsed / JACK_CYCLE_MS) * 100)
+  );
+
+  let remainingSeconds = Math.max(
+    0,
+    Math.ceil((jackBot.cycleEndsAt - now) / 1000)
+  );
+
+  return {
+    amount: jackBot.amount,
+    pending: jackBot.pending,
+    progress,
+    remainingSeconds,
+    cycleStartedAt: jackBot.cycleStartedAt,
+    cycleEndsAt: jackBot.cycleEndsAt
+  };
+}
+
+function broadcastJackState() {
+  const state = getJackState();
+
+  io.emit("jack:update", state);
+}
+
+function finishJackCycle() {
+  const now = Date.now();
+
+  // Make sure we don't finish the same cycle repeatedly.
+  if (now < jackBot.cycleEndsAt) {
+    return;
+  }
+
+  jackBot.pending = true;
+
+  console.log(
+    `[JACK] Hour finished. ${JACK_AMOUNT} ETB is now pending for the next winner.`
+  );
+
+  broadcastJackState();
+}
+
+function awardJackToWinner(winnerName) {
+  if (!jackBot.pending) {
+    return 0;
+  }
+
+  const jackAmount = jackBot.amount;
+
+  console.log(
+    `[JACK] ${jackAmount} ETB awarded to ${winnerName}`
+  );
+    io.emit("jack:winner", {
+    winnerName,
+    amount: jackAmount
+  });
+  // Reset Jack immediately.
+  jackBot.amount = JACK_AMOUNT;
+  jackBot.pending = false;
+
+  const now = Date.now();
+
+  // Start a new 60-minute cycle from this moment.
+  jackBot.cycleStartedAt = now;
+  jackBot.cycleEndsAt = now + JACK_CYCLE_MS;
+
+  broadcastJackState();
+
+  return jackAmount;
+}
+
+initializeJackBot();
+
+// Check Jack every second.
+setInterval(() => {
+  if (!jackBot.pending && Date.now() >= jackBot.cycleEndsAt) {
+    finishJackCycle();
+  }
+
+  broadcastJackState();
+}, 1000);
 // =========================================================================
 const rooms = {}; // rooms = { roomId: { players, selectedIndexes, playerCartelas, ... } }
+
 const socketIdToClientId = new Map();
 const clientIdToSocketId = new Map();
 const authenticatedSockets = new Map();
@@ -434,36 +563,65 @@ socket.on("authenticate", async ({ initData }) => {
     return;
   }
 
-  const verified = verifyTelegramInitData(initData, process.env.BOT_TOKEN);
+  const verified = verifyTelegramInitData(
+    initData,
+    process.env.BOT_TOKEN
+  );
+
   if (!verified) {
-    socket.emit("auth_error", { message: "Invalid or expired initData" });
+    socket.emit("auth_error", {
+      message: "Invalid or expired initData"
+    });
     return;
   }
 
   try {
     const userData = JSON.parse(verified.user);
+
     const telegramId = userData.id;
     const username = userData.username || userData.first_name;
 
-    // Verify user exists in DB
     const user = await BingoBord.findOne({ telegramId });
+
     if (!user) {
-      socket.emit("auth_error", { message: "User not registered. Use /start on Telegram." });
+      socket.emit("auth_error", {
+        message: "User not registered. Use /start on Telegram."
+      });
       return;
     }
 
-    // Store authentication info for this socket
+    // Stable ID for this Telegram user
+    const clientId = `tg_${user.telegramId}`;
+
+    // Store authentication information
     authenticatedSockets.set(socket.id, {
       telegramId: user.telegramId,
       username: user.username,
-      clientId: `tg_${user.telegramId}`   // consistent clientId
+      clientId
     });
 
-    socket.emit("auth_success", { message: "Authenticated", user: { username: user.username, wallet: user.Wallet } });
-    console.log(`✅ Socket ${socket.id} authenticated as ${user.username}`);
+    // Connect stable player ID to the NEW socket
+    clientIdToSocketId.set(clientId, socket.id);
+
+    // Tell frontend authentication succeeded
+    socket.emit("auth_success", {
+      message: "Authenticated",
+      user: {
+        username: user.username,
+        wallet: user.Wallet
+      }
+    });
+
+    console.log(
+      `✅ Socket ${socket.id} authenticated as ${user.username}`
+    );
+
   } catch (err) {
     console.error("Authentication error:", err);
-    socket.emit("auth_error", { message: "Server error" });
+
+    socket.emit("auth_error", {
+      message: "Server error"
+    });
   }
 });
   // --- JOIN ROOM ---
@@ -516,7 +674,8 @@ socket.on("authenticate", async ({ initData }) => {
     totalAward: rooms[rId].totalAward,
     totalPlayers: Object.values(rooms[rId].playerCartelas).reduce((sum, arr) => sum + arr.length, 0),
     activeGame: rooms[rId].activeGame || false,
-    gameId: rooms[rId].gameId || null
+    gameId: rooms[rId].gameId || null,
+     jack: getJackState()
   });
 
   const activePlayers = Object.values(rooms[rId].playerCartelas).reduce((sum, arr) => sum + arr.length, 0);
@@ -637,52 +796,60 @@ socket.on("checkPlayerStatus", ({ roomId }) => {   // no clientId from client
 // --- DISCONNECT ---
 socket.on("disconnect", () => {
   const clientId = socketIdToClientId.get(socket.id);
-   authenticatedSockets.delete(socket.id);
+
+  authenticatedSockets.delete(socket.id);
+
   if (!clientId) return;
 
-  // Clean up maps
   socketIdToClientId.delete(socket.id);
-  clientIdToSocketId.delete(clientId);
 
-  for (const roomId in rooms) {
-    const room = rooms[roomId];
-    if (!room || !room.players[clientId]) continue;
+  console.log(
+    `⚠️ ${clientId} disconnected. Waiting 15 seconds for refresh...`
+  );
 
-    // --- START OF FIX ---
-    // We only delete the player if the game is NOT currently running.
-    // If room.activeGame is true, we keep the data so you can win during refresh.
-    if (!room.activeGame) {
+  setTimeout(() => {
 
+    // Check whether this SAME player has connected with a NEW socket
+    const currentSocketId = clientIdToSocketId.get(clientId);
 
-      
-      delete room.playerCartelas[clientId];
-      delete room.players[clientId];
+    if (currentSocketId && currentSocketId !== socket.id) {
+      console.log(
+        `✅ ${clientId} reconnected with new socket. Keeping player/cartela.`
+      );
+      return;
+    }
 
-      // Check if room is now empty (Only relevant if game hasn't started)
-      const playersWithCartela = Object.values(room.playerCartelas).filter(
-        arr => arr.length > 0
-      ).length;
+    // Remove stale socket mapping
+    if (currentSocketId === socket.id) {
+      clientIdToSocketId.delete(clientId);
+    }
 
-      if (playersWithCartela === 0) {
-        const totalPlayers = Object.keys(room.players).length;
-        if (totalPlayers === 0) {
-          resetRoom(roomId);
-          delete rooms[roomId];
-        } else {
-          resetRoom(roomId);
-        }
+    // Player did not reconnect within 15 seconds
+    for (const roomId in rooms) {
+      const room = rooms[roomId];
+
+      if (!room || !room.players[clientId]) continue;
+
+      if (!room.activeGame) {
+        delete room.playerCartelas[clientId];
+        delete room.players[clientId];
+
+        console.log(
+          `🗑️ ${clientId} removed from room ${roomId} after timeout`
+        );
       }
-    } 
-    // --- END OF FIX ---
 
-    // Broadcast updated player count
-    // Because we didn't delete the data above, this count will stay at 16.
-    const activePlayers = Object.values(room.playerCartelas)
-      .reduce((sum, arr) => sum + arr.length, 0);
+      const activePlayers = Object.values(room.playerCartelas)
+        .reduce((sum, arr) => sum + arr.length, 0);
 
-    io.to(roomId).emit("playerCount", { totalPlayers: activePlayers });
-    break;
-  }
+      io.to(roomId).emit("playerCount", {
+        totalPlayers: activePlayers
+      });
+
+      break;
+    }
+
+  }, 15000);
 });
 });
 
@@ -954,25 +1121,42 @@ async function checkWinners(roomId, calledNumber) {
   // Update winners
   // REPLACE your winner update block with this:
 await Promise.all(winners.map(async (winner) => {
+
+    const jackAward = awardJackToWinner(winner.winnerName);
+
+    const finalAward = awardPerWinner + jackAward;
+
+    console.log(
+        `[WINNER] ${winner.winnerName} normal=${awardPerWinner} Jack=${jackAward} total=${finalAward}`
+    );
+
     await BingoBord.updateOne(
         { username: winner.winnerName },
         { 
-            $inc: { Wallet: awardPerWinner, coins: 1 }, // Updates balance instantly
+            $inc: {
+                Wallet: finalAward,
+                coins: 1
+            },
+
             $push: {
                 gameHistory: {
                     $each: [{
                         roomId: Number(roomId),
-                        stake: Number(awardPerWinner),
+                        stake: Number(finalAward),
                         outcome: "win",
                         timestamp: new Date(),
                         gameId: room.gameId || Date.now()
                     }],
-                    $slice: -50 // CRITICAL: This trims the 10,000 items down to 50!
+                    $slice: -50
                 }
             }
         }
-    ).catch(err => console.error("Winner update failed:", err));
+    ).catch(err =>
+        console.error("Winner update failed:", err)
+    );
+
     winnerUsernames.add(winner.winnerName);
+
 }));
 
   // Update losers

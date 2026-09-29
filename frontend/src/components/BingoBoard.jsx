@@ -4,7 +4,11 @@ import "./BingoBoard.css";
 import cartela from "./cartela.json";
 import socket from "../socket";
 import { toast, ToastContainer } from "react-toastify";
+const getTelegramInitData = () => {
+  return window.Telegram?.WebApp?.initData || "";
+};
 
+const initData = getTelegramInitData();
 function getBingoLetter(num) {
   if (num >= 1 && num <= 15) return "B";
   if (num >= 16 && num <= 30) return "I";
@@ -143,18 +147,16 @@ function BingoBoard() {
   const [winners, setWinners] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [iAmWinner, setIAmWinner] = useState(false);
-
+  const [jackWinnerPopup, setJackWinnerPopup] = useState(null);
+const [jack, setJack] = useState({
+  amount: 100,
+  pending: false,
+  progress: 0,
+  remainingSeconds: 3600
+});
   const gameIdRef = useRef(`${roomId}-${Date.now()}`);
 
-  const getClientId = () => {
-    let cid = localStorage.getItem("clientId");
-    if (!cid) {
-      cid = `${Date.now()}-${Math.random()}`;
-      localStorage.setItem("clientId", cid);
-    }
-    return cid;
-  };
-  const clientId = getClientId();
+const clientId = telegramId ? `tg_${telegramId}` : null;
 
   const letters = ["B", "I", "N", "G", "O"];
   const numberColumns = [
@@ -204,23 +206,115 @@ function BingoBoard() {
     localStorage.setItem("telegramId", telegramId);
   }, [username, telegramId, navigate]);
 
-  useEffect(() => {
-    if (!roomId) return;
-    socket.emit("joinRoom", { roomId, username, telegramId, clientId });
+ useEffect(() => {
+  if (!roomId || !telegramId || !clientId) return;
 
-    const handleGameState = (state) => {
-      setAllCalledNumbers(state.calledNumbers || []);
-      setHighlightedNumbers(state.calledNumbers || []);
-      setLastNumber(state.lastNumber || null);
-      if (state.countdown != null) setTimer(state.countdown);
-      setSelectedIndexes(state.selectedIndexes || []);
-      if (state.totalAward != null) setTotalAward(state.totalAward);
-      if (state.gameId != null) setGameId(state.gameId);
-    };
+  let joined = false;
 
-    socket.on("currentGameState", handleGameState);
-    return () => socket.off("currentGameState", handleGameState);
-  }, [roomId, username, clientId]);
+  const authenticateAndJoin = () => {
+    const initData = window.Telegram?.WebApp?.initData || "";
+
+    if (!initData) {
+      console.error("Telegram initData is missing");
+      toast.error("Telegram authentication data is missing");
+      return;
+    }
+
+    console.log("🔐 Authenticating socket...");
+
+    socket.emit("authenticate", { initData });
+  };
+
+  const handleAuthSuccess = (data) => {
+    console.log("✅ Socket authenticated:", data);
+
+    if (!joined) {
+      joined = true;
+
+      console.log("🚪 Joining room:", roomId);
+
+      socket.emit("joinRoom", {
+        roomId
+      });
+    }
+  };
+
+  const handleAuthError = (data) => {
+    console.error("❌ Socket authentication failed:", data);
+
+    toast.error(data?.message || "Authentication failed");
+  };
+
+  const handleGameState = (state) => {
+    console.log("📦 Restored game state:", state);
+
+    setAllCalledNumbers(state.calledNumbers || []);
+    setHighlightedNumbers(state.calledNumbers || []);
+    setLastNumber(state.lastNumber || null);
+
+    // Your backend currently sends "timer", not "countdown"
+    if (state.timer !== undefined && state.timer !== null) {
+      setTimer(state.timer);
+    }
+
+    setSelectedIndexes(state.selectedIndexes || []);
+
+    if (state.totalAward !== undefined && state.totalAward !== null) {
+      setTotalAward(state.totalAward);
+    }
+
+    if (state.gameId !== undefined && state.gameId !== null) {
+      setGameId(state.gameId);
+    }
+    if (state.jack) {
+  setJack(state.jack);
+      }
+    // IMPORTANT:
+    // Restore my cartelas after refresh
+    if (state.myCartelas) {
+      setMyCartelas(state.myCartelas);
+
+      localStorage.setItem(
+        "myCartelas",
+        JSON.stringify(state.myCartelas)
+      );
+    }
+  };
+
+  const handleReconnect = () => {
+    console.log("🔄 Socket reconnected");
+
+    joined = false;
+
+    // New socket.id means backend authentication must happen again
+    authenticateAndJoin();
+  };
+
+  const handleDisconnect = (reason) => {
+    console.log("⚠️ Socket disconnected:", reason);
+  };
+
+  socket.on("auth_success", handleAuthSuccess);
+  socket.on("auth_error", handleAuthError);
+  socket.on("currentGameState", handleGameState);
+  socket.on("connect", authenticateAndJoin);
+  socket.on("reconnect", handleReconnect);
+  socket.on("disconnect", handleDisconnect);
+
+  // Socket may already be connected when this component mounts
+  if (socket.connected) {
+    authenticateAndJoin();
+  }
+
+  return () => {
+    socket.off("auth_success", handleAuthSuccess);
+    socket.off("auth_error", handleAuthError);
+    socket.off("currentGameState", handleGameState);
+    socket.off("connect", authenticateAndJoin);
+    socket.off("reconnect", handleReconnect);
+    socket.off("disconnect", handleDisconnect);
+  };
+}, [roomId, telegramId, clientId]);
 
   useEffect(() => {
     const handleMyCartelas = (cartelasFromServer) => {
@@ -247,7 +341,38 @@ function BingoBoard() {
     socket.on("gameStarted", handleGameStarted);
     return () => socket.off("gameStarted", handleGameStarted);
   }, []);
+useEffect(() => {
 
+  const handleJackUpdate = (jackState) => {
+    setJack(jackState);
+  };
+
+  socket.on("jack:update", handleJackUpdate);
+
+  return () => {
+    socket.off("jack:update", handleJackUpdate);
+  };
+
+}, []);
+useEffect(() => {
+  const handleJackWinner = ({ winnerName, amount }) => {
+    setJackWinnerPopup({
+      winnerName,
+      amount
+    });
+
+    // Hide after 5 seconds
+    setTimeout(() => {
+      setJackWinnerPopup(null);
+    }, 5000);
+  };
+
+  socket.on("jack:winner", handleJackWinner);
+
+  return () => {
+    socket.off("jack:winner", handleJackWinner);
+  };
+}, []);
   useEffect(() => {
     const handleWinningPattern = (winnersArr) => {
       console.log("WINNERS PAYLOAD:", JSON.stringify(winnersArr, null, 2));
@@ -288,6 +413,7 @@ function BingoBoard() {
     <div className="bingo-board-wrapper">
       {/* TOP STATS */}
       <div className="top-stats">
+      
          <div className="stat-button">
             GameID {gameId || "Waiting..."}
           </div>
@@ -299,7 +425,49 @@ function BingoBoard() {
         <div className="stat-button">👥 Players {totalPlayers}</div>
         <div className="stat-button">🔢 {allCalledNumbers.length}/75</div>
       </div>
+{/* JACK BOT */}
+<div className="jack-container">
 
+  <div className="jack-header">
+    <span>🎰 JACK BOT</span>
+
+    <strong>
+      {jack.amount.toLocaleString()} ETB
+    </strong>
+  </div>
+
+  <div className="jack-progress-background">
+
+    <div
+      className="jack-progress-fill"
+      style={{
+        width: `${jack.progress}%`
+      }}
+    />
+
+  </div>
+
+  <div className="jack-info">
+
+    {jack.pending ? (
+      <span className="jack-pending">
+        🎁 100 ETB READY — NEXT WINNER
+      </span>
+    ) : (
+      <span>
+        {Math.floor(jack.remainingSeconds / 60)}:
+        {String(jack.remainingSeconds % 60).padStart(2, "0")}
+        {" "}remaining
+      </span>
+    )}
+
+    <span>
+      {Math.round(jack.progress)}%
+    </span>
+
+  </div>
+
+</div>
       {/* CORE DESKTOP AND MOBILE CONTENT SPLIT */}
     <div className="main-content-layout">
   
@@ -448,7 +616,27 @@ function BingoBoard() {
           </div>
         </div>
       )}
+{jackWinnerPopup && (
+  <div className="jack-winner-overlay">
+    <div className="jack-winner-popup">
+      <div className="jack-winner-icon">🎰</div>
 
+      <h1>🎉 JACKPOT WINNER! 🎉</h1>
+
+      <p className="jack-winner-name">
+        {jackWinnerPopup.winnerName}
+      </p>
+
+      <p className="jack-winner-amount">
+        💰 +{jackWinnerPopup.amount.toLocaleString()} ETB
+      </p>
+
+      <p className="jack-winner-message">
+        Congratulations!
+      </p>
+    </div>
+  </div>
+)}
     </div>
   );
 }
