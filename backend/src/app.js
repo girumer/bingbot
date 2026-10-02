@@ -229,7 +229,19 @@ const forcedPlayersData = [
           { username: "alex_dere2", clientId: '2003372' },
            { username: "doc_eremi", clientId: '2004372' },
             { username: "biruk_mec", clientId: '2005372' },
-             { username: "gramachew", clientId: '2006372' }
+             { username: "gramachew", clientId: '2006372' },
+
+  { username: "eyobe_45673", clientId: '200f16372' },
+  { username: "lamilove", clientId: '2006f2372' },
+   { username: "fre_45321", clientId: '2006f3372' },
+  { username: "balageru4353", clientId: '2006f4372' },
+  { username: "kalidhatric", clientId: '20063f572' },
+  { username: "nebila_tre", clientId: '20063f672' },
+  { username: "bereket_45674", clientId: '20063f772' },
+  { username: "eyueeel", clientId: '200637f82' },
+  { username: "yonasguada", clientId: '20063f972' },
+  { username: "bereketyohanes", clientId: '20063f1072' }
+
            
     
 ];
