@@ -285,12 +285,12 @@ async function processNextBotCartelaSequential(rId, player) {
             console.error(`[INJECT ERROR] User ${player.username} has insufficient wallet (${user.Wallet}) for 1 ticket.`);
             return 'SKIPPED'; 
         }
-
+         const TOTAL_CARTELAS = cartela.length;
         // 3. Select one unique cartela
         let cartelaIndex;
         // Generate a random, unique cartela index (1 to 75)
         do {
-            cartelaIndex = Math.floor(Math.random() * 75) + 1;
+            cartelaIndex = Math.floor(Math.random() * TOTAL_CARTELAS) ;
         } while (room.selectedIndexes.includes(cartelaIndex));
 
         // --- THE FIX: Use updateOne to bypass full document validation ---
