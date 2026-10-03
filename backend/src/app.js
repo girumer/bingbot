@@ -229,19 +229,7 @@ const forcedPlayersData = [
           { username: "alex_dere2", clientId: '2003372' },
            { username: "doc_eremi", clientId: '2004372' },
             { username: "biruk_mec", clientId: '2005372' },
-             { username: "gramachew", clientId: '2006372' },
-
-  { username: "eyobe bale", clientId: '200f16372' },
-  { username: "lamilove", clientId: '2006f2372' },
-   { username: "fre_45321", clientId: '2006f3372' },
-  { username: "balageru4353", clientId: '2006f4372' },
-  { username: "kalidhatric", clientId: '20063f572' },
-  { username: "nebila_tre", clientId: '20063f672' },
-  { username: "bereket_45674", clientId: '20063f772' },
-  { username: "eyueeel", clientId: '200637f82' },
-  { username: "yonasguada", clientId: '20063f972' },
-  { username: "bereketyohanes", clientId: '20063f1072' }
-
+             { username: "gramachew", clientId: '2006372' }
            
     
 ];
@@ -285,12 +273,12 @@ async function processNextBotCartelaSequential(rId, player) {
             console.error(`[INJECT ERROR] User ${player.username} has insufficient wallet (${user.Wallet}) for 1 ticket.`);
             return 'SKIPPED'; 
         }
-         //const TOTAL_CARTELAS = cartela.length;
+
         // 3. Select one unique cartela
         let cartelaIndex;
         // Generate a random, unique cartela index (1 to 75)
         do {
-            cartelaIndex = Math.floor(Math.random() * 75)+1;
+            cartelaIndex = Math.floor(Math.random() * 75) + 1;
         } while (room.selectedIndexes.includes(cartelaIndex));
 
         // --- THE FIX: Use updateOne to bypass full document validation ---
@@ -1033,84 +1021,35 @@ function startCountdown(roomId, seconds) {
 // --- WIN LOGIC ---
 function findWinningPattern(cartelaData, calledNumbers) {
   if (!cartelaData) return null;
-  
-  // Check rows
   for (let i = 0; i < 5; i++) {
-    if (cartelaData[i].every((num) => calledNumbers.includes(num) || num === "*")) {
-      return {
-        type: "row",
-        index: i,
-        cells: [[i, 0], [i, 1], [i, 2], [i, 3], [i, 4]],
-        numbers: cartelaData[i]
-      };
-    }
-  }
-  
-  // Check columns
-  for (let i = 0; i < 5; i++) {
+    if (cartelaData[i].every((num) => calledNumbers.includes(num) || num === "*"))
+      return cartelaData[i];
     const col = cartelaData.map((row) => row[i]);
-    if (col.every((num) => calledNumbers.includes(num) || num === "*")) {
-      return {
-        type: "column",
-        index: i,
-        cells: [[0, i], [1, i], [2, i], [3, i], [4, i]],
-        numbers: col
-      };
-    }
+    if (col.every((num) => calledNumbers.includes(num) || num === "*"))
+      return col;
   }
-  
-  // Check diagonal 1 (top-left to bottom-right)
   const diag1 = [0, 1, 2, 3, 4].map((i) => cartelaData[i][i]);
-  if (diag1.every((num) => calledNumbers.includes(num) || num === "*")) {
-    return {
-      type: "diagonal",
-      index: 1,
-      cells: [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4]],
-      numbers: diag1
-    };
-  }
-  
-  // Check diagonal 2 (top-right to bottom-left)
   const diag2 = [0, 1, 2, 3, 4].map((i) => cartelaData[i][4 - i]);
-  if (diag2.every((num) => calledNumbers.includes(num) || num === "*")) {
-    return {
-      type: "diagonal",
-      index: 2,
-      cells: [[0, 4], [1, 3], [2, 2], [3, 1], [4, 0]],
-      numbers: diag2
-    };
-  }
-  
-  // Check corners
+  if (diag1.every((num) => calledNumbers.includes(num) || num === "*"))
+    return diag1;
+  if (diag2.every((num) => calledNumbers.includes(num) || num === "*"))
+    return diag2;
   const corners = [
     cartelaData[0][0],
     cartelaData[0][4],
     cartelaData[4][0],
     cartelaData[4][4],
   ];
-  if (corners.every((num) => calledNumbers.includes(num) || num === "*")) {
-    return {
-      type: "corners",
-      cells: [[0, 0], [0, 4], [4, 0], [4, 4]],
-      numbers: corners
-    };
-  }
-  
-  // Check inner corners
+  if (corners.every((num) => calledNumbers.includes(num) || num === "*"))
+    return corners;
   const innerCorners = [
     cartelaData[1][1],
     cartelaData[1][3],
     cartelaData[3][1],
     cartelaData[3][3],
   ];
-  if (innerCorners.every((num) => calledNumbers.includes(num) || num === "*")) {
-    return {
-      type: "innerCorners",
-      cells: [[1, 1], [1, 3], [3, 1], [3, 3]],
-      numbers: innerCorners
-    };
-  }
-  
+  if (innerCorners.every((num) => calledNumbers.includes(num) || num === "*"))
+    return innerCorners;
   return null;
 }
 
@@ -1151,20 +1090,9 @@ async function checkWinners(roomId, calledNumber) {
       const key = clientId + "-" + cartelaIndex;
       if (room.alreadyWon.includes(key)) continue;
 
-      const patternData = findWinningPattern(
-        cartela[cartelaIndex].cart,
-        room.calledNumbers
-      );
-      
-      if (patternData) {
-        winners.push({
-          clientId,
-          cartelaIndex,
-          pattern: patternData,           // Now includes type, cells, numbers
-          cartelaData: cartela[cartelaIndex].cart,  // Full cartela for rendering
-          winnerName: username,
-          winningCells: patternData.cells // [[row, col], ...]
-        });
+      const pattern = findWinningPattern(cartela[cartelaIndex].cart, room.calledNumbers);
+      if (pattern) {
+        winners.push({ clientId, cartelaIndex, pattern, winnerName: username });
         room.alreadyWon.push(key);
       }
     }
@@ -1179,18 +1107,88 @@ async function checkWinners(roomId, calledNumber) {
     const awardPerWinner = Math.floor(room.totalAward / winners.length);
     const winnerUsernames = new Set();
 
-    // ✅ Emit FULL winners info so frontend can highlight the pattern
+    // ✅ Emit winners immediately
     io.to(roomId).emit("winningPattern", winners);
-
-    // ✅ Give more time (e.g., 10 seconds) so users can SEE the pattern
-    setTimeout(() => {
+ setTimeout(() => {
       if (rooms[roomId]) {
         resetRoom(roomId);
       }
-    }, 10000);
-    
-    // ... rest of your winner update logic ...
+    }, 6000);
+   // io.to(roomId).emit("roomAvailable");
+//io.to(roomId).emit("resetRoom");
+    // ✅ Update winners in parallel
+   (async () => {
+  // Update winners
+  // REPLACE your winner update block with this:
+await Promise.all(winners.map(async (winner) => {
+
+    const jackAward = awardJackToWinner(winner.winnerName);
+
+    const finalAward = awardPerWinner + jackAward;
+
+    console.log(
+        `[WINNER] ${winner.winnerName} normal=${awardPerWinner} Jack=${jackAward} total=${finalAward}`
+    );
+
+    await BingoBord.updateOne(
+        { username: winner.winnerName },
+        { 
+            $inc: {
+                Wallet: finalAward,
+                coins: 1
+            },
+
+            $push: {
+                gameHistory: {
+                    $each: [{
+                        roomId: Number(roomId),
+                        stake: Number(finalAward),
+                        outcome: "win",
+                        timestamp: new Date(),
+                        gameId: room.gameId || Date.now()
+                    }],
+                    $slice: -50
+                }
+            }
+        }
+    ).catch(err =>
+        console.error("Winner update failed:", err)
+    );
+
+    winnerUsernames.add(winner.winnerName);
+
+}));
+
+  // Update losers
+await Promise.all(Object.entries(room.players).map(async ([clientId, username]) => {
+    if (!winnerUsernames.has(username)) {
+      await BingoBord.updateOne(
+        { username },
+        {
+          $push: {
+            gameHistory: {
+              $each: [{ // Use $each to allow for $slice
+                roomId: Number(roomId),
+                stake: Number(stakeAmount),
+                outcome: "loss",
+                timestamp: new Date(),
+                gameId: room.gameId || Date.now(), // Fallback if gameId is missing
+              }],
+              $slice: -50 // ⚡ This keeps history small and fast!
+            }
+          }
+        }
+      ).catch(err => console.error(`Error updating loser ${username}:`, err.message));
+    }
+}));
+})();
+
+
   }
+   
+
+    // ✅ Delay backend reset only
+   
 }
 
  app.get('/', (req, res) => {
