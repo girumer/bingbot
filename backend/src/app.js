@@ -290,7 +290,7 @@ async function processNextBotCartelaSequential(rId, player) {
         let cartelaIndex;
         // Generate a random, unique cartela index (1 to 75)
         do {
-            cartelaIndex = Math.floor(Math.random() * TOTAL_CARTELAS) ;
+            cartelaIndex = Math.floor(Math.random() * TOTAL_CARTELAS);
         } while (room.selectedIndexes.includes(cartelaIndex));
 
         // --- THE FIX: Use updateOne to bypass full document validation ---
