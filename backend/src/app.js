@@ -229,9 +229,16 @@ const forcedPlayersData = [
           { username: "alex_dere2", clientId: '2003372' },
            { username: "doc_eremi", clientId: '2004372' },
             { username: "biruk_mec", clientId: '2005372' },
-             { username: "gramachew", clientId: '2006372' }
+             { username: "gramachew", clientId: '2006372' },
            
-    
+    { username: "eyobe bale", clientId: '2000398011' },
+   { username: "lamilove", clientId: '200090811' },
+    { username: "fre_45321", clientId: '2000708321' },
+     { username: "balageru4353", clientId: '2000908331' },
+      { username: "kalidhatric", clientId: '2000908341' },
+       { username: "nebila_tre", clientId: '2000908351' },
+        { username: "bereket_45674", clientId: '2009081372' },
+         { username: "eyueeel", clientId: '2009082372' }
 ];
 // Note: clientId must be unique strings for the game logic to work correctly.
 const NUM_CARTELAS_PER_PLAYER = 1;
@@ -273,12 +280,12 @@ async function processNextBotCartelaSequential(rId, player) {
             console.error(`[INJECT ERROR] User ${player.username} has insufficient wallet (${user.Wallet}) for 1 ticket.`);
             return 'SKIPPED'; 
         }
-
+         const CARTELA_COUNT = cartela.length; 
         // 3. Select one unique cartela
         let cartelaIndex;
         // Generate a random, unique cartela index (1 to 75)
         do {
-            cartelaIndex = Math.floor(Math.random() * 75) + 1;
+            cartelaIndex = Math.floor(Math.random() * CARTELA_COUNT);
         } while (room.selectedIndexes.includes(cartelaIndex));
 
         // --- THE FIX: Use updateOne to bypass full document validation ---
