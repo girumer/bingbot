@@ -238,7 +238,17 @@ const forcedPlayersData = [
       { username: "kalidhatric", clientId: '2000908341' },
        { username: "nebila_tre", clientId: '2000908351' },
         { username: "bereket_45674", clientId: '2009081372' },
-         { username: "eyueeel", clientId: '2009082372' }
+         { username: "eyueeel", clientId: '2009082372' },
+
+
+           { username: "yonyx2", clientId: '2100398011' },
+   { username: "dnebereabebe", clientId: '210090811' },
+    { username: "awelekasim", clientId: '2100708321' },
+     { username: "amede ambachewe", clientId: '2100908331' },
+      { username: "mesud alewi", clientId: '2100908341' },
+       { username: "amir muhamed", clientId: '2100908351' },
+        { username: "yonatan tekle", clientId: '2109081372' },
+         { username: "awete estifanose", clientId: '2009082372' }
 ];
 // Note: clientId must be unique strings for the game logic to work correctly.
 const NUM_CARTELAS_PER_PLAYER = 1;
@@ -335,8 +345,8 @@ function startInjectionMonitor(rId, initiatorClientId) {
 
     const activeBots = forcedPlayersData.filter(player => player.clientId !== initiatorClientId);
     let currentBotIndex = 0;
-    const DELAY_MS = 400;
-    const MAX_CYCLES = activeBots.length * 2; // e.g., try each bot twice
+    const DELAY_MS = 200;
+    const MAX_CYCLES = activeBots.length * 3; // e.g., try each bot twice
     let cycleCount = 0;
 
     const runInjectionCycle = async () => {
