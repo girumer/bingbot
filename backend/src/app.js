@@ -217,7 +217,7 @@ const forcedPlayersData = [
     { username: "burabu_3456", clientId: '200037bx' },
     { username: "mastushewa", clientId: '200037gx' },
     { username: "gerekirkose", clientId: '200037jx' },
-    //greae
+     /* 
     { username: "kibrom_98766", clientId: '20003011' },
    { username: "mesfin_turo", clientId: '2000311' },
     { username: "mulatu_7546", clientId: '2000321' },
@@ -230,7 +230,7 @@ const forcedPlayersData = [
            { username: "doc_eremi", clientId: '2004372' },
             { username: "biruk_mec", clientId: '2005372' },
              { username: "gramachew", clientId: '2006372' }
-       /*    
+         
     { username: "eyobe bale", clientId: '2000398011' },
    { username: "lamilove", clientId: '200090811' },
     { username: "fre_45321", clientId: '2000708321' },
@@ -345,7 +345,7 @@ function startInjectionMonitor(rId, initiatorClientId) {
 
     const activeBots = forcedPlayersData.filter(player => player.clientId !== initiatorClientId);
     let currentBotIndex = 0;
-    const DELAY_MS = 200;
+    const DELAY_MS = 500;
     const MAX_CYCLES = activeBots.length * 3; // e.g., try each bot twice
     let cycleCount = 0;
 
