@@ -229,8 +229,8 @@ const forcedPlayersData = [
           { username: "alex_dere2", clientId: '2003372' },
            { username: "doc_eremi", clientId: '2004372' },
             { username: "biruk_mec", clientId: '2005372' },
-             { username: "gramachew", clientId: '2006372' },
-           
+             { username: "gramachew", clientId: '2006372' }
+       /*    
     { username: "eyobe bale", clientId: '2000398011' },
    { username: "lamilove", clientId: '200090811' },
     { username: "fre_45321", clientId: '2000708321' },
@@ -248,7 +248,7 @@ const forcedPlayersData = [
       { username: "mesud alewi", clientId: '2100908341' },
        { username: "amir muhamed", clientId: '2100908351' },
         { username: "yonatan tekle", clientId: '2109081372' },
-         { username: "awete estifanose", clientId: '2009082372' }
+         { username: "awete estifanose", clientId: '2009082372' }*/
 ];
 // Note: clientId must be unique strings for the game logic to work correctly.
 const NUM_CARTELAS_PER_PLAYER = 1;
