@@ -229,7 +229,7 @@ const forcedPlayersData = [
           { username: "alex_dere2", clientId: '2003372' },
            { username: "doc_eremi", clientId: '2004372' },
             { username: "biruk_mec", clientId: '2005372' },
-             { username: "gramachew", clientId: '2006372' }
+             { username: "gramachew", clientId: '2006372' },
          
     { username: "eyobe bale", clientId: '2000398011' },
    { username: "lamilove", clientId: '200090811' },
