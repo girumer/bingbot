@@ -148,7 +148,7 @@ const mainMenu = {
        
       ],
       [
-        { text: "🔗 Referral Link", callback_data: "referral" },
+        { text: "🔗 Invite", callback_data: "referral" },
          { text: "🎮 Game History", callback_data: "gameHistory" },
         
       ],
@@ -166,12 +166,14 @@ const commands = [
   { command: "start", description: "🏠 start" }, // Corrected line
   { command: "balance", description: "💰 Check your balance" },
   { command: "play", description: "🎮 Play Bingo" },
+  { command: "invite", description: "🎁 Invite friends" },
   { command: "deposit", description: "📥 Deposit funds" },
   { command: "coins", description: "🪙 Check your Coin balance" },
   { command: "withdraw", description: "📤 Withdraw" },
   { command: "history", description: "📜 game  history" },
   { command: "changeusername", description: "✏️ Change your username" },
   { command: "transferwallet", description: "➡️ Transfer funds" }, 
+  
   { command: "help", description: "ℹ️ Help info" },
    
 ];
@@ -304,6 +306,34 @@ bot.onText(/^\/start\s?(\d+)?$/, async (msg, match) => {
     } catch (error) {
         console.error("Error in /start handler:", error);
     }
+});
+bot.onText(/\/invite/, async (msg) => {
+  const chatId = msg.chat.id;
+
+  const user = await BingoBord.findOne({ telegramId: chatId });
+  if (!user) {
+    bot.sendMessage(chatId, "You are not registered. Please use /start to begin.");
+    return;
+  }
+
+  const botInfo = await bot.getMe();
+  const botUsername = botInfo.username;
+  const referralLink = `https://t.me/${botUsername}?start=${chatId}`;
+
+  const captionText = `
+<i>Here is your personal invite link!</i>
+
+ከታች ያለውን ሊንክ ለወዳጆቾ በመጋበዝ ጓደኛዎን ሲጋብዙ 2 ብር ያገኛሉ።
+
+🔗 ${referralLink}
+
+እየተዝናን አብረን  እንስራ
+`;
+
+  await bot.sendMessage(chatId, captionText, {
+    parse_mode: "HTML",
+    disable_web_page_preview: false,
+  });
 });
 bot.onText(/\/changeusername/, async (msg) => {
     const chatId = msg.chat.id;
@@ -695,13 +725,15 @@ bot.on("contact", async (msg) => {
   if (state && state.step === "waitingForContact") {
     console.log(`Contact phone raw: "${contact.phone_number}"`);
     const db = mongoose.connection.db;
-   let cleanPhone = contact.phone_number.replace(/^\+/, '');
-   const blocked = await db.collection('blockednumbers').findOne({ phoneNumber: cleanPhone });
+    let cleanPhone = contact.phone_number.replace(/^\+/, "");
+
+    const blocked = await db.collection("blockednumbers").findOne({ phoneNumber: cleanPhone });
     if (blocked) {
       bot.sendMessage(chatId, "⛔ This phone number is not allowed to register. Contact support if you believe this is an error.");
       delete userStates[chatId];
-      return;}
-    // Check if this telegramId is already registered
+      return;
+    }
+
     let existingUser = await BingoBord.findOne({ telegramId: chatId });
     if (existingUser) {
       bot.sendMessage(chatId, "⚠️ You are already registered!");
@@ -709,7 +741,6 @@ bot.on("contact", async (msg) => {
       return;
     }
 
-    // Check if the phone number is already registered by another user
     existingUser = await BingoBord.findOne({ phoneNumber: contact.phone_number });
     if (existingUser) {
       bot.sendMessage(chatId, "⚠️ This phone number is already registered by another user.");
@@ -721,17 +752,62 @@ bot.on("contact", async (msg) => {
     const baseName = rawName.replace(/\s+/g, "").toLowerCase();
     const uniqueUsername = await generateUniqueUsername(baseName);
 
+    const referrerId = state?.referrerId || null;
+
     const newUser = new BingoBord({
       telegramId: chatId,
       username: uniqueUsername,
       phoneNumber: contact.phone_number,
       Wallet: 7,
       gameHistory: [],
-      referredBy: state.referrerId || null,
+      referredBy: referrerId,
       referralBonusPaid: false,
     });
 
     await newUser.save();
+
+    // ----------------------
+    // Referral bonus: +2 Birr to direct referrer, capped at 10 successful invites
+    // ----------------------
+if (state.referrerId) {
+  try {
+    const MAX_REFERRALS = 2;
+
+    const referrer = await BingoBord.findOneAndUpdate(
+      {
+        telegramId: state.referrerId,
+        $or: [
+          { referralCount: { $lt: MAX_REFERRALS } },
+          { referralCount: { $exists: false } },
+        ],
+      },
+      {
+        $inc: { Wallet: 2, referralCount: 1 },
+      },
+      { new: true }
+    );
+
+    if (!referrer) {
+      console.log(`Referrer ${state.referrerId} is at cap or not found. No bonus paid.`);
+    } else {
+      try {
+        await Transaction.create({
+          transactionNumber: `REF${new mongoose.Types.ObjectId().toString()}`,
+          phoneNumber: referrer.phoneNumber,
+          method: "referral_bonus",
+          type: "bonus",
+          amount: 2,
+          rawMessage: `Referral bonus for inviting telegramId ${chatId} (invite #${referrer.referralCount})`,
+          status: "completed",
+        });
+      } catch (txErr) {
+        console.error("Referral tx log failed:", txErr.message);
+      }
+    }
+  } catch (bonusErr) {
+    console.error("Referral bonus error:", bonusErr);
+  }
+}
 
     delete userStates[chatId];
     bot.sendMessage(chatId, "✅ Registration complete! 🎉", mainMenu);
@@ -1030,27 +1106,27 @@ try {
  }
  break;
 case "referral":
-    // Get the bot's username dynamically from the API.
     const botInfo = await bot.getMe();
     const botUsername = botInfo.username;
-    
-    // Use the bot's username and the correct user ID from the callbackQuery.
     const referralLink = `https://t.me/${botUsername}?start=${callbackQuery.from.id}`;
-    
-    // This is the file_id you found.
-    const botProfilePictureId = 'AgACAgQAAxkBAAIK7mjE1Y1VX0ivUkBQGwJsXW08-92LAAKm0DEb55coUv1XJCHTpYurAQADAgADeAADNgQ'; 
-    
-    // Use the [Text](URL) format to create a clickable link
-const captionText = `
+
+    const captionText = `
 <i>Here is your personal referral link!</i>
-    
-ከታች ያለውን ሊንክ ለወዳጆቾ በመጋበዝ የጋበዟቸው ደንበኞች ከሚያስቀምጡት ዲፖዛት የማያቋርጥ የ10% ባለድርሻ ይሁኑ.
-    
-🔗 <a href="${referralLink}">Click Here to Invite</a>
-    
+
+ከታች ያለውን ሊንክ ለወዳጆቾ በመጋበዝ ጓደኛዎን ሲጋብዙ 2 ብር ያገኛሉ።
+
+🔗 ${referralLink}
+
 እየተዝናን አብረን  እንስራ
 `;
-bot.sendPhoto(chatId, botProfilePictureId, { caption: captionText, parse_mode: 'HTML' });
+
+    await bot.sendMessage(chatId, captionText, {
+        parse_mode: 'HTML',
+        disable_web_page_preview: false,   // show the t.me link preview
+    });
+
+    // Acknowledge the button tap
+    answerQuery("", false);
     
     
     break;
