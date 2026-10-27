@@ -134,7 +134,8 @@ exports.broadcastToAllCustomers = async (req, res) => {
         const allUsers = await BingoBord.find({}, 'telegramId');
         const token = process.env.BOT_TOKEN; // main bot token
 
-        const message = `💸💸አደይ ቢንጎ በአዲስ ነገር  መጣ የማይቋርጥ በየ1 ሰአቱ የሚወጣ ማራኪ የጃክፖት ቦነስ ሽልማት ለአሸናፊዎች መሥጠት  ጀመረ💸 💸
+        const message = `💸💸ሰበር ሰበር ሰበር አደይ ቢንጎ በሪፈራል ሊንክ ገንዘብ መስጠት ጀመር አንድ ተጫዋች በጋበዙ ቁጥር ሁለት ብር ያገኛሉ 💸 💸
+                            💸💸ቦቱ ላይ  ገብተው invite ሊንኩን በመጫን ተጫዋች ይጋብዙ 💸 💸
                           💸 💸 ከዚህ በተጨማሪ  💸 💸 
          💰💰ሲመዝገቡ ነጻ መጫወቻ ቦነስ💰💰
         🎁🎁ዲፖዚት ሲያርጉ ዲፖዚት ያረጉትን 10% ተጨማሪ ቦነስ🎁🎁

@@ -771,7 +771,7 @@ bot.on("contact", async (msg) => {
     // ----------------------
 if (state.referrerId) {
   try {
-    const MAX_REFERRALS = 2;
+    const MAX_REFERRALS = 10;
 
     const referrer = await BingoBord.findOneAndUpdate(
       {
