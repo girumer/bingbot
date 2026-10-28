@@ -134,7 +134,7 @@ exports.broadcastToAllCustomers = async (req, res) => {
         const allUsers = await BingoBord.find({}, 'telegramId');
         const token = process.env.BOT_TOKEN; // main bot token
 
-        const message = `💸💸ሰበር ሰበር ሰበር አደይ ቢንጎ በሪፈራል ሊንክ ገንዘብ መስጠት ጀመር አንድ ተጫዋች በጋበዙ ቁጥር ሁለት ብር ያገኛሉ 💸 💸
+        const message = `💸💸አንድ ሰው በጋበዙ ቁጥር 5 ብር እንደሚያገኙ ያቃሉ?💸 💸
                             💸💸ቦቱ ላይ  ገብተው invite ሊንኩን በመጫን ተጫዋች ይጋብዙ 💸 💸
                           💸 💸 ከዚህ በተጨማሪ  💸 💸 
          💰💰ሲመዝገቡ ነጻ መጫወቻ ቦነስ💰💰
